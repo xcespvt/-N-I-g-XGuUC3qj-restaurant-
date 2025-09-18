@@ -174,7 +174,7 @@ export interface RefundRequest {
 }
 
 
-type SubscriptionPlan = 'Free' | 'Pro';
+type SubscriptionPlan = "Starter Plan" | "Growth Plan";
 
 interface AppContextType {
   branches: Branch[];
@@ -605,7 +605,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [ownerInfo, setOwnerInfo] = useState<OwnerInfo>(initialOwnerInfo);
   const [isRestaurantOnline, setRestaurantOnline] = useState<boolean>(true);
   const [isBusy, setBusy] = useState<boolean>(false);
-  const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlan>('Pro');
+  const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlan>('Starter Plan');
   const [takeawayCart, setTakeawayCart] = useState<TakeawayCartItem[]>([]);
 
   // HANDLERS
