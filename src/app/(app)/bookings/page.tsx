@@ -234,8 +234,19 @@ export default function TableManagementPage() {
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-md" side="bottom">
-          <form onSubmit={handleSaveTable}>
+        <DialogContent  className={cn(
+            "sm:max-w-md w-full",
+            "fixed left-1/2 top-16 -translate-x-1/2 bottom-0",
+            "flex flex-col rounded-t-xl p-6",
+          "items-center",
+          "justify-center",
+            // Animation overrides
+            "data-[state=open]:animate-in data-[state=closed]:animate-out",
+            "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
+            "data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-bottom-2"
+          )}
+        > 
+          <form  onSubmit={handleSaveTable}>
             <DialogHeader>
               <DialogTitle>
                 {editingTable ? "Edit Table" : "Add New Table"}
