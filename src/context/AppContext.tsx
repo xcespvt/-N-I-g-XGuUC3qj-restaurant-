@@ -174,7 +174,7 @@ export interface RefundRequest {
 }
 
 
-type SubscriptionPlan = 'Free' | 'Pro';
+type SubscriptionPlan = "Starter Plan" | "Growth Plan" | "Pro" | "Free";
 
 interface AppContextType {
   branches: Branch[];
