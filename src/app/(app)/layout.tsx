@@ -66,10 +66,12 @@ const BranchesPage = dynamic(() => import('./branches/page'));
 const DashboardPage = dynamic(() => import('./dashboard/page'));
 const DineInTakeawayPage = dynamic(() => import('./dine-in-takeaway/page'));
 const EarningsPage = dynamic(() => import('./earnings/page'));
+const WithdrawPage = dynamic(() => import('./earnings/withdraw/page'));
 const FeedbackPage = dynamic(() => import('./feedback/page'));
 const HelpSupportPage = dynamic(() => import('./help-support/page'));
 const CommunityForumPage = dynamic(() => import('./help-support/community-forum/page'));
 const KnowledgeBasePage = dynamic(() => import('./help-support/knowledge-base/page'));
+const ChatPage = dynamic(() => import('./help-support/chat/page'));
 const MenuPage = dynamic(() => import('./menu/page'));
 const OffersPage = dynamic(() => import('./offers/page'));
 const OrderHistoryPage = dynamic(() => import('./order-history/page'));
@@ -146,7 +148,7 @@ function AppLayoutClient({
         badge: newOrdersCount > 0 ? newOrdersCount.toString() : undefined
       },
       { href: "/order-history", label: "Order History", icon: History },
-      { href: "/track-order", label: "Track Order", icon: PackageSearch },
+      { href: "/order-tracking", label: "Track Order", icon: PackageSearch },
       { href: "/refunds", label: "Refunds", icon: RefreshCw }
     ],
 

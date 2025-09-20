@@ -115,3 +115,42 @@ body {
     @apply scale-[0.97];
   }
 }
+
+@keyframes slide-up-bottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down-bottom {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.animate-slide-up-bottom {
+  animation: slide-up-bottom 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.animate-slide-down-bottom {
+  animation: slide-down-bottom 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* For SM screens and up, maintain center positioning */
+@media (min-width: 640px) {
+  @keyframes slide-up-bottom {
+    from {
+      transform: translateX(-50%) translateY(100%);
+    }
+    to {
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+}

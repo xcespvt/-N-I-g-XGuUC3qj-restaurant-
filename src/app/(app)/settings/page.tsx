@@ -15,7 +15,8 @@ import {
   Settings as SettingsIcon,
   Sun,
   Wand2,
-  ArrowLeft
+  ArrowLeft,
+  Shield,
 } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -124,38 +125,6 @@ export default function SettingsPage() {
                  </div>
               </CardContent>
             </Card>
-
-            <Card>
-            <CardHeader>
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary"><Lock className="h-5 w-5"/></div>
-                    <div>
-                        <CardTitle>Account Security</CardTitle>
-                        <CardDescription>Manage your account security</CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="font-medium mb-2">Change Password</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input id="current-password" type="password" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input id="new-password" type="password" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input id="confirm-password" type="password" />
-                  </div>
-                </div>
-                <Button className="mt-4" onClick={handlePasswordUpdate}>Update Password</Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="lg:col-span-1 space-y-6">
@@ -183,27 +152,28 @@ export default function SettingsPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary"><HelpCircle className="h-5 w-5"/></div>
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary"><Shield className="h-5 w-5"/></div>
                     <div>
-                        <CardTitle>Help & Support</CardTitle>
-                        <CardDescription>Get assistance</CardDescription>
+                        <CardTitle>Policies</CardTitle>
+                        <CardDescription>Legal & company policies</CardDescription>
                     </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                 <Link href="/help-support" className="w-full">
-                    <Button variant="ghost" className="w-full justify-start gap-2">
-                        <LifeBuoy className="h-4 w-4"/>
-                        FAQs & Help
-                    </Button>
-                 </Link>
-                 <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => toast({ title: "Contacting Support", description: "Email client opened."})}>
-                    <Mail className="h-4 w-4"/>
-                    Contact Support
+                 <Button variant="ghost" className="w-full justify-start gap-2">
+                    <FileText className="h-4 w-4"/> Terms & Conditions
                  </Button>
-                 <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => toast({ title: "Contacting Support", description: "Calling support..."})}>
-                    <Phone className="h-4 w-4"/>
-                    Call Support
+                 <Button variant="ghost" className="w-full justify-start gap-2">
+                    <FileText className="h-4 w-4"/> Refund Policy
+                 </Button>
+                 <Button variant="ghost" className="w-full justify-start gap-2">
+                    <FileText className="h-4 w-4"/> Payout Policy
+                 </Button>
+                  <Button variant="ghost" className="w-full justify-start gap-2">
+                    <FileText className="h-4 w-4"/> Privacy Policy
+                 </Button>
+                  <Button variant="ghost" className="w-full justify-start gap-2">
+                    <FileText className="h-4 w-4"/> Settlement Policy
                  </Button>
               </CardContent>
             </Card>

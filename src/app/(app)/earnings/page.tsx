@@ -38,12 +38,14 @@ import {
   Package,
   Calendar,
   Zap,
+  History,
 } from "lucide-react"
 import { useAppContext } from "@/context/AppContext"
+import Link from "next/link"
 
 export default function EarningsPage() {
     
-  const { orders } = useAppContext();
+  const { orders, walletBalance } = useAppContext();
 
   const {
       deliveryRevenue,
@@ -85,19 +87,19 @@ export default function EarningsPage() {
   }, [orders])
 
   const revenueItems = [
-    { icon: <TrendingUp />, label: "Delivery", amount: deliveryRevenue },
-    { icon: <ShoppingBag />, label: "Takeaway", amount: takeawayRevenue },
-    { icon: <UtensilsCrossed />, label: "Dine-in", amount: dineInRevenue },
-    { icon: <CalendarCheck />, label: "Booking Charges", amount: bookingCharges },
-    { icon: <Zap />, label: "Walk-in Revenue", amount: walkInRevenue },
+    { icon: TrendingUp, label: "Delivery", amount: deliveryRevenue },
+    { icon: ShoppingBag, label: "Takeaway", amount: takeawayRevenue },
+    { icon: UtensilsCrossed, label: "Dine-in", amount: dineInRevenue },
+    { icon: CalendarCheck, label: "Booking Charges", amount: bookingCharges },
+    { icon: Zap, label: "Walk-in Revenue", amount: walkInRevenue },
   ];
 
   const deductionItems = [
-    { icon: <Percent />, label: "GST on Delivery (5%)", amount: -gstOnDelivery },
-    { icon: <Receipt />, label: "Refunds", amount: -250 },
-    { icon: <TrendingUp />, label: "Ads Spend", amount: -500 },
-    { icon: <Percent />, label: "GST on Ads (18%)", amount: -90 },
-    { icon: <Zap />, label: "Walk-in Revenue", amount: -walkInRevenue },
+    { icon: Percent, label: "GST on Delivery (5%)", amount: -gstOnDelivery },
+    { icon: Receipt, label: "Refunds", amount: -250 },
+    { icon: TrendingUp, label: "Ads Spend", amount: -500 },
+    { icon: Percent, label: "GST on Ads (18%)", amount: -90 },
+    { icon: Zap, label: "Walk-in Revenue", amount: -walkInRevenue },
   ];
 
   return (
@@ -107,16 +109,25 @@ export default function EarningsPage() {
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <CardDescription className="text-primary-foreground/80 flex items-center gap-2"><Wallet className="h-4 w-4"/> Wallet Balance</CardDescription>
-              <CardTitle className="text-4xl font-bold flex items-center"><IndianRupee className="h-7 w-7"/>2,458</CardTitle>
+              <CardTitle className="text-4xl font-bold flex items-center"><IndianRupee className="h-7 w-7"/>{walletBalance.toLocaleString('en-IN')}</CardTitle>
               <p className="text-sm text-primary-foreground/80 !mt-2">Last payout: ₹1,200 on May 1, 2025</p>
             </div>
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 -mr-2 -mt-2">
-              <Download className="h-5 w-5"/>
-            </Button>
+            <div className="flex items-center">
+              <Link href="/earnings/history">
+                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20">
+                  <History className="h-5 w-5"/>
+                </Button>
+              </Link>
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20">
+                <Download className="h-5 w-5"/>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="px-6 pb-6 pt-0">
-            <Button className="w-full bg-primary-foreground text-primary font-bold hover:bg-primary-foreground/90">Request Payout</Button>
+            <Button asChild className="w-full bg-primary-foreground text-primary font-bold hover:bg-primary-foreground/90">
+                <Link href="/earnings/withdraw">Request Payout</Link>
+            </Button>
         </CardContent>
       </Card>
       
@@ -144,18 +155,18 @@ export default function EarningsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-lg">This Month's Earning</CardTitle>
+                    <CardTitle className="text-lg">This Month's Earning Breakdown</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                 <CardContent className="space-y-6">
                     <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-semibold text-base">A. Revenue</h3>
+                        <div className="flex justify-between items-center mb-4 p-3 bg-green-50 dark:bg-green-900/50 rounded-lg">
+                            <h3 className="font-semibold text-base text-green-800 dark:text-green-300">A. Revenue</h3>
                             <p className="font-bold text-green-600 flex items-center"><IndianRupee className="h-4 w-4 mr-0.5"/>{totalRevenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-3 pl-3">
                             {revenueItems.map(item => (
                                 <div key={item.label} className="flex items-center justify-between text-sm">
-                                    <p className="flex items-center gap-3 text-muted-foreground">{item.icon} {item.label}</p>
+                                    <p className="flex items-center gap-3 text-muted-foreground"><item.icon className="h-4 w-4"/> {item.label}</p>
                                     <p className="font-medium flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-0.5"/>{item.amount.toLocaleString('en-IN')}</p>
                                 </div>
                             ))}
@@ -163,24 +174,24 @@ export default function EarningsPage() {
                     </div>
 
                     <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-semibold text-base">B. Deductions</h3>
+                        <div className="flex justify-between items-center mb-4 p-3 bg-red-50 dark:bg-red-900/50 rounded-lg">
+                            <h3 className="font-semibold text-base text-red-800 dark:text-red-300">B. Deductions</h3>
                              <p className="font-bold text-red-600 flex items-center"><IndianRupee className="h-4 w-4 mr-0.5"/>{totalDeductions.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-3 pl-3">
                              {deductionItems.map(item => (
                                 <div key={item.label} className="flex items-center justify-between text-sm">
-                                    <p className="flex items-center gap-3 text-muted-foreground">{item.icon} {item.label}</p>
+                                    <p className="flex items-center gap-3 text-muted-foreground"><item.icon className="h-4 w-4" /> {item.label}</p>
                                     <p className="font-medium flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-0.5"/>{item.amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </CardContent>
-                <CardFooter className="flex-col items-stretch gap-4 p-4">
-                    <div className="bg-muted/50 p-4 flex justify-between items-center rounded-lg">
-                        <p className="font-bold text-lg">Net Payout (A - B)</p>
-                         <p className="font-extrabold text-lg text-green-600 flex items-center"><IndianRupee className="h-5 w-5 mr-0.5"/>{netPayout.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+                <CardFooter className="flex-col items-stretch gap-4 p-4 border-t">
+                    <div className="p-4 flex flex-col items-center justify-center text-center rounded-lg bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800">
+                        <p className="font-semibold text-sm text-green-800 dark:text-green-300">Net Payout (A - B)</p>
+                        <p className="font-extrabold text-3xl text-green-600 flex items-center"><IndianRupee className="h-7 w-7 mr-0.5"/>{netPayout.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
                     </div>
                     <Button variant="outline" className="w-full">View Full Statement</Button>
                 </CardFooter>
@@ -276,3 +287,5 @@ export default function EarningsPage() {
     </div>
   )
 }
+
+    

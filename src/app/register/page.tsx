@@ -1,18 +1,18 @@
+
     "use client";
 
     import { useRouter } from "next/navigation";
     import { motion } from "framer-motion";
     import SignUpForm from "@/components/signup-form";
+    import { UtensilsCrossed } from "lucide-react";
 
-    const SwishLogo = () => (
-    <div className="flex items-baseline gap-3">
-        <h1 className="text-4xl font-bold text-yellow-400">swish</h1>
-        <p className="text-sm text-white/80">
-        10-minute
-        <br />
-        food delivery
-        </p>
-    </div>
+    const CrevingsLogo = () => (
+      <div className="flex items-center gap-2 text-2xl font-semibold text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+            <UtensilsCrossed className="h-5 w-5" />
+        </div>
+        <span>Crevings</span>
+      </div>
     );
 
     export default function SignUpPage() {
@@ -22,7 +22,7 @@
         <div className="flex min-h-screen w-full flex-col bg-stone-500">
         <div className="flex-1 p-8 text-white relative flex flex-col justify-center">
             <div className="absolute top-8 left-8">
-            <SwishLogo />
+            <CrevingsLogo />
             </div>
             <div className="space-y-4">
             <h2 className="text-5xl font-extrabold text-yellow-400 leading-tight">
