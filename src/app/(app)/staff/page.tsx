@@ -90,7 +90,7 @@ const initialManagerData = [
     avatarFallback: "VS",
     branchIds: ["indiranagar"],
   },
-   {
+  {
     id: "mgr-3",
     name: "Anjali Sharma",
     email: "anjali@restaurant.com",
@@ -104,38 +104,38 @@ const initialManagerData = [
 type Manager = typeof initialManagerData[0]
 
 const defaultPermissions = {
-    dashboard: true,
-    orders: true,
-    menu: true,
-    bookings: true,
-    tableManagement: true,
-    feedback: true,
-    promotions: true,
-    analytics: true,
-    earnings: true,
-    settings: false,
+  dashboard: true,
+  orders: true,
+  menu: true,
+  bookings: true,
+  tableManagement: true,
+  feedback: true,
+  promotions: true,
+  analytics: true,
+  earnings: true,
+  settings: false,
 };
 
 const permissionDetails = [
-    { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
-    { key: 'orders', label: 'Orders', icon: Package },
-    { key: 'menu', label: 'Menu', icon: BookOpen },
-    { key: 'tableManagement', label: 'Tables', icon: Users },
-    { key: 'bookings', label: 'Bookings', icon: CalendarDays },
-    { key: 'feedback', label: 'Feedback', icon: MessageSquare },
-    { key: 'promotions', label: 'Promotions', icon: Percent },
-    { key: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { key: 'earnings', label: 'Earnings', icon: Wallet },
-    { key: 'settings', label: 'Settings', icon: Settings },
+  { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
+  { key: 'orders', label: 'Orders', icon: Package },
+  { key: 'menu', label: 'Menu', icon: BookOpen },
+  { key: 'tableManagement', label: 'Tables', icon: Users },
+  { key: 'bookings', label: 'Bookings', icon: CalendarDays },
+  { key: 'feedback', label: 'Feedback', icon: MessageSquare },
+  { key: 'promotions', label: 'Promotions', icon: Percent },
+  { key: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { key: 'earnings', label: 'Earnings', icon: Wallet },
+  { key: 'settings', label: 'Settings', icon: Settings },
 ] as const;
 
 
 const defaultFormState = {
-    name: "",
-    email: "",
-    phone: "",
-    branchIds: [] as string[],
-    permissions: defaultPermissions,
+  name: "",
+  email: "",
+  phone: "",
+  branchIds: [] as string[],
+  permissions: defaultPermissions,
 };
 
 type FormState = typeof defaultFormState;
@@ -212,14 +212,14 @@ export default function StaffPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
-  
+
   const [editingManager, setEditingManager] = useState<Manager | null>(null)
   const [managerToDelete, setManagerToDelete] = useState<Manager | null>(null)
   const [formState, setFormState] = useState<FormState>(defaultFormState)
   const { toast } = useToast()
 
   const filteredManagers = useMemo(() => {
-    return managers.filter(manager => 
+    return managers.filter(manager =>
       manager.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [managers, searchTerm])
@@ -240,7 +240,7 @@ export default function StaffPage() {
     setManagerToDelete(manager)
     setIsDeleteAlertOpen(true)
   }
-  
+
   const handleShareCode = (code: string) => {
     navigator.clipboard.writeText(code);
     toast({
@@ -261,14 +261,14 @@ export default function StaffPage() {
       setManagerToDelete(null)
     }
   }
-  
+
   const handlePermissionChange = (permission: keyof typeof defaultPermissions) => {
     setFormState(prev => ({
-        ...prev,
-        permissions: {
-            ...prev.permissions,
-            [permission]: !prev.permissions[permission],
-        }
+      ...prev,
+      permissions: {
+        ...prev.permissions,
+        [permission]: !prev.permissions[permission],
+      }
     }));
   };
 
@@ -304,11 +304,11 @@ export default function StaffPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-semibold md:text-3xl">Manager Access</h1>
       </div>
-       <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search managers..." 
+          <Input
+            placeholder="Search managers..."
             className="pl-9 w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -318,45 +318,45 @@ export default function StaffPage() {
           <PlusCircle className="mr-2 h-4 w-4" /> Add Manager
         </Button>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
         {filteredManagers.map((manager) => (
           <Card key={manager.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
             <CardHeader>
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={manager.avatar} alt={manager.name} />
-                    <AvatarFallback>{manager.avatarFallback}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{manager.name}</h3>
-                    <div className="space-y-1 text-sm text-muted-foreground mt-1">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          <span>{manager.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          <span>{manager.phone}</span>
-                        </div>
+              <div className="flex items-start gap-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={manager.avatar} alt={manager.name} />
+                  <AvatarFallback>{manager.avatarFallback}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{manager.name}</h3>
+                  <div className="space-y-1 text-sm text-muted-foreground mt-1">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      <span>{manager.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <span>{manager.phone}</span>
                     </div>
                   </div>
-                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-1">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEditClick(manager)}><Pencil className="mr-2 h-4 w-4"/>Edit Access</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(manager)}><Trash2 className="mr-2 h-4 w-4"/>Remove Manager</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-1">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEditClick(manager)}><Pencil className="mr-2 h-4 w-4" />Edit Access</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(manager)}><Trash2 className="mr-2 h-4 w-4" />Remove Manager</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3 flex-grow">
               <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2"><GitFork className="h-4 w-4"/> Branch Access</p>
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2"><GitFork className="h-4 w-4" /> Branch Access</p>
                 <div className="flex flex-wrap gap-2">
                   {manager.branchIds.map(branchId => {
                     const branch = branches.find(b => b.id === branchId)
@@ -367,105 +367,116 @@ export default function StaffPage() {
             </CardContent>
           </Card>
         ))}
-         {filteredManagers.length === 0 && (
+        {filteredManagers.length === 0 && (
           <div className="text-center py-16 text-muted-foreground col-span-full">
-              <p>No managers found. Add one to get started.</p>
+            <p>No managers found. Add one to get started.</p>
           </div>
         )}
       </div>
 
-       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>{editingManager ? 'Edit Manager' : 'Add New Manager'}</DialogTitle>
-                    <DialogDescription>
-                        {editingManager ? "Update the manager's details and branch access." : "Fill in the details to invite a new manager."}
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input id="name" placeholder="Enter full name" value={formState.name} onChange={(e) => setFormState(p => ({...p, name: e.target.value}))} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" placeholder="Enter email address" value={formState.email} onChange={(e) => setFormState(p => ({...p, email: e.target.value}))} disabled={!!editingManager} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input id="phone" type="tel" placeholder="Enter phone number" value={formState.phone} onChange={(e) => setFormState(p => ({...p, phone: e.target.value}))} />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="branches">Branch Access</Label>
-                        <MultiBranchSelect
-                          branches={branches}
-                          selectedBranchIds={formState.branchIds}
-                          onSelectionChange={(ids) => setFormState(p => ({...p, branchIds: ids}))}
-                        />
-                    </div>
-                     {formState.branchIds.length > 0 && (
-                       <>
-                        <div className="space-y-2">
-                            <Label>Restaurant Joining Code</Label>
-                            <div className="flex items-center gap-2">
-                                <Input value="XCES123" readOnly className="font-semibold tracking-wider" />
-                                <Button type="button" variant="secondary" onClick={() => handleShareCode("XCES123")}>
-                                    <Share2 className="mr-2 h-4 w-4"/>
-                                    Share
-                                </Button>
-                            </div>
-                        </div>
-                        <Separator />
-                        <div className="space-y-4">
-                           <div>
-                             <Label>Permissions</Label>
-                             <p className="text-sm text-muted-foreground">Control what this manager can see and do.</p>
-                           </div>
-                           <div className="grid grid-cols-2 gap-2">
-                                {permissionDetails.map(({ key, label, icon: Icon }) => {
-                                    const isActive = formState.permissions[key];
-                                    return (
-                                        <Button
-                                            key={key}
-                                            type="button"
-                                            variant="outline"
-                                            className={cn(
-                                                "h-auto flex flex-col items-center justify-center gap-2 p-3 text-center transition-colors",
-                                                isActive && "bg-primary/10 border-primary text-primary"
-                                            )}
-                                            onClick={() => handlePermissionChange(key)}
-                                        >
-                                            <Icon className="h-5 w-5" />
-                                            <span className="text-xs font-medium">{label}</span>
-                                        </Button>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                       </>
-                    )}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent
+          className={cn(
+            "sm:max-w-md w-full",
+            "fixed left-1/2 top-16 -translate-x-1/2 bottom-0",
+            "flex flex-col rounded-t-xl p-6",
+
+            // Animation overrides
+            "data-[state=open]:animate-in data-[state=closed]:animate-out",
+            "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
+            "data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-bottom-2"
+          )}
+        >
+          <DialogHeader>
+            <DialogTitle>{editingManager ? 'Edit Manager' : 'Add New Manager'}</DialogTitle>
+            <DialogDescription>
+              {editingManager ? "Update the manager's details and branch access." : "Fill in the details to invite a new manager."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input id="name" placeholder="Enter full name" value={formState.name} onChange={(e) => setFormState(p => ({ ...p, name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="Enter email address" value={formState.email} onChange={(e) => setFormState(p => ({ ...p, email: e.target.value }))} disabled={!!editingManager} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" type="tel" placeholder="Enter phone number" value={formState.phone} onChange={(e) => setFormState(p => ({ ...p, phone: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="branches">Branch Access</Label>
+              <MultiBranchSelect
+                branches={branches}
+                selectedBranchIds={formState.branchIds}
+                onSelectionChange={(ids) => setFormState(p => ({ ...p, branchIds: ids }))}
+              />
+            </div>
+            {formState.branchIds.length > 0 && (
+              <>
+                <div className="space-y-2">
+                  <Label>Restaurant Joining Code</Label>
+                  <div className="flex items-center gap-2">
+                    <Input value="XCES123" readOnly className="font-semibold tracking-wider" />
+                    <Button type="button" variant="secondary" onClick={() => handleShareCode("XCES123")}>
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Share
+                    </Button>
+                  </div>
                 </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button onClick={handleSaveManager}>{editingManager ? 'Save Changes' : 'Add Manager'}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-      
+                <Separator />
+                <div className="space-y-4">
+                  <div>
+                    <Label>Permissions</Label>
+                    <p className="text-sm text-muted-foreground">Control what this manager can see and do.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {permissionDetails.map(({ key, label, icon: Icon }) => {
+                      const isActive = formState.permissions[key];
+                      return (
+                        <Button
+                          key={key}
+                          type="button"
+                          variant="outline"
+                          className={cn(
+                            "h-auto flex flex-col items-center justify-center gap-2 p-3 text-center transition-colors",
+                            isActive && "bg-primary/10 border-primary text-primary"
+                          )}
+                          onClick={() => handlePermissionChange(key)}
+                        >
+                          <Icon className="h-5 w-5" />
+                          <span className="text-xs font-medium">{label}</span>
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleSaveManager}>{editingManager ? 'Save Changes' : 'Add Manager'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will permanently remove {managerToDelete?.name} and revoke their access.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Remove</AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently remove {managerToDelete?.name} and revoke their access.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Remove</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 

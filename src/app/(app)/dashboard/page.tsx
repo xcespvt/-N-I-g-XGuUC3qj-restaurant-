@@ -29,6 +29,7 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppContext } from "@/context/AppContext"
 import { OrderCard } from "@/components/order-card"
 import type { Order, OrderStatus } from "@/context/AppContext"
@@ -300,7 +301,6 @@ export default function Dashboard() {
           </CardHeader>
         </Card>
       </div>
-      
       <Card>
         <CardContent className="p-0">
           <Link href="/takeaway" className="block p-4 hover:bg-accent transition-colors rounded-lg">
@@ -333,13 +333,64 @@ export default function Dashboard() {
 
       <div className="space-y-6">
         <h2 className="text-xl font-semibold">Active Orders</h2>
-        <div className="grid md:grid-cols-2 gap-6">
-            <OrderCategory title="Delivery" orders={deliveryOrders} />
-            <OrderCategory title="Takeaway" orders={takeawayOrders} />
-            <div className="md:col-span-2">
-                <OrderCategory title="Dine-in" orders={dineInOrders} />
+        <Tabs defaultValue="delivery" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="delivery" className="flex items-center gap-2">
+              <Truck className="h-4 w-4" />
+              Delivery
+              <Badge variant="secondary" className="ml-1">{deliveryOrders.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="takeaway" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Takeaway
+              <Badge variant="secondary" className="ml-1">{takeawayOrders.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="dine-in" className="flex items-center gap-2">
+              <UtensilsCrossed className="h-4 w-4" />
+              Dine-in
+              <Badge variant="secondary" className="ml-1">{dineInOrders.length}</Badge>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="delivery" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+              {deliveryOrders.map(order => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+              {deliveryOrders.length === 0 && (
+                <div className="text-center py-16 text-muted-foreground col-span-full">
+                  <Truck className="h-12 w-12 mx-auto mb-2"/>
+                  <p>No active delivery orders at the moment.</p>
+                </div>
+              )}
             </div>
-        </div>
+          </TabsContent>
+          <TabsContent value="takeaway" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+              {takeawayOrders.map(order => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+              {takeawayOrders.length === 0 && (
+                <div className="text-center py-16 text-muted-foreground col-span-full">
+                  <Package className="h-12 w-12 mx-auto mb-2"/>
+                  <p>No active takeaway orders at the moment.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="dine-in" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+              {dineInOrders.map(order => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+              {dineInOrders.length === 0 && (
+                <div className="text-center py-16 text-muted-foreground col-span-full">
+                  <UtensilsCrossed className="h-12 w-12 mx-auto mb-2"/>
+                  <p>No active dine-in orders at the moment.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

@@ -18,7 +18,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { HelpCircle, Search, LifeBuoy, Mail, Phone, BookOpen, Users } from "lucide-react"
+import { HelpCircle, Search, LifeBuoy, Mail, Phone, BookOpen, Users, MessageSquare } from "lucide-react"
 
 const faqItems = [
   {
@@ -136,30 +136,16 @@ export default function HelpSupportPage() {
                         </a>
                     </Button>
                      <Button asChild variant="outline" className="w-full justify-start h-14 text-base">
+                        <Link href="/chat">
+                           <MessageSquare className="h-5 w-5 mr-3"/>
+                           Chat Support
+                        </Link>
+                    </Button>
+                     <Button asChild variant="outline" className="w-full justify-start h-14 text-base">
                         <a href="tel:+911234567890">
                            <Phone className="h-5 w-5 mr-3"/>
                            Call Us
                         </a>
-                    </Button>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Resources</CardTitle>
-                    <CardDescription>Explore our guides and community.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    <Button asChild variant="outline" className="w-full justify-start h-14 text-base">
-                        <Link href="/help-support/knowledge-base">
-                            <BookOpen className="h-5 w-5 mr-3"/>
-                            Knowledge Base
-                        </Link>
-                    </Button>
-                     <Button asChild variant="outline" className="w-full justify-start h-14 text-base">
-                        <Link href="/help-support/community-forum">
-                            <Users className="h-5 w-5 mr-3"/>
-                            Community Forum
-                        </Link>
                     </Button>
                 </CardContent>
             </Card>

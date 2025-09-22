@@ -12,6 +12,12 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -27,6 +33,9 @@ import {
   KeyRound,
   Package,
   Ticket,
+  Users2,
+  Table,
+  MoreVertical,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "./ui/card"
@@ -51,15 +60,32 @@ export function TakeawayDineinOrderDetails({ order }: { order: Order }) {
   const commission = subtotal * 0.12;
   const total = subtotal + commission;
 
+  const isBooking = order.items.some(item => item.category === 'Booking');
+  const guestCount = isBooking ? order.items[0].name.match(/\d+/)?.[0] : null;
+  const tableInfo = isBooking || order.type === 'Dine-in' ? order.customerDetails.address.replace('Tables: ', '').replace('Table ', '') : null;
+
+
   return (
     <>
-      <SheetHeader className="p-4 border-b text-left flex-row items-center gap-4">
-        <SheetClose asChild>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </SheetClose>
-        <SheetTitle className="text-lg">Order Details</SheetTitle>
+      <SheetHeader className="p-4 border-b text-left flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+            <SheetClose asChild>
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </SheetClose>
+            <SheetTitle className="text-lg">Order Details</SheetTitle>
+        </div>
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-5 w-5"/>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem>Report Issue</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </SheetHeader>
 
       <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-muted/50">
@@ -80,6 +106,8 @@ export function TakeawayDineinOrderDetails({ order }: { order: Order }) {
                             </>
                         )}
                     </DetailItem>
+                    {guestCount && <DetailItem icon={Users2} label="Guests" value={guestCount} />}
+                    {tableInfo && <DetailItem icon={Table} label="Table(s)" value={tableInfo} />}
                     <DetailItem icon={Clock} label="Order Time" value={`${new Date(order.date).toLocaleDateString()}, ${order.time}`} />
                     <DetailItem icon={Wallet} label="Payment" value={order.payment.status} valueClass={order.payment.status === 'Paid' ? 'text-green-600' : 'text-red-500'}/>
                 </div>

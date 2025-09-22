@@ -23,6 +23,7 @@ import {
   Star,
   KeyRound,
   Ticket,
+  MoreVertical,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "./ui/card"
@@ -32,6 +33,12 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { KotDialog } from "./kot-dialog"
 import { OrderDetailsDialog } from "./order-details-dialog"
 import { CountdownTimer } from "./countdown-timer"
@@ -57,13 +64,25 @@ export function DeliveryOrderDetails({ order }: { order: Order }) {
 
   return (
     <>
-      <SheetHeader className="p-4 border-b text-left flex-row items-center gap-4">
-        <SheetClose asChild>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </SheetClose>
-        <SheetTitle className="text-lg">Order Details</SheetTitle>
+      <SheetHeader className="p-4 border-b text-left flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+            <SheetClose asChild>
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </SheetClose>
+            <SheetTitle className="text-lg">Order Details</SheetTitle>
+        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-5 w-5"/>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem>Report Issue</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </SheetHeader>
 
       <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-muted/50">

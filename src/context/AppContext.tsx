@@ -11,6 +11,7 @@ export interface Table {
   name: string;
   capacity: number;
   status: 'Available' | 'Occupied';
+  type: string;
 }
 
 export interface Branch {
@@ -201,9 +202,13 @@ interface AppContextType {
   addCategory: (name: string) => void;
   
   tables: Table[];
-  addTable: (name: string, capacity: number) => void;
+  addTable: (name: string, capacity: number, type: string) => void;
   updateTable: (table: Table) => void;
   deleteTable: (tableId: string) => void;
+  
+  tableTypes: string[];
+  addTableType: (name: string) => void;
+  deleteTableType: (name: string) => void;
 
   facilities: string[];
   updateFacilities: (facilities: string[]) => void;
@@ -244,6 +249,8 @@ interface AppContextType {
   isBusy: boolean;
   setBusy: (isBusy: boolean) => void;
 
+  walletBalance: number;
+  initiateWithdrawal: (amount: number) => void;
   subscriptionPlan: SubscriptionPlan;
   setSubscriptionPlan: (plan: SubscriptionPlan) => void;
 }
@@ -251,17 +258,19 @@ interface AppContextType {
 // --- MOCK DATA ---
 
 const initialTables: Table[] = [
-  { id: "T1", name: "T1", capacity: 4, status: "Available" },
-  { id: "T2", name: "T2", capacity: 4, status: "Occupied" },
-  { id: "T3", name: "T3", capacity: 2, status: "Available" },
-  { id: "T4", name: "T4", capacity: 2, status: "Available" },
-  { id: "T5", name: "T5", capacity: 6, status: "Available" },
-  { id: "T6", name: "T6", capacity: 6, status: "Occupied" },
-  { id: "T7", name: "T7", capacity: 4, status: "Available" },
-  { id: "T8", name: "T8", capacity: 8, status: "Available" },
-  { id: "P1", name: "P1", capacity: 4, status: "Available" },
-  { id: "P2", name: "P2", capacity: 4, status: "Available" },
+  { id: "T1", name: "T1", capacity: 4, status: "Available", type: "Normal" },
+  { id: "T2", name: "T2", capacity: 4, status: "Occupied", type: "Normal" },
+  { id: "T3", name: "T3", capacity: 2, status: "Available", type: "Couple" },
+  { id: "T4", name: "T4", capacity: 2, status: "Available", type: "Couple" },
+  { id: "T5", name: "T5", capacity: 6, status: "Available", type: "Family" },
+  { id: "T6", name: "T6", capacity: 6, status: "Occupied", type: "Family" },
+  { id: "T7", name: "T7", capacity: 4, status: "Available", type: "Normal" },
+  { id: "T8", name: "T8", capacity: 8, status: "Available", type: "Private" },
+  { id: "P1", name: "P1", capacity: 4, status: "Available", type: "Outdoor" },
+  { id: "P2", name: "P2", capacity: 4, status: "Available", type: "Outdoor" },
 ];
+
+const initialTableTypes = ["Normal", "Couple", "Family", "Private", "Outdoor"];
 
 
 const initialBranches: Branch[] = [
@@ -595,6 +604,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const [tables, setTables] = useState<Table[]>(initialTables);
+  const [tableTypes, setTableTypes] = useState<string[]>(initialTableTypes);
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(null);
   const [feedback, setFeedback] = useState<Feedback[]>(initialFeedback);
@@ -605,6 +615,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [ownerInfo, setOwnerInfo] = useState<OwnerInfo>(initialOwnerInfo);
   const [isRestaurantOnline, setRestaurantOnline] = useState<boolean>(true);
   const [isBusy, setBusy] = useState<boolean>(false);
+  const [walletBalance, setWalletBalance] = useState<number>(2458);
   const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlan>('Pro');
   const [takeawayCart, setTakeawayCart] = useState<TakeawayCartItem[]>([]);
 
@@ -778,13 +789,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [toast]);
   
-  const addTable = useCallback((name: string, capacity: number) => {
+  const addTable = useCallback((name: string, capacity: number, type: string) => {
     setTables(prev => {
       const newTable: Table = {
         id: name.toUpperCase() + `-${Date.now()}`,
         name,
         capacity,
         status: 'Available',
+        type,
       };
       toast({ title: "Table Added", description: `Table ${name} has been added.` });
       return [...prev, newTable];
@@ -811,6 +823,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return prev.filter(t => t.id !== tableId);
     });
   }, [toast]);
+  
+  const addTableType = useCallback((name: string) => {
+    setTableTypes(prev => {
+        if (name && !prev.find(t => t.toLowerCase() === name.toLowerCase())) {
+            toast({ title: "Table Type Added", description: `"${name}" has been added.` });
+            return [...prev, name];
+        } else {
+            toast({ variant: "destructive", title: "Type Exists", description: "This table type already exists." });
+            return prev;
+        }
+    });
+  }, [toast]);
+
+  const deleteTableType = useCallback((name: string) => {
+    setTableTypes(prev => {
+        toast({ title: "Table Type Removed", description: `"${name}" has been removed.`, variant: "destructive" });
+        return prev.filter(t => t !== name);
+    });
+  }, [toast]);
+
 
   const updateFacilities = useCallback((newFacilities: string[]) => {
     setFacilities(newFacilities);
@@ -971,6 +1003,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: "Order Cleared", description: "The current takeaway order has been cleared." });
   }, [toast]);
 
+  const initiateWithdrawal = useCallback((amount: number) => {
+    setWalletBalance(prev => prev - amount);
+  }, []);
+
   const value = useMemo(() => ({
     branches,
     selectedBranch,
@@ -995,6 +1031,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addTable,
     updateTable,
     deleteTable,
+    tableTypes,
+    addTableType,
+    deleteTableType,
     facilities,
     updateFacilities,
     serviceSettings,
@@ -1024,19 +1063,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setRestaurantOnline,
     isBusy,
     setBusy,
+    walletBalance,
+    initiateWithdrawal,
     subscriptionPlan,
     setSubscriptionPlan,
   }), [
     branches, selectedBranch, addBranch, updateBranch, deleteBranch, toggleBranchOnlineStatus,
     orders, updateOrderStatus, updateOrderPrepTime, addOrder, acceptNewOrder, menuItems, addMenuItem, updateMenuItem, deleteMenuItem,
     toggleMenuItemAvailability, categories, addCategory, tables, addTable, updateTable, deleteTable,
-    facilities, updateFacilities, serviceSettings, updateServiceSetting, ownerInfo, updateOwnerInfo,
+    tableTypes, addTableType, deleteTableType, facilities, updateFacilities, serviceSettings, updateServiceSetting, ownerInfo, updateOwnerInfo,
     bookings, addBooking,
     updateBookingStatus, pendingBooking, setPendingBooking, resetPendingBooking,
     feedback, addReplyToFeedback, refunds, handleRefundRequest, notificationSettings,
     updateNotificationSetting, takeawayCart, addToTakeawayCart, removeFromTakeawayCart,
     incrementTakeawayCartItem, decrementTakeawayCartItem,
-    clearPortionsFromCart, isRestaurantOnline, isBusy, subscriptionPlan, clearTakeawayCart
+    clearPortionsFromCart, isRestaurantOnline, isBusy, walletBalance, initiateWithdrawal, subscriptionPlan, clearTakeawayCart
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

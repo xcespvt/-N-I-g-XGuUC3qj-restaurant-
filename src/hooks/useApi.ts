@@ -16,7 +16,10 @@ export function useGet<T>(
   return useQuery<T>({
     queryKey: key,
     queryFn: () => apiClient<T>(url),
-    ...options,
+    // staleTime: 1000 * 1, // 1 min fresh
+    // gcTime: 1000 * 60 * 5, // 5 min cache
+    // refetchOnWindowFocus: false,
+    ...options, // allow per-query overrides
   });
 }
 

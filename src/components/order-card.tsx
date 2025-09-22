@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Clock, User, IndianRupee, Package, Bike, UtensilsCrossed, Zap, Calendar } from "lucide-react";
+import { Clock, User, IndianRupee, Package, Bike, UtensilsCrossed, Zap, Calendar, Users2, Table } from "lucide-react";
 import type { Order, OrderStatus } from "@/context/AppContext";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -99,6 +99,10 @@ export const OrderCard = ({ order }: { order: Order; }) => {
     const isBooking = order.items.some(item => item.category === 'Booking');
     const orderType = isBooking ? 'Booking' : order.type;
     const type = typeConfig[orderType];
+    
+    const guestCount = isBooking ? order.items[0].name.match(/\d+/)?.[0] : null;
+    const tableInfo = isBooking || order.type === 'Dine-in' ? order.customerDetails.address.replace('Tables: ', '').replace('Table ', '') : null;
+
 
     const getNextAction = () => {
         switch (order.status) {
@@ -152,28 +156,47 @@ export const OrderCard = ({ order }: { order: Order; }) => {
               <Separator className="my-3" />
 
               <div className="flex items-end justify-between">
-                <div>
-                     <p className="font-semibold text-base">{order.id}</p>
+                <div className="flex-1 min-w-0">
+                     <p className="font-semibold text-base truncate">{order.id}</p>
                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                         <User className="h-4 w-4" />
-                        <span>{order.customer}</span>
+                        <span className="truncate">{order.customer}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                        <Package className="h-3.5 w-3.5" />
-                        <span>{order.items.length} {order.items.length > 1 ? 'items' : 'item'}</span>
-                    </div>
-                     {order.status === 'Preparing' && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            <span>{remainingTime} left</span>
+                    {isBooking || order.type === 'Dine-in' ? (
+                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
+                            {guestCount && (
+                                <div className="flex items-center gap-1.5">
+                                    <Users2 className="h-3.5 w-3.5" />
+                                    <span>{guestCount} Guests</span>
+                                </div>
+                            )}
+                            {tableInfo && (
+                                <div className="flex items-center gap-1.5">
+                                    <Table className="h-3.5 w-3.5" />
+                                    <span>{tableInfo}</span>
+                                </div>
+                            )}
+                       </div>
+                    ) : (
+                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <Package className="h-3.5 w-3.5" />
+                            <span>{order.items.length} {order.items.length > 1 ? 'items' : 'item'}</span>
                         </div>
                     )}
                 </div>
-                 <DetailsSheet order={order}>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground flex items-center gap-1 h-auto p-1">
-                        View Details
-                    </Button>
-                </DetailsSheet>
+                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    {order.status === 'Preparing' && (
+                        <div className="text-right">
+                            <p className="font-bold text-lg text-primary">{remainingTime}</p>
+                            <p className="text-xs text-muted-foreground -mt-1">Time Left</p>
+                        </div>
+                    )}
+                     <DetailsSheet order={order}>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground flex items-center gap-1 h-auto p-1">
+                            View Details
+                        </Button>
+                    </DetailsSheet>
+                 </div>
               </div>
           </div>
         </CardContent>
