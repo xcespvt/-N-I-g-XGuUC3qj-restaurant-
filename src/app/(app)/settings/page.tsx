@@ -1,5 +1,4 @@
-
-"use client"
+"use client";
 
 import {
   Bell,
@@ -15,50 +14,52 @@ import {
   Settings as SettingsIcon,
   Sun,
   Wand2,
-  ArrowLeft
-} from "lucide-react"
-import Link from "next/link"
-import { useToast } from "@/hooks/use-toast"
+  ArrowLeft,
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
+
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
-import { useState, useEffect } from "react"
-import { useAppContext } from "@/context/AppContext"
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { useState, useEffect } from "react";
+import { useAppContext } from "@/context/AppContext";
 
+import { useGet, usePost } from "@/hooks/useApi";
 export default function SettingsPage() {
-    const { notificationSettings, updateNotificationSetting } = useAppContext();
-    const [isDarkMode, setIsDarkMode] = useState(false);
-    const { toast } = useToast();
+  const { notificationSettings, updateNotificationSetting } = useAppContext();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { toast } = useToast();
 
-    useEffect(() => {
-        setIsDarkMode(document.documentElement.classList.contains('dark'));
-    }, []);
+  useEffect(() => {
+    setIsDarkMode(document.documentElement.classList.contains("dark"));
+  }, []);
 
-    const toggleTheme = () => {
-        const isDark = document.documentElement.classList.toggle('dark');
-        setIsDarkMode(isDark);
-    };
-    
-    const handlePasswordUpdate = () => {
-        toast({
-            title: "Password Updated",
-            description: "Your password has been changed successfully.",
-        });
-    }
+  const toggleTheme = () => {
+    const isDark = document.documentElement.classList.toggle("dark");
+    setIsDarkMode(isDark);
+  };
+
+  const handlePasswordUpdate = () => {
+    toast({
+      title: "Password Updated",
+      description: "Your password has been changed successfully.",
+    });
+  };
 
   return (
     <div className="flex flex-col gap-6">
-        <Link href="/profile" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-fit">
+      <Link href="/profile" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-fit">
           <ArrowLeft className="h-4 w-4"/>
           Back to Profile
         </Link>
@@ -210,5 +211,5 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
