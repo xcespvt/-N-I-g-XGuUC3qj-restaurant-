@@ -60,6 +60,9 @@ import { NotificationBell } from "@/components/notification-bell";
 import { BottomNav } from "@/components/bottom-nav";
 import dynamic from 'next/dynamic';
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
 const AnalyticsPage = dynamic(() => import('./analytics/page'));
 const BookingsPage = dynamic(() => import('./bookings/page'));
 const BranchesPage = dynamic(() => import('./branches/page'));
@@ -268,10 +271,18 @@ export default function AppLayout({
   children,
 }: {
   children: React.ReactNode
-}) {
+  }) {
+  
+  const [queryClient] = React.useState(() => new QueryClient());
+  
   return (
-    <AppProvider>
-      <AppLayoutClient>{children}</AppLayoutClient>
-    </AppProvider>
-  )
+    <QueryClientProvider client={queryClient}>
+      <AppProvider>
+        <AppLayoutClient>{children}</AppLayoutClient>
+      </AppProvider>
+
+      {/* ✅ Optional Devtools for debugging */}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
 }
