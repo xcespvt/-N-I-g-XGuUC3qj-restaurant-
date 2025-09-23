@@ -252,11 +252,11 @@ export default function TableManagementPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between md:flex-wrap lg:flex-nowrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <h1 className="text-2xl font-semibold md:text-3xl flex items-center gap-2">
           <Users className="h-6 w-6" /> Table Management
         </h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto md:w-full lg:w-auto">  
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
           {actionButtons.map((button) => (
             <Button
               key={button.id}
@@ -337,7 +337,7 @@ export default function TableManagementPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent
           side="bottom"
-          className="sm:max-w-md"
+          className="sm:max-w-md left-1/2 -translate-x-1/2"
         >
           <form onSubmit={handleSaveTable}>
             <DialogHeader>
