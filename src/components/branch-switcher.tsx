@@ -8,11 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { MapPin } from "lucide-react"
 
 export function BranchSwitcher() {
-  const { branches, selectedBranch, setSelectedBranch } = useAppContext();
+  const { branches, selectedBranch, setSelectedBranch } = useAppStore();
 
   if (branches.length <= 1) {
     return (

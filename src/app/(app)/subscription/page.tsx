@@ -35,7 +35,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { useAppContext } from "@/context/AppContext";
+import { useAppStore } from "@/context/useAppStore";
 
 const proPlanFeatures = [
   { text: "Everything in Free plan", included: true },
@@ -159,7 +159,7 @@ const statusStyles: Record<string, string> = {
 export default function SubscriptionPage() {
   const [isAnnual, setIsAnnual] = useState(false);
   const { toast } = useToast();
-  const { subscriptionPlan, setSubscriptionPlan } = useAppContext();
+  const { subscriptionPlan, setSubscriptionPlan } = useAppStore();
 
   const proMonthlyPrice = 349;
   const proAnnualPriceMonthly = Math.round(proMonthlyPrice * 0.8);

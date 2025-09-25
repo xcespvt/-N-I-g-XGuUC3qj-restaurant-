@@ -19,7 +19,7 @@ import { IndianRupee, CreditCard, Lock, ArrowLeft, Landmark, User, Mail, Phone, 
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const restaurantProfile = {
@@ -43,7 +43,7 @@ function CheckoutContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setSubscriptionPlan } = useAppContext();
+  const { setSubscriptionPlan } = useAppStore();
 
   const [paymentMethod, setPaymentMethod] = useState("card");
 

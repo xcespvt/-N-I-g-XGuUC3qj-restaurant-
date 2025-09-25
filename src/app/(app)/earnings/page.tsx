@@ -40,12 +40,12 @@ import {
   Zap,
   History,
 } from "lucide-react"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import Link from "next/link"
 
 export default function EarningsPage() {
     
-  const { orders, walletBalance } = useAppContext();
+  const { orders, walletBalance } = useAppStore();
 
   const {
       deliveryRevenue,

@@ -5,7 +5,7 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 
 export default function TakeawayCheckoutPage() {
-    const { takeawayCart, clearTakeawayCart, addOrder } = useAppContext()
+    const { takeawayCart, clearTakeawayCart, addOrder } = useAppStore()
     const { toast } = useToast()
     const router = useRouter()
 

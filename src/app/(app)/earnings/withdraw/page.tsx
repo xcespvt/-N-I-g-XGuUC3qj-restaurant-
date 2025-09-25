@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   AlertDialog,
@@ -35,7 +35,7 @@ import {
 export default function WithdrawPage() {
     const { toast } = useToast();
     const router = useRouter();
-    const { orders, walletBalance, initiateWithdrawal } = useAppContext();
+    const { orders, walletBalance, initiateWithdrawal } = useAppStore();
     const [amount, setAmount] = useState("");
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);

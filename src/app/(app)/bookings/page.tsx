@@ -52,8 +52,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { useAppContext } from "@/context/AppContext";
-import type { Table } from "@/context/AppContext";
+import { useAppStore } from "@/context/useAppStore";
+import type { Table } from "@/context/useAppStore";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
@@ -75,7 +75,7 @@ const initialSeriesFormState = {
 };
 
 export default function TableManagementPage() {
-  const { tables, addTable, updateTable, deleteTable, tableTypes, addTableType, deleteTableType } = useAppContext();
+  const { tables, addTable, updateTable, deleteTable, tableTypes, addTableType, deleteTableType } = useAppStore();
   const { toast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);

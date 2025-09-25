@@ -4,7 +4,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 
 export default function BookingCheckoutPage() {
-    const { pendingBooking, addBooking, resetPendingBooking } = useAppContext()
+    const { pendingBooking, addBooking, resetPendingBooking } = useAppStore()
     const { toast } = useToast()
     const router = useRouter()
     

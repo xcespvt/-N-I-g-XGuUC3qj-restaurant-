@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { ArrowLeft, Edit, User, Mail, Phone } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 
 const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) => (
     <div>
@@ -29,7 +29,7 @@ const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, lab
 )
 
 export default function OwnerInformationPage() {
-    const { ownerInfo, updateOwnerInfo } = useAppContext();
+    const { ownerInfo, updateOwnerInfo } = useAppStore();
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState(ownerInfo);

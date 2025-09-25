@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutGrid, Package, TrendingUp, BookOpen, User, UtensilsCrossed } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAppContext } from '@/context/AppContext';
+import { useAppStore } from '@/context/useAppStore';
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutGrid },
@@ -17,7 +17,7 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { orders } = useAppContext();
+  const { orders } = useAppStore();
   const newOrdersCount = orders.filter(o => o.status === "New").length;
 
   return (
