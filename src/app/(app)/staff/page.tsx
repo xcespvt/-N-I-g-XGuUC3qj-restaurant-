@@ -376,16 +376,8 @@ export default function StaffPage() {
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent
-          className={cn(
-            "sm:max-w-md w-full",
-            "fixed left-1/2 top-16 -translate-x-1/2 bottom-0",
-            "flex flex-col rounded-t-xl p-6",
-
-            // Animation overrides
-            "data-[state=open]:animate-in data-[state=closed]:animate-out",
-            "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
-            "data-[state=open]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-bottom-2"
-          )}
+          side="bottom"
+          className="sm:max-w-md left-1/2 -translate-x-1/2"
         >
           <DialogHeader>
             <DialogTitle>{editingManager ? 'Edit Manager' : 'Add New Manager'}</DialogTitle>
