@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/context/useAppStore";
-import type { Table } from "@/context/AppContext";
+import type { Table } from "@/context/useAppStore";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
