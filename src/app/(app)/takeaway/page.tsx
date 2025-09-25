@@ -15,7 +15,7 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -24,7 +24,7 @@ import type { MenuItem, TakeawayCartItem } from "@/context/AppContext"
 import { cn } from "@/lib/utils"
 
 const MenuItemCard = ({ item }: { item: MenuItem }) => {
-    const { takeawayCart, addToTakeawayCart } = useAppContext();
+    const { takeawayCart, addToTakeawayCart } = useAppStore();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     
     const quantityInCart = useMemo(() => {
@@ -89,7 +89,7 @@ const MenuItemCard = ({ item }: { item: MenuItem }) => {
 }
 
 const ItemSelectionDialog = ({ isOpen, onOpenChange, item }: { isOpen: boolean, onOpenChange: (open: boolean) => void, item: MenuItem }) => {
-    const { takeawayCart, addToTakeawayCart, clearPortionsFromCart } = useAppContext();
+    const { takeawayCart, addToTakeawayCart, clearPortionsFromCart } = useAppStore();
     
     const [selectedPortionName, setSelectedPortionName] = useState(item.portionOptions?.[0]?.name || 'Full');
     const [quantity, setQuantity] = useState(1);
@@ -199,7 +199,7 @@ const ItemSelectionDialog = ({ isOpen, onOpenChange, item }: { isOpen: boolean, 
 }
 
 export default function TakeawayPage() {
-  const { menuItems, takeawayCart, clearTakeawayCart, incrementTakeawayCartItem, decrementTakeawayCartItem } = useAppContext()
+  const { menuItems, takeawayCart, clearTakeawayCart, incrementTakeawayCartItem, decrementTakeawayCartItem } = useAppStore()
   const [activeCategory, setActiveCategory] = useState("All")
   const [searchTerm, setSearchTerm] = useState("")
 

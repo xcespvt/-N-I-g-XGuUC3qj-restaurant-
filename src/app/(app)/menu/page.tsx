@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { cn } from "@/lib/utils"
 import {
     Sheet,
@@ -65,7 +65,7 @@ type AddSheetType = 'Item' | 'Beverage' | 'Combo' | 'Sauce' | null;
 
 
 export default function MenuPage() {
-  const { menuItems, toggleMenuItemAvailability, isRestaurantOnline, addMenuItem, categories, addCategory, updateMenuItem, deleteMenuItem } = useAppContext();
+  const { menuItems, toggleMenuItemAvailability, isRestaurantOnline, addMenuItem, categories, addCategory, updateMenuItem, deleteMenuItem } = useAppStore();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();

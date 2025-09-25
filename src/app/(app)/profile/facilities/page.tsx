@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Sparkles, ParkingCircle, Siren, Wind, Droplet, User, Users, Accessibility, Map, GraduationCap, Sun, Car, Sofa, Building2 } from "lucide-react"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { useToast } from "@/hooks/use-toast"
 
 const allFacilities = [
@@ -37,7 +37,7 @@ const allFacilities = [
 
 
 export default function FacilitiesPage() {
-    const { facilities, updateFacilities } = useAppContext();
+    const { facilities, updateFacilities } = useAppStore();
     const { toast } = useToast();
 
     const handleToggleFacility = (facilityId: string) => {

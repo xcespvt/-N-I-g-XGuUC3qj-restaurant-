@@ -39,7 +39,7 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "./ui/card"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { KotDialog } from "./kot-dialog"
 import { OrderDetailsDialog } from "./order-details-dialog"
 import { CountdownTimer } from "./countdown-timer"
@@ -55,7 +55,7 @@ const DetailItem = ({ icon: Icon, label, value, valueClass, children }: { icon: 
 )
 
 export function TakeawayDineinOrderDetails({ order }: { order: Order }) {
-  const { updateOrderStatus } = useAppContext();
+  const { updateOrderStatus } = useAppStore();
   const subtotal = order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const commission = subtotal * 0.12;
   const total = subtotal + commission;

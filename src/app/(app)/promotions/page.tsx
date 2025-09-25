@@ -111,7 +111,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProFeatureWrapper } from "@/components/pro-feature-wrapper"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { useToast } from "@/hooks/use-toast"
 
 
@@ -312,7 +312,7 @@ const AnalyticsCustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function PromotionsPage() {
-  const { menuItems } = useAppContext();
+  const { menuItems } = useAppStore();
   const { toast } = useToast();
   const [promotions, setPromotions] = useState(promotionsData);
   const [staffPermissions, setStaffPermissions] = useState(staffPermissionsData);

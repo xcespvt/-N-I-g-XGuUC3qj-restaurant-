@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { IndianRupee, Receipt, ThumbsUp, ThumbsDown, Info, ShoppingBag, Clock, FileText, User, Camera, X, ChevronLeft, ChevronRight } from "lucide-react"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogClose } from "@/components/ui/dialog"
@@ -23,7 +23,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 
 export default function RefundsPage() {
-  const { refunds, handleRefundRequest } = useAppContext();
+  const { refunds, handleRefundRequest } = useAppStore();
   const [filter, setFilter] = useState<"Pending" | "All">("Pending");
   
   const [isViewerOpen, setIsViewerOpen] = useState(false);

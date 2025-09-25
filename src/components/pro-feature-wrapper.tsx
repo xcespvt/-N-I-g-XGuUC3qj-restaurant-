@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import { Lock } from "lucide-react"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { UpgradeModal } from "./upgrade-modal"
 import { cn } from "@/lib/utils"
 import {
@@ -22,7 +22,7 @@ interface ProFeatureWrapperProps {
 }
 
 export function ProFeatureWrapper({ children, featureName, featureDescription, className }: ProFeatureWrapperProps) {
-  const { subscriptionPlan } = useAppContext()
+  const { subscriptionPlan } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   if (subscriptionPlan === "Pro") {

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import type { Order, OrderStatus } from "@/context/AppContext"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
@@ -21,7 +21,7 @@ const statusStyles: Record<string, string> = {
 };
 
 export default function OrderHistoryPage() {
-  const { orders } = useAppContext();
+  const { orders } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "All">("All");
   const [typeFilter, setTypeFilter] = useState<"All" | "Delivery" | "Takeaway" | "Dine-in">("All");

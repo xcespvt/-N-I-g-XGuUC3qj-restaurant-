@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { OrderCard } from "@/components/order-card"
 import type { Order, OrderStatus } from "@/context/AppContext"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
@@ -202,7 +202,7 @@ export default function Dashboard() {
     orders,
     updateOrderStatus,
     acceptNewOrder,
-  } = useAppContext();
+  } = useAppStore();
   
   const [newOrder, setNewOrder] = useState<Order | null>(null);
   const [orderToAccept, setOrderToAccept] = useState<Order | null>(null);

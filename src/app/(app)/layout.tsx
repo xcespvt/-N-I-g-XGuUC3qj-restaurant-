@@ -55,7 +55,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BranchSwitcher } from "@/components/branch-switcher";
-import { AppProvider, useAppContext } from "@/context/AppContext";
+import { useAppStore } from "@/context/useAppStore";
 import { NotificationBell } from "@/components/notification-bell";
 import { BottomNav } from "@/components/bottom-nav";
 import dynamic from 'next/dynamic';
@@ -103,7 +103,7 @@ function AppLayoutClient({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
-  const { subscriptionPlan, orders } = useAppContext();
+  const { subscriptionPlan, orders } = useAppStore();
 
   const newOrdersCount = orders.filter(o => o.status === "New").length;
 
@@ -188,7 +188,7 @@ function AppLayoutClient({
     // 👤 Profile
     [
       { href: "/profile", label: "My Profile", icon: User },
-      { href: "/settings", label: "Settings", icon: Settings }
+      // { href: "/settings", label: "Settings", icon: Settings }
     ]
   ];
   const bottomNav = [
@@ -277,9 +277,7 @@ export default function AppLayout({
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AppProvider>
-        <AppLayoutClient>{children}</AppLayoutClient>
-      </AppProvider>
+      <AppLayoutClient>{children}</AppLayoutClient>
 
       {/* ✅ Optional Devtools for debugging */}
       <ReactQueryDevtools initialIsOpen={false} />

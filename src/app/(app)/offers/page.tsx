@@ -86,7 +86,7 @@ import {
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProFeatureWrapper } from "@/components/pro-feature-wrapper"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { MenuItem } from "@/context/AppContext"
 
@@ -284,7 +284,7 @@ const ItemCombobox = ({
 }
 
 export default function OffersPage() {
-  const { menuItems } = useAppContext();
+  const { menuItems } = useAppStore();
   const [offers, setOffers] = useState<Offer[]>(initialOffersData);
   const [activeTab, setActiveTab] = useState("All");
 

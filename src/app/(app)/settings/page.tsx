@@ -34,11 +34,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
-import { useAppContext } from "@/context/AppContext";
+import { useAppStore } from "@/context/useAppStore";
 
 // import { useGet, usePost } from "@/hooks/useApi";
 export default function SettingsPage() {
-  const { notificationSettings, updateNotificationSetting } = useAppContext();
+  const { notificationSettings, updateNotificationSetting } = useAppStore();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { toast } = useToast();
 

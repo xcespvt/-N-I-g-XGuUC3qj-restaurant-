@@ -62,7 +62,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import type { Branch } from "@/context/AppContext"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -206,7 +206,7 @@ const MultiBranchSelect = ({
 
 
 export default function StaffPage() {
-  const { branches } = useAppContext()
+  const { branches } = useAppStore()
   const [managers, setManagers] = useState<Manager[]>(initialManagerData)
   const [searchTerm, setSearchTerm] = useState("")
 

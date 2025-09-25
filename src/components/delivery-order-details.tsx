@@ -27,7 +27,7 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "./ui/card"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import {
   Dialog,
   DialogContent,
@@ -56,7 +56,7 @@ const DetailItem = ({ icon: Icon, label, value, valueClass }: { icon: React.Elem
 
 
 export function DeliveryOrderDetails({ order }: { order: Order }) {
-  const { updateOrderStatus } = useAppContext();
+  const { updateOrderStatus } = useAppStore();
   const subtotal = order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const commission = subtotal * 0.12;
   const discount = 5.00; // Mock data

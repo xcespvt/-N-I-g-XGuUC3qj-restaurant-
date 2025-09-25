@@ -56,7 +56,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { ProFeatureWrapper } from "@/components/pro-feature-wrapper"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import type { OrderItem } from "@/context/AppContext"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
     const [salesTimeRange, setSalesTimeRange] = useState("month");
     const [activeTab, setActiveTab] = useState("sales");
     const { toast } = useToast();
-    const { orders, feedback } = useAppContext();
+    const { orders, feedback } = useAppStore();
     const [date, setDate] = useState<DateRange | undefined>()
 
     const handleExport = () => {

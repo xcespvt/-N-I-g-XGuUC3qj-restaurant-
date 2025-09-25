@@ -6,7 +6,7 @@ import type { Order } from "@/context/AppContext"
 import { Progress } from "./ui/progress"
 import { Clock, PlusCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,7 @@ const DelayTimeDialog = ({
   onOpenChange: (open: boolean) => void
   orderId: string
 }) => {
-  const { updateOrderPrepTime } = useAppContext()
+  const { updateOrderPrepTime } = useAppStore()
   const delayOptions = [5, 10, 15]
 
   const handleAddTime = (minutes: number) => {

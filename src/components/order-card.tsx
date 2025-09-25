@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Clock, User, IndianRupee, Package, Bike, UtensilsCrossed, Zap, Calendar, Users2, Table } from "lucide-react";
 import type { Order, OrderStatus } from "@/context/AppContext";
-import { useAppContext } from "@/context/AppContext";
+import { useAppStore } from "@/context/useAppStore";
 import {
   Sheet,
   SheetContent,
@@ -65,7 +65,7 @@ const DetailsSheet = ({ order, children }: { order: Order, children: React.React
 
 
 export const OrderCard = ({ order }: { order: Order; }) => {
-    const { updateOrderStatus } = useAppContext();
+    const { updateOrderStatus } = useAppStore();
     const status = statusConfig[order.status];
     const [remainingTime, setRemainingTime] = React.useState("00:00");
 

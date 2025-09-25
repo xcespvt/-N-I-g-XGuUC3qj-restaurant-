@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { useToast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -109,7 +109,7 @@ const initialBranchFormData = {
 
 
 export default function BranchesPage() {
-  const { branches, addBranch, updateBranch, deleteBranch, toggleBranchOnlineStatus } = useAppContext();
+  const { branches, addBranch, updateBranch, deleteBranch, toggleBranchOnlineStatus } = useAppStore();
   const [activeTab, setActiveTab] = useState<BranchStatusFilter>("All Branches")
 
   const [dialogOpen, setDialogOpen] = useState(false);

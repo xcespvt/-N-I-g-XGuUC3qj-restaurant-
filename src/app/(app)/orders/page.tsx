@@ -4,12 +4,12 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAppContext } from "@/context/AppContext";
+import { useAppStore } from "@/context/useAppStore";
 import { OrderCard } from "@/components/order-card";
 import { UtensilsCrossed, Calendar } from "lucide-react";
 
 export default function OrdersPage() {
-  const { orders } = useAppContext();
+  const { orders } = useAppStore();
   
   const { activeOrders, bookingOrders } = useMemo(() => {
     const allActive = orders.filter(o => !["Delivered", "Cancelled", "Rejected"].includes(o.status));

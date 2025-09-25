@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Wrench, Truck, ShoppingBag, UtensilsCrossed, Calendar } from "lucide-react"
-import { useAppContext } from "@/context/AppContext"
+import { useAppStore } from "@/context/useAppStore"
 import { useToast } from "@/hooks/use-toast"
 
 const allServices = [
@@ -27,7 +27,7 @@ const allServices = [
 
 
 export default function ServicesPage() {
-    const { serviceSettings, updateServiceSetting } = useAppContext();
+    const { serviceSettings, updateServiceSetting } = useAppStore();
     const { toast } = useToast();
 
     const handleSaveChanges = () => {
