@@ -4,36 +4,97 @@ import {
   UseQueryOptions,
   useMutation,
   UseMutationOptions,
+  useQueryClient,
 } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import { buildUrl } from "@/lib/utils";
 
-// ✅ Generic GET
+// ✅ Generic GET with optional params
 export function useGet<T>(
-  key: string[], // query key
-  url: string, // API endpoint
+  key: string[],
+  url: string,
+  params?: Record<string, unknown>,
   options?: Omit<UseQueryOptions<T>, "queryKey" | "queryFn">
 ) {
+  const finalUrl = params ? buildUrl(url, params) : url;
+
   return useQuery<T>({
-    queryKey: key,
-    queryFn: () => apiClient<T>(url),
-    // staleTime: 1000 * 1, // 1 min fresh
-    // gcTime: 1000 * 60 * 5, // 5 min cache
-    // refetchOnWindowFocus: false,
-    ...options, // allow per-query overrides
+    queryKey: params ? [...key, params] : key,
+    queryFn: () => apiClient<T>(finalUrl),
+    ...options,
   });
 }
 
-// ✅ Generic POST (can also handle PUT/PATCH/DELETE)
+// ✅ Generic POST
 export function usePost<TData, TVariables>(
   url: string,
   options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
 ) {
   return useMutation<TData, Error, TVariables>({
-    mutationFn: (variables: TVariables) =>
+    mutationFn: async (variables: TVariables) =>
       apiClient<TData>(url, {
         method: "POST",
         body: JSON.stringify(variables),
       }),
     ...options,
   });
+}
+
+type HttpMethod = "POST" | "PUT" | "PATCH" | "DELETE";
+
+// ✅ Generic Mutation Request
+export function useMutationRequest<TData, TVariables>(
+  method: HttpMethod,
+  url: string,
+  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
+) {
+  return useMutation<TData, Error, TVariables>({
+    mutationFn: async (variables: TVariables) =>
+      apiClient<TData>(url, {
+        method,
+        body:
+          method === "DELETE" ? undefined : JSON.stringify(variables),
+      }),
+    ...options,
+  });
+}
+
+// ✅ PUT
+export function usePut<TData, TVariables>(
+  url: string,
+  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
+) {
+  return useMutationRequest<TData, TVariables>("PUT", url, options);
+}
+
+// ✅ PATCH
+export function usePatch<TData, TVariables>(
+  url: string,
+  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
+) {
+  return useMutationRequest<TData, TVariables>("PATCH", url, options);
+}
+
+// ✅ DELETE
+export function useDelete<TData, TVariables = void>(
+  url: string,
+  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
+) {
+  return useMutationRequest<TData, TVariables>("DELETE", url, options);
+}
+
+// ✅ Query Helpers
+export function useQueryHelpers() {
+  const queryClient = useQueryClient();
+
+  return {
+    invalidate: async (key: unknown[]) =>
+      queryClient.invalidateQueries({ queryKey: key }),
+    reset: async (key: unknown[]) =>
+      queryClient.resetQueries({ queryKey: key }),
+    set: <TData>(key: unknown[], updater: TData) =>
+      queryClient.setQueryData<TData>(key, updater),
+    remove: (key: unknown[]) =>
+      queryClient.removeQueries({ queryKey: key }),
+  };
 }
