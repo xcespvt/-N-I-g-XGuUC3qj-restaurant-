@@ -38,15 +38,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-  DialogClose,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -760,31 +759,20 @@ export default function BranchesPage() {
           <h1 className="text-2xl font-semibold md:text-3xl flex items-center gap-2">
             <GitFork className="h-6 w-6" /> My Branches
           </h1>
-          <Dialog
-            open={dialogOpen}
-            onOpenChange={(isOpen) => {
-              setDialogOpen(isOpen);
-              if (!isOpen) setEditingBranch(null);
-            }}
-          >
-            <DialogTrigger asChild>
+          <Sheet open={dialogOpen} onOpenChange={(isOpen) => {
+            setDialogOpen(isOpen);
+            if (!isOpen) setEditingBranch(null);
+          }}>
+            <SheetTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> Add New Branch
               </Button>
-            </DialogTrigger>
-            <DialogContent
-              className={cn(
-                "sm:max-w-md w-full",
-                "fixed left-1/2 top-16 -translate-x-1/2 bottom-0",
-                "flex flex-col rounded-t-xl p-6",
-
-                // Animation overrides
-                "data-[state=open]:animate-in data-[state=closed]:animate-out",
-                "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
-                "data-[state=open]:slide-in-from-bottom- data-[state=closed]:slide-out-to-bottom-2"
-              )}
+            </SheetTrigger>
+            <SheetContent
+              side="bottom"
+              className="sm:max-w-2xl mx-auto p-0 flex flex-col h-full max-h-[90vh]"
             >
-              <DialogHeader className="p-6 pb-4">
+              <SheetHeader className="p-6 pb-4 border-b">
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
                   <div className="flex justify-start">
                     <Button
@@ -806,14 +794,14 @@ export default function BranchesPage() {
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary flex-shrink-0">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <DialogTitle className="text-xl mt-2">
+                    <SheetTitle className="text-xl mt-2">
                       {editingBranch ? "Edit Branch" : title}
-                    </DialogTitle>
-                    <DialogDescription>
+                    </SheetTitle>
+                    <SheetDescription>
                       Step {formStep} of {STEPS.length - 1}
-                    </DialogDescription>
+                    </SheetDescription>
                   </div>
-                  <div className="flex justify-end">
+                  <div className="w-8">
                     {/* Placeholder for alignment */}
                   </div>
                 </div>
@@ -821,27 +809,38 @@ export default function BranchesPage() {
                   value={(formStep / (STEPS.length - 1)) * 100}
                   className="w-full mt-4"
                 />
-              </DialogHeader>
-              <div className="flex-grow overflow-y-auto px-6 py-4">
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto p-6">
                 {renderStepContent()}
               </div>
-              <DialogFooter className="p-6 bg-muted/50 border-t flex justify-center mt-auto">
+              <SheetFooter className="p-4 border-t flex justify-center gap-2">
                 {formStep < STEPS.length - 1 ? (
-                  <Button type="button" onClick={handleNextStep}>
+                  <Button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="w-full sm:w-auto"
+                  >
                     Next <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : formStep === STEPS.length - 1 ? (
-                  <Button type="button" onClick={handleSaveBranch}>
-                    Add Branch & Finish
+                  <Button
+                    type="button"
+                    onClick={handleSaveBranch}
+                    className="w-full sm:w-auto"
+                  >
+                    {editingBranch ? 'Update Branch' : 'Add Branch & Finish'}
                   </Button>
                 ) : (
-                  <DialogClose asChild>
-                    <Button>Done</Button>
-                  </DialogClose>
+                  <Button
+                    onClick={() => setDialogOpen(false)}
+                    className="w-full sm:w-auto"
+                  >
+                    Done
+                  </Button>
                 )}
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
 
         <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
