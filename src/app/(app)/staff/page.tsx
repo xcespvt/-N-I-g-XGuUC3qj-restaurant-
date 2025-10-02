@@ -37,14 +37,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -429,22 +428,20 @@ export default function StaffPage() {
         )}
       </div>
 
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent
+      <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <SheetContent 
           side="bottom"
-          className="sm:max-w-md left-1/2 -translate-x-1/2"
+          className="sm:max-w-2xl mx-auto p-0 flex flex-col h-full max-h-[90vh]"
         >
-          <DialogHeader>
-            <DialogTitle>
-              {editingManager ? "Edit Manager" : "Add New Manager"}
-            </DialogTitle>
-            <DialogDescription>
+          <SheetHeader className="p-6 pb-4 border-b">
+            <SheetTitle>{editingManager ? "Edit Manager" : "Add New Manager"}</SheetTitle>
+            <SheetDescription>
               {editingManager
                 ? "Update the manager's details and branch access."
                 : "Fill in the details to invite a new manager."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
@@ -544,16 +541,16 @@ export default function StaffPage() {
               </>
             )}
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSaveManager}>
+          <SheetFooter className="p-4 border-t">
+            <Button variant="outline" onClick={() => setIsFormOpen(false)} className="w-full sm:w-auto">
+              Cancel
+            </Button>
+            <Button onClick={handleSaveManager} className="w-full sm:w-auto">
               {editingManager ? "Save Changes" : "Add Manager"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
