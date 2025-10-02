@@ -276,7 +276,7 @@ const initialTableTypes = ["Normal", "Couple", "Family", "Private", "Outdoor"];
 const initialBranches: Branch[] = [
   {
     id: "indiranagar",
-    name: "Spice Garden - Indiranagar",
+    name: "Spice Garden - Rajkot",
     address: "123 100ft Road",
     city: "Bangalore",
     pincode: "560038",

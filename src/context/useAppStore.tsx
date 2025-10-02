@@ -267,7 +267,7 @@ export const useAppStore = create<AppStore>()(
       branches: [
         {
           id: "indiranagar",
-          name: "Spice Garden - Indiranagar",
+          name: "Spice Garden - Rajkot",
           address: "123 100ft Road",
           city: "Bangalore",
           pincode: "560038",
@@ -279,6 +279,7 @@ export const useAppStore = create<AppStore>()(
           ordersToday: 42,
           status: "Active",
           isOnline: true,
+          restaurantId: "b1a2c3d4-e5f6-7890-1234-56789abcdef9",
         },
         {
           id: "koramangala",

@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAdd, useGet } from "@/hooks/useApi";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,10 +96,124 @@ export default function MenuPage() {
     addCategory,
     updateMenuItem,
     deleteMenuItem,
+    branches,
+    selectedBranch,
   } = useAppStore();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+
+  // Get the current branch's restaurantId
+  const currentBranch = branches.find(branch => branch.id === selectedBranch);
+  const restaurantId = (currentBranch as any)?.restaurantId;
+
+  // API call to fetch menu items from database
+  const { data: apiMenuData, error: apiError, isLoading } = useGet<{
+    success: boolean;
+    message: string;
+    data: Array<{
+      _id: string;
+      restaurantId: string;
+      name: string;
+      description: string;
+      type: string;
+      category: string;
+      images: string[];
+      available: boolean;
+      pricing_unit: string;
+      pricing_options: Array<{
+        label: string;
+        price: number;
+        default?: boolean;
+      }>;
+      portions: string[];
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    pagination: {
+      currentPage: number;
+      itemsPerPage: number;
+      totalItems: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  }>(
+    ['menu-items', restaurantId || '', currentPage],
+    `/api/menu/getitems/${restaurantId}`,
+    { page: currentPage, limit: 10 },
+    {
+      enabled: !!restaurantId,
+      onError: () => {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Some error occurred while fetching data",
+        });
+      }
+    }
+  );
+
+  // Transform API data to MenuItem format
+  const transformedMenuItems = useMemo(() => {
+    if (!apiMenuData?.data) return menuItems;
+    
+    return apiMenuData.data.map((item, index) => ({
+      id: Date.now() + index, // Generate unique ID
+      name: item.name,
+      description: item.description,
+      price: item.pricing_options[0]?.price || 0,
+      category: item.category,
+      image: item.images[0] || "https://placehold.co/300x200.png",
+      aiHint: item.name.toLowerCase(),
+      available: item.available,
+      dietaryType: 'Veg' as const, // Default to Veg, could be enhanced based on API data
+      portionOptions: item.pricing_options.length > 1 
+        ? item.pricing_options.map(option => ({
+            name: option.label,
+            price: option.price
+          }))
+        : undefined
+    }));
+  }, [apiMenuData, menuItems]);
+
+  // Use transformed data if API data is available, otherwise use store data
+  const displayMenuItems = apiMenuData?.data ? transformedMenuItems : menuItems;
+
+  // API hook for adding menu items
+  const addMenuItemMutation = useAdd({
+    onSuccess: (data) => {
+      toast({
+        title: "Menu Item Added",
+        description: "The menu item has been successfully added to the restaurant.",
+      });
+      // Also add to local store for immediate UI update
+      const localItem = {
+        id: Date.now(), // temporary ID
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price || formData.portionOptions[0]?.price || "0"),
+        category: formData.category,
+        available: formData.available,
+        image: "https://placehold.co/300x200.png", // placeholder
+        aiHint: formData.name.toLowerCase(),
+        dietaryType: "Veg" as const,
+        portionOptions: formData.portionOptions.length > 0 
+          ? formData.portionOptions.map(p => ({ name: p.name, price: parseFloat(p.price) }))
+          : undefined,
+      };
+      addMenuItem(localItem as any);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error Adding Menu Item",
+        description: "Failed to add the menu item. Please try again.",
+      });
+      console.error("Error adding menu item:", error);
+    },
+  });
 
   const [activeSheet, setActiveSheet] = useState<AddSheetType>(null);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -256,7 +371,7 @@ export default function MenuPage() {
     handleInputChange("portionOptions", newPortions);
   };
 
-  const filteredMenu = menuItems.filter(
+  const filteredMenu = displayMenuItems.filter(
     (item) =>
       (activeCategory === "All" || item.category === activeCategory) &&
       item.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -317,27 +432,58 @@ export default function MenuPage() {
 
     const finalPortionOptions = formData.portionOptions
       .filter((p) => p.name && p.price) // Ensure portions are not empty
-      .map((p) => ({ name: p.name, price: parseFloat(p.price) }))
+      .map((p) => ({ label: p.name, price: parseFloat(p.price) }))
       .filter((p) => !isNaN(p.price)); // Ensure price is a number
 
-    const itemPayload = {
-      name: formData.name,
-      description: formData.description,
-      price: finalPrice,
-      category: formData.category,
-      available: formData.available,
-      dietaryType: "Veg", // Mock default
-      portionOptions: isPortionBased ? finalPortionOptions : [],
-    };
-
     if (editingItem) {
+      // For editing, use the existing local store update
+      const itemPayload = {
+        name: formData.name,
+        description: formData.description,
+        price: finalPrice,
+        category: formData.category,
+        available: formData.available,
+        dietaryType: "Veg", // Mock default
+        portionOptions: isPortionBased ? finalPortionOptions.map(p => ({ name: p.label, price: p.price })) : [],
+      };
       updateMenuItem({ ...editingItem, ...itemPayload });
+      setActiveSheet(null);
+      setEditingItem(null);
     } else {
-      addMenuItem(itemPayload as any);
-    }
+      // For new items, use the API call
+      if (!restaurantId) {
+        toast({
+          variant: "destructive",
+          title: "Restaurant ID Missing",
+          description: "Please select a valid branch with restaurant ID.",
+        });
+        return;
+      }
 
-    setActiveSheet(null);
-    setEditingItem(null);
+      // Transform data to match API payload structure
+      const apiPayload = {
+        restaurantId: restaurantId,
+        name: formData.name,
+        description: formData.description,
+        type: activeSheet?.toLowerCase() || "item", // "item", "beverage", "combo", "sauce"
+        available: formData.available,
+        category: formData.category,
+        images: [
+          "https://cdn.example.com/menu/default-1.jpg",
+          "https://cdn.example.com/menu/default-2.jpg"
+        ],
+        pricing_unit: formData.pricedBy, // "quantity", "size", "weight", "ml"
+        pricing_options: isPortionBased && finalPortionOptions.length > 0 
+          ? finalPortionOptions 
+          : [{ label: "Regular", price: finalPrice }],
+        portions: ["Regular"] // Default portion
+      };
+
+      // Call the API
+      addMenuItemMutation.mutate(apiPayload);
+      setActiveSheet(null);
+      setEditingItem(null);
+    }
   };
 
   const handleAddCategory = () => {
@@ -462,7 +608,21 @@ export default function MenuPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredMenu.map((item) => (
+        {isLoading && restaurantId ? (
+          // Loading skeleton
+          Array.from({ length: 6 }).map((_, index) => (
+            <Card key={`loading-${index}`} className="flex flex-col overflow-hidden shadow-sm">
+              <div className="aspect-[3/2] w-full bg-muted animate-pulse" />
+              <CardContent className="p-4 space-y-3">
+                <div className="h-4 bg-muted animate-pulse rounded w-20" />
+                <div className="h-6 bg-muted animate-pulse rounded w-3/4" />
+                <div className="h-4 bg-muted animate-pulse rounded w-full" />
+                <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          filteredMenu.map((item) => (
           <Card
             key={item.id}
             className="flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
@@ -558,13 +718,58 @@ export default function MenuPage() {
               </div>
             </CardFooter>
           </Card>
-        ))}
-        {filteredMenu.length === 0 && (
+          ))
+        )}
+        {!isLoading && filteredMenu.length === 0 && (
           <div className="text-center py-16 text-muted-foreground col-span-full">
             <p>No {activeCategory.toLowerCase()} items to show.</p>
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {apiMenuData?.pagination && apiMenuData.pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {Array.from({ length: apiMenuData.pagination.totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <Button
+                key={pageNum}
+                variant={currentPage === pageNum ? "default" : "outline"}
+                size="sm"
+                className="w-10 h-10"
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </Button>
+            ))}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(apiMenuData.pagination.totalPages, prev + 1))}
+            disabled={currentPage === apiMenuData.pagination.totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+
+      {/* Pagination Info */}
+      {apiMenuData?.pagination && (
+        <div className="text-center text-sm text-muted-foreground mt-4">
+          Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, apiMenuData.pagination.totalItems)} of {apiMenuData.pagination.totalItems} items
+        </div>
+      )}
 
       {/* Add/Edit Sheet */}
       <Sheet

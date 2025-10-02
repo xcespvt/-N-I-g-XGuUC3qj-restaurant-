@@ -9,6 +9,8 @@ import {
 import { apiClient } from "@/lib/apiClient";
 import { buildUrl } from "@/lib/utils";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+
 // ✅ Generic GET with optional params
 export function useGet<T>(
   key: string[],
@@ -16,7 +18,9 @@ export function useGet<T>(
   params?: Record<string, unknown>,
   options?: Omit<UseQueryOptions<T>, "queryKey" | "queryFn">
 ) {
-  const finalUrl = params ? buildUrl(url, params) : url;
+  // Construct the full URL with base URL
+  const baseUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  const finalUrl = params ? buildUrl(baseUrl, params) : baseUrl;
 
   return useQuery<T>({
     queryKey: params ? [...key, params] : key,
@@ -81,6 +85,12 @@ export function useDelete<TData, TVariables = void>(
   options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
 ) {
   return useMutationRequest<TData, TVariables>("DELETE", url, options);
+}
+
+export function useAdd<TData = any>(
+  options?: Omit<UseMutationOptions<TData, Error, any>, "mutationFn">
+) {
+  return usePost<TData, any>(`${API_BASE_URL}/restaurant/add-menu-item`, options);
 }
 
 // ✅ Query Helpers
