@@ -48,14 +48,13 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -357,9 +356,8 @@ export default function OffersPage() {
     );
     toast({
       title: "Offer Status Updated",
-      description: `The offer "${
-        offerToToggle.title
-      }" is now ${newStatus.toLowerCase()}.`,
+      description: `The offer "${offerToToggle.title
+        }" is now ${newStatus.toLowerCase()}.`,
     });
   };
 
@@ -592,23 +590,26 @@ export default function OffersPage() {
           </TabsContent>
         </Tabs>
 
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className="sm:max-w-lg p-0 flex flex-col h-full max-h-[90vh]">
-            <DialogHeader className="p-6 pb-4 flex-shrink-0">
-              <DialogTitle>
+        <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <SheetContent
+            side="bottom"
+            className="sm:max-w-3xl mx-auto p-0 flex flex-col h-full max-h-[90vh]"
+          >
+            <SheetHeader className="p-6 pb-4 border-b">
+              <SheetTitle>
                 {editingOffer ? "Edit Offer" : "Create New Offer"}
-              </DialogTitle>
-              <DialogDescription>
+              </SheetTitle>
+              <SheetDescription>
                 {editingOffer
                   ? "Update the details for this offer."
                   : "Fill in the details to create a new promotional offer."}
-              </DialogDescription>
-            </DialogHeader>
+              </SheetDescription>
+            </SheetHeader>
             <form
               onSubmit={handleSaveOffer}
               className="flex-grow overflow-hidden flex flex-col"
             >
-              <div className="flex-grow overflow-y-auto px-6 py-4">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div className="grid gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="title">Offer Title</Label>
@@ -662,8 +663,8 @@ export default function OffersPage() {
                   </div>
 
                   {formState.type === "Percentage" ||
-                  formState.type === "Flat" ||
-                  formState.type === "Happy Hour" ? (
+                    formState.type === "Flat" ||
+                    formState.type === "Happy Hour" ? (
                     <div className="space-y-2">
                       <Label htmlFor="discount">
                         {getDiscountFieldLabel()}
@@ -772,17 +773,19 @@ export default function OffersPage() {
                   </div>
                 </div>
               </div>
-              <DialogFooter className="border-t p-6 bg-muted/50 flex-shrink-0">
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </DialogClose>
+              <SheetFooter className="border-t p-4 bg-muted/50 flex-shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsFormOpen(false)}
+                >
+                  Cancel
+                </Button>
                 <Button type="submit">Save Offer</Button>
-              </DialogFooter>
+              </SheetFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
 
         {/* Delete Alert Dialog */}
         <AlertDialog
