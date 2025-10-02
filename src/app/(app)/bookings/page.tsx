@@ -27,14 +27,13 @@ import {
   X,
 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -334,41 +333,36 @@ export default function TableManagementPage() {
         ))}
       </div>
 
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent
+      <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <SheetContent
           side="bottom"
-          className="sm:max-w-md left-1/2 -translate-x-1/2"
+          className="sm:max-w-md mx-auto p-0 flex flex-col h-full max-h-[90vh]"
         >
-          <form onSubmit={handleSaveTable}>
-            <DialogHeader>
-              <DialogTitle>
+          <form onSubmit={handleSaveTable} className="flex flex-col h-full">
+            <SheetHeader className="p-6 pb-4 border-b">
+              <SheetTitle className="text-xl">
                 {editingTable ? "Edit Table" : "Add New Table"}
-              </DialogTitle>
-              <DialogDescription>
+              </SheetTitle>
+              <SheetDescription>
                 {editingTable
                   ? "Update the details for this table."
                   : "Provide a name and capacity for the new table."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="table-name" className="text-right">
-                  Name
-                </Label>
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="table-name">Name</Label>
                 <Input
                   id="table-name"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData((p) => ({ ...p, name: e.target.value }))
                   }
-                  className="col-span-3"
                   placeholder="e.g., T1, P2"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="capacity" className="text-right">
-                  Capacity
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity</Label>
                 <Input
                   id="capacity"
                   type="number"
@@ -376,102 +370,126 @@ export default function TableManagementPage() {
                   onChange={(e) =>
                     setFormData((p) => ({ ...p, capacity: e.target.value }))
                   }
-                  className="col-span-3"
                   placeholder="e.g., 4"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="table-type" className="text-right">
-                  Type
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="table-type">Type</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value) => setFormData(p => ({ ...p, type: value }))}
                 >
-                    <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select a type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {tableTypes.map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                    </SelectContent>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tableTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-              </DialogClose>
+            <SheetFooter className="p-4 border-t flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsFormOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit">
                 {editingTable ? "Save Changes" : "Add Table"}
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
       
-      <Dialog open={isSeriesFormOpen} onOpenChange={setIsSeriesFormOpen} >
-        <DialogContent
+      <Sheet open={isSeriesFormOpen} onOpenChange={setIsSeriesFormOpen}>
+        <SheetContent
           side="bottom"
-          className="d-flex justify-center"  
+          className="sm:max-w-md mx-auto p-0 flex flex-col h-full max-h-[90vh]"
         >
-          <form onSubmit={handleSaveTableSeries}>
-            <DialogHeader>
-              <DialogTitle>Add Table Series</DialogTitle>
-              <DialogDescription>
+          <form onSubmit={handleSaveTableSeries} className="flex flex-col h-full">
+            <SheetHeader className="p-6 pb-4 border-b">
+              <SheetTitle className="text-xl">Add Table Series</SheetTitle>
+              <SheetDescription>
                 Quickly add multiple tables with a numerical series.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-               <div className="space-y-2">
-                 <Label htmlFor="series-prefix">Prefix (Optional)</Label>
-                 <Input id="series-prefix" placeholder="e.g., T, Patio-" value={seriesFormData.prefix} onChange={(e) => setSeriesFormData(p => ({ ...p, prefix: e.target.value }))} />
-               </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="series-start">Start Number</Label>
-                        <Input id="series-start" type="number" placeholder="e.g., 1" value={seriesFormData.start} onChange={(e) => setSeriesFormData(p => ({ ...p, start: e.target.value }))} />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="series-end">End Number</Label>
-                        <Input id="series-end" type="number" placeholder="e.g., 10" value={seriesFormData.end} onChange={(e) => setSeriesFormData(p => ({ ...p, end: e.target.value }))} />
-                    </div>
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="series-prefix">Prefix (Optional)</Label>
+                <Input 
+                  id="series-prefix" 
+                  placeholder="e.g., T, Patio-" 
+                  value={seriesFormData.prefix} 
+                  onChange={(e) => setSeriesFormData(p => ({ ...p, prefix: e.target.value }))} 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="series-start">Start Number</Label>
+                  <Input 
+                    id="series-start" 
+                    type="number" 
+                    placeholder="e.g., 1" 
+                    value={seriesFormData.start} 
+                    onChange={(e) => setSeriesFormData(p => ({ ...p, start: e.target.value }))} 
+                  />
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="series-capacity">Capacity of each table</Label>
-                    <Input id="series-capacity" type="number" placeholder="e.g., 4" value={seriesFormData.capacity} onChange={(e) => setSeriesFormData(p => ({ ...p, capacity: e.target.value }))} />
+                <div className="space-y-2">
+                  <Label htmlFor="series-end">End Number</Label>
+                  <Input 
+                    id="series-end" 
+                    type="number" 
+                    placeholder="e.g., 10" 
+                    value={seriesFormData.end} 
+                    onChange={(e) => setSeriesFormData(p => ({ ...p, end: e.target.value }))} 
+                  />
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="series-table-type">Type of tables</Label>
-                    <Select
-                        value={seriesFormData.type}
-                        onValueChange={(value) => setSeriesFormData(p => ({ ...p, type: value }))}
-                    >
-                        <SelectTrigger id="series-table-type">
-                            <SelectValue placeholder="Select a type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {tableTypes.map(type => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="series-capacity">Capacity of each table</Label>
+                <Input 
+                  id="series-capacity" 
+                  type="number" 
+                  placeholder="e.g., 4" 
+                  value={seriesFormData.capacity} 
+                  onChange={(e) => setSeriesFormData(p => ({ ...p, capacity: e.target.value }))} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="series-table-type">Type of tables</Label>
+                <Select
+                  value={seriesFormData.type}
+                  onValueChange={(value) => setSeriesFormData(p => ({ ...p, type: value }))}
+                >
+                  <SelectTrigger id="series-table-type">
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tableTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-              </DialogClose>
+            <SheetFooter className="p-4 border-t flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsSeriesFormOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit">Add Series</Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent side="bottom" className="sm:max-w-md">
@@ -496,94 +514,126 @@ export default function TableManagementPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog
-        open={isBookingSettingsOpen}
-        onOpenChange={setIsBookingSettingsOpen}
-      >
-        <DialogContent
+      <Sheet open={isBookingSettingsOpen} onOpenChange={setIsBookingSettingsOpen}>
+        <SheetContent
           side="bottom"
-          className="sm:max-w-md"
+          className="sm:max-w-md mx-auto p-0 flex flex-col h-full max-h-[90vh]"
         >
-          <DialogHeader>
-            <DialogTitle>Booking Settings</DialogTitle>
-            <DialogDescription>
-              Manage settings for your online table bookings.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div>
-                <Label htmlFor="charge-booking-fee">
-                  Charge for Advance Bookings
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Enable to charge a small fee for reservations.
-                </p>
-              </div>
-              <Switch
-                id="charge-booking-fee"
-                checked={chargeForBooking}
-                onCheckedChange={setChargeForBooking}
-              />
-            </div>
-            {chargeForBooking && (
-              <div className="space-y-2">
-                <Label htmlFor="booking-fee">Booking Fee (per booking)</Label>
-                <div className="relative">
-                  <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="booking-fee"
-                    type="number"
-                    value={bookingFee}
-                    onChange={(e) => setBookingFee(e.target.value)}
-                    className="pl-9"
-                    placeholder="e.g., 100"
-                  />
+          <div className="flex flex-col h-full">
+            <SheetHeader className="p-6 pb-4 border-b">
+              <SheetTitle className="text-xl">Booking Settings</SheetTitle>
+              <SheetDescription>
+                Manage settings for your online table bookings.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <Label htmlFor="charge-booking-fee">
+                    Charge for Advance Bookings
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable to charge a small fee for reservations.
+                  </p>
                 </div>
+                <Switch
+                  id="charge-booking-fee"
+                  checked={chargeForBooking}
+                  onCheckedChange={setChargeForBooking}
+                />
               </div>
-            )}
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
+              {chargeForBooking && (
+                <div className="space-y-2">
+                  <Label htmlFor="booking-fee">Booking Fee (per booking)</Label>
+                  <div className="relative">
+                    <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="booking-fee"
+                      type="number"
+                      value={bookingFee}
+                      onChange={(e) => setBookingFee(e.target.value)}
+                      className="pl-9"
+                      placeholder="e.g., 100"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            <SheetFooter className="p-4 border-t flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsBookingSettingsOpen(false)}
+              >
                 Cancel
               </Button>
-            </DialogClose>
-            <Button type="button" onClick={handleSaveBookingSettings}>
-              Save Settings
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <Button 
+                type="button" 
+                onClick={handleSaveBookingSettings}
+              >
+                Save Settings
+              </Button>
+            </SheetFooter>
+          </div>
+        </SheetContent>
+      </Sheet>
       
-      <Dialog open={isTableTypeDialogOpen} onOpenChange={setIsTableTypeDialogOpen}>
-          <DialogContent side="bottom" className="sm:max-w-xl">
-              <DialogHeader>
-                  <DialogTitle>Manage Table Types</DialogTitle>
-                  <DialogDescription>Add new types or remove existing ones.</DialogDescription>
-              </DialogHeader>
-              <div className="py-4 space-y-4">
-                  <div className="flex gap-2">
-                    <Input value={newTableTypeName} onChange={(e) => setNewTableTypeName(e.target.value)} placeholder="e.g. Rooftop, Bar Seating"/>
-                    <Button onClick={handleAddTableType}>Add Type</Button>
-                  </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <Label>Existing Types</Label>
-                    <div className="max-h-48 overflow-y-auto pr-2 space-y-2">
-                        {tableTypes.map(type => (
-                            <div key={type} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                                <span className="font-medium text-sm">{type}</span>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteTableType(type)}>
-                                    <X className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                  </div>
+      <Sheet open={isTableTypeDialogOpen} onOpenChange={setIsTableTypeDialogOpen}>
+        <SheetContent
+          side="bottom"
+          className="sm:max-w-xl mx-auto p-0 flex flex-col h-full max-h-[90vh]"
+        >
+          <div className="flex flex-col h-full">
+            <SheetHeader className="p-6 pb-4 border-b">
+              <SheetTitle className="text-xl">Manage Table Types</SheetTitle>
+              <SheetDescription>Add new types or remove existing ones.</SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="flex gap-2">
+                <Input 
+                  value={newTableTypeName} 
+                  onChange={(e) => setNewTableTypeName(e.target.value)} 
+                  placeholder="e.g. Rooftop, Bar Seating"
+                />
+                <Button 
+                  onClick={handleAddTableType}
+                  disabled={!newTableTypeName.trim()}
+                >
+                  Add Type
+                </Button>
               </div>
-          </DialogContent>
-      </Dialog>
+              <Separator />
+              <div className="space-y-2">
+                <Label>Existing Types</Label>
+                <div className="max-h-48 overflow-y-auto pr-2 space-y-2">
+                  {tableTypes.map(type => (
+                    <div key={type} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                      <span className="font-medium text-sm">{type}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-destructive hover:text-destructive/80" 
+                        onClick={() => deleteTableType(type)}
+                      >
+                        <X className="h-4 w-4"/>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <SheetFooter className="p-4 border-t">
+              <Button 
+                type="button" 
+                onClick={() => setIsTableTypeDialogOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Done
+              </Button>
+            </SheetFooter>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
