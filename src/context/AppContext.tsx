@@ -288,6 +288,7 @@ const initialBranches: Branch[] = [
     ordersToday: 42,
     status: "Active",
     isOnline: true,
+    restaurantId: "b1a2c3d4-e5f6-7890-1234-56789abcdef9"
   },
   {
     id: "koramangala",

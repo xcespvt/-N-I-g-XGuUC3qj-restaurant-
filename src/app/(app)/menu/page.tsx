@@ -1,21 +1,51 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState, useMemo, useEffect, useRef } from "react";
+import Image from "next/image";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Upload,
+  MoreVertical,
+  Mic,
+  X,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAdd, useGet } from "@/hooks/useApi";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { useAppStore } from "@/context/useAppStore";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,189 +56,1000 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useAppStore } from "@/context/useAppStore";
-import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { MenuSearchAndFilter } from "@/components/menu/MenuSearchAndFilter";
-import { MenuItemCard } from "@/components/menu/MenuItemCard";
-import { MenuItemForm } from "@/components/menu/MenuItemForm";
+import type { MenuItem } from "@/context/useAppStore";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+const initialFormState = {
+  name: "",
+  category: "Pizza",
+  price: "",
+  description: "",
+  available: true,
+  pricedBy: "quantity" as "quantity" | "size" | "weight" | "ml",
+  portionOptions: [] as { name: string; price: string }[],
+};
+
+// SpeechRecognition type might not be available on the window object by default
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
 
 type AddSheetType = "Item" | "Beverage" | "Combo" | "Sauce" | null;
 
 export default function MenuPage() {
-  const { 
-    menuItems, 
-    addMenuItem, 
-    updateMenuItem, 
-    deleteMenuItem,
+  const {
+    menuItems,
     toggleMenuItemAvailability,
+    isRestaurantOnline,
+    addMenuItem,
     categories,
-    addCategory
+    addCategory,
+    updateMenuItem,
+    deleteMenuItem,
+    branches,
+    selectedBranch,
   } = useAppStore();
-  
-  // Search and filter state
-  const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
-  
-  // Sheet and dialog state
-  const [addSheetOpen, setAddSheetOpen] = useState(false);
-  const [addSheetType, setAddSheetType] = useState<AddSheetType>(null);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
 
-  // Speech recognition hook
-  const { isListening, toggleListening } = useSpeechRecognition(setSearchTerm);
+  // Get the current branch's restaurantId
+  const currentBranch = branches.find(branch => branch.id === selectedBranch);
+  const restaurantId = (currentBranch as any)?.restaurantId;
 
-  // Derived data
-  const filteredItems = menuItems.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = activeCategory === "All" || item.category === activeCategory;
-    return matchesSearch && matchesCategory;
+  // API call to fetch menu items from database
+  const { data: apiMenuData, error: apiError, isLoading } = useGet<{
+    success: boolean;
+    message: string;
+    data: Array<{
+      _id: string;
+      restaurantId: string;
+      name: string;
+      description: string;
+      type: string;
+      category: string;
+      images: string[];
+      available: boolean;
+      pricing_unit: string;
+      pricing_options: Array<{
+        label: string;
+        price: number;
+        default?: boolean;
+      }>;
+      portions: string[];
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    pagination: {
+      currentPage: number;
+      itemsPerPage: number;
+      totalItems: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  }>(
+    ['menu-items', restaurantId || '', currentPage],
+    `/api/menu/getitems/${restaurantId}`,
+    { page: currentPage, limit: 10 },
+    {
+      enabled: !!restaurantId,
+      onError: () => {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Some error occurred while fetching data",
+        });
+      }
+    }
+  );
+
+  // Transform API data to MenuItem format
+  const transformedMenuItems = useMemo(() => {
+    if (!apiMenuData?.data) return menuItems;
+    
+    return apiMenuData.data.map((item, index) => ({
+      id: Date.now() + index, // Generate unique ID
+      name: item.name,
+      description: item.description,
+      price: item.pricing_options[0]?.price || 0,
+      category: item.category,
+      image: item.images[0] || "https://placehold.co/300x200.png",
+      aiHint: item.name.toLowerCase(),
+      available: item.available,
+      dietaryType: 'Veg' as const, // Default to Veg, could be enhanced based on API data
+      portionOptions: item.pricing_options.length > 1 
+        ? item.pricing_options.map(option => ({
+            name: option.label,
+            price: option.price
+          }))
+        : undefined
+    }));
+  }, [apiMenuData, menuItems]);
+
+  // Use transformed data if API data is available, otherwise use store data
+  const displayMenuItems = apiMenuData?.data ? transformedMenuItems : menuItems;
+
+  // API hook for adding menu items
+  const addMenuItemMutation = useAdd({
+    onSuccess: (data) => {
+      toast({
+        title: "Menu Item Added",
+        description: "The menu item has been successfully added to the restaurant.",
+      });
+      // Also add to local store for immediate UI update
+      const localItem = {
+        id: Date.now(), // temporary ID
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price || formData.portionOptions[0]?.price || "0"),
+        category: formData.category,
+        available: formData.available,
+        image: "https://placehold.co/300x200.png", // placeholder
+        aiHint: formData.name.toLowerCase(),
+        dietaryType: "Veg" as const,
+        portionOptions: formData.portionOptions.length > 0 
+          ? formData.portionOptions.map(p => ({ name: p.name, price: parseFloat(p.price) }))
+          : undefined,
+      };
+      addMenuItem(localItem as any);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error Adding Menu Item",
+        description: "Failed to add the menu item. Please try again.",
+      });
+      console.error("Error adding menu item:", error);
+    },
   });
 
-  // Handlers
-  const openAddSheet = (type: AddSheetType) => {
-    setAddSheetType(type);
-    setEditingItem(null);
-    setAddSheetOpen(true);
+  const [activeSheet, setActiveSheet] = useState<AddSheetType>(null);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [formData, setFormData] = useState(initialFormState);
+
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
+
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
-  const openEditSheet = (item: any) => {
-    setEditingItem(item);
-    setAddSheetOpen(true);
-  };
-
-  const handleFormSubmit = (itemData: any) => {
-    if (editingItem) {
-      updateMenuItem({ ...editingItem, ...itemData });
-    } else {
-      addMenuItem(itemData);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      toast({
+        title: "Image Selected",
+        description: `${file.name} is ready to be uploaded.`,
+      });
     }
-    setAddSheetOpen(false);
+  };
+
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        setSearchTerm(finalTranscript + interimTranscript);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    } else {
+      console.warn("Speech Recognition not supported");
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      toast({
+        variant: "destructive",
+        title: "Voice Search Not Supported",
+        description: "Your browser does not support voice search.",
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSheet && editingItem) {
+      let pricedBy: "quantity" | "size" | "weight" | "ml" = "quantity";
+      if (editingItem.portionOptions && editingItem.portionOptions.length > 0) {
+        // This is a simplification. We'd need to store the original pricedBy type
+        // For now, we'll default to 'size' if portions exist.
+        pricedBy = "size";
+      }
+      setFormData({
+        name: editingItem.name,
+        category: editingItem.category,
+        price: editingItem.price.toString(),
+        description: editingItem.description,
+        available: editingItem.available,
+        pricedBy: pricedBy,
+        portionOptions:
+          editingItem.portionOptions?.map((p) => ({
+            ...p,
+            price: p.price.toString(),
+          })) || [],
+      });
+    } else {
+      setFormData(initialFormState);
+    }
+  }, [activeSheet, editingItem]);
+
+  const handleInputChange = (
+    field: keyof typeof formData,
+    value: string | boolean | typeof formData.portionOptions
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePricedByChange = (
+    value: "quantity" | "size" | "weight" | "ml"
+  ) => {
+    setFormData((prev) => {
+      const newState = { ...prev, pricedBy: value };
+      if (
+        ["size", "weight", "quantity", "ml"].includes(value) &&
+        newState.portionOptions.length === 0
+      ) {
+        newState.portionOptions = [{ name: "", price: "" }];
+      }
+      return newState;
+    });
+  };
+
+  const handlePortionChange = (
+    index: number,
+    field: "name" | "price",
+    value: string
+  ) => {
+    const newPortions = [...formData.portionOptions];
+    newPortions[index][field] = value;
+    handleInputChange("portionOptions", newPortions);
+  };
+
+  const addPortion = () => {
+    handleInputChange("portionOptions", [
+      ...formData.portionOptions,
+      { name: "", price: "" },
+    ]);
+  };
+
+  const removePortion = (index: number) => {
+    const newPortions = formData.portionOptions.filter((_, i) => i !== index);
+    handleInputChange("portionOptions", newPortions);
+  };
+
+  const filteredMenu = displayMenuItems.filter(
+    (item) =>
+      (activeCategory === "All" || item.category === activeCategory) &&
+      item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleOpenAdd = (type: AddSheetType) => {
     setEditingItem(null);
+    setActiveSheet(type);
   };
 
-  const openDeleteDialog = (item: any) => {
+  const handleOpenEdit = (item: MenuItem) => {
+    setEditingItem(item);
+    setActiveSheet("Item");
+  };
+
+  const handleOpenDelete = (item: MenuItem) => {
     setItemToDelete(item);
-    setDeleteDialogOpen(true);
+    setIsDeleteAlertOpen(true);
   };
 
-  const handleDelete = () => {
+  const confirmDelete = () => {
     if (itemToDelete) {
       deleteMenuItem(itemToDelete.id);
-      setDeleteDialogOpen(false);
+      setIsDeleteAlertOpen(false);
       setItemToDelete(null);
     }
   };
 
-  const handleCreateCategory = () => {
-    if (newCategoryName.trim()) {
-      addCategory(newCategoryName.trim());
-      setNewCategoryName("");
-      setCategoryDialogOpen(false);
+  const handleSaveItem = () => {
+    const isPortionBased = ["size", "weight", "quantity", "ml"].includes(
+      formData.pricedBy
+    );
+
+    if (
+      !formData.name ||
+      !formData.description ||
+      (isPortionBased ? !formData.portionOptions[0]?.price : !formData.price)
+    ) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in all required fields, including a price.",
+      });
+      return;
+    }
+
+    const finalPrice = isPortionBased
+      ? parseFloat(formData.portionOptions[0].price)
+      : parseFloat(formData.price);
+    if (isNaN(finalPrice) || finalPrice <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Price",
+        description: "Please enter a valid price.",
+      });
+      return;
+    }
+
+    const finalPortionOptions = formData.portionOptions
+      .filter((p) => p.name && p.price) // Ensure portions are not empty
+      .map((p) => ({ label: p.name, price: parseFloat(p.price) }))
+      .filter((p) => !isNaN(p.price)); // Ensure price is a number
+
+    if (editingItem) {
+      // For editing, use the existing local store update
+      const itemPayload = {
+        name: formData.name,
+        description: formData.description,
+        price: finalPrice,
+        category: formData.category,
+        available: formData.available,
+        dietaryType: "Veg", // Mock default
+        portionOptions: isPortionBased ? finalPortionOptions.map(p => ({ name: p.label, price: p.price })) : [],
+      };
+      updateMenuItem({ ...editingItem, ...itemPayload });
+      setActiveSheet(null);
+      setEditingItem(null);
+    } else {
+      // For new items, use the API call
+      if (!restaurantId) {
+        toast({
+          variant: "destructive",
+          title: "Restaurant ID Missing",
+          description: "Please select a valid branch with restaurant ID.",
+        });
+        return;
+      }
+
+      // Transform data to match API payload structure
+      const apiPayload = {
+        restaurantId: restaurantId,
+        name: formData.name,
+        description: formData.description,
+        type: activeSheet?.toLowerCase() || "item", // "item", "beverage", "combo", "sauce"
+        available: formData.available,
+        category: formData.category,
+        images: [
+          "https://cdn.example.com/menu/default-1.jpg",
+          "https://cdn.example.com/menu/default-2.jpg"
+        ],
+        pricing_unit: formData.pricedBy, // "quantity", "size", "weight", "ml"
+        pricing_options: isPortionBased && finalPortionOptions.length > 0 
+          ? finalPortionOptions 
+          : [{ label: "Regular", price: finalPrice }],
+        portions: ["Regular"] // Default portion
+      };
+
+      // Call the API
+      addMenuItemMutation.mutate(apiPayload);
+      setActiveSheet(null);
+      setEditingItem(null);
     }
   };
 
-  const handleAvailabilityToggle = (itemId: number) => {
-    toggleMenuItemAvailability(itemId);
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      addCategory(newCategoryName.trim());
+      setNewCategoryName("");
+      setIsCategoryDialogOpen(false);
+    }
   };
 
+  const availableCategories = useMemo(
+    () => categories.filter((c) => c !== "All"),
+    [categories]
+  );
+
+  const showDetailedPricing =
+    activeSheet === "Item" || activeSheet === "Beverage";
+
+  const getPortionLabel = (pricedBy: string) => {
+    switch (pricedBy) {
+      case "quantity":
+        return {
+          name: "Quantity Name",
+          price: "Price (₹)",
+          placeholder: "e.g. 6 pcs",
+        };
+      case "size":
+        return {
+          name: "Size Name",
+          price: "Price (₹)",
+          placeholder: "e.g. Half, Large",
+        };
+      case "weight":
+        return {
+          name: "Weight Name",
+          price: "Price (₹)",
+          placeholder: "e.g. 250g, 1kg",
+        };
+      case "ml":
+        return {
+          name: "Volume Name",
+          price: "Price (₹)",
+          placeholder: "e.g. 250ml",
+        };
+      default:
+        return {
+          name: "Portion Name",
+          price: "Price (₹)",
+          placeholder: "e.g. Half, Large",
+        };
+    }
+  };
+
+  const portionLabels = getPortionLabel(formData.pricedBy);
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Menu Management</h1>
-      </div> */}
-
-      <MenuSearchAndFilter
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
-        categories={categories}
-        isListening={isListening}
-        onToggleListening={toggleListening}
-        onOpenAdd={openAddSheet}
-        onOpenCategoryDialog={() => setCategoryDialogOpen(true)}
-      />
-
-      {/* Menu Items Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((item) => (
-          <MenuItemCard
-            key={item.id}
-            item={item}
-            isRestaurantOnline={true}
-            onEdit={() => openEditSheet(item)}
-            onDelete={() => openDeleteDialog(item)}
-            onToggleAvailability={handleAvailabilityToggle}
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative flex-grow w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search menu items or use the mic..."
+            className="pl-9 pr-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-        ))}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-green-600",
+              isListening && "animate-pulse"
+            )}
+            onClick={toggleListening}
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="flex-1">
+                <Plus className="mr-2 h-4 w-4" />
+                Add New
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleOpenAdd("Item")}>
+                Add Item
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleOpenAdd("Beverage")}>
+                Add Beverage
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleOpenAdd("Combo")}>
+                Add Combo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleOpenAdd("Sauce")}>
+                Add Sauce
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      {filteredItems.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No menu items found.</p>
+      <div className="flex gap-2">
+        <Select value={activeCategory} onValueChange={setActiveCategory}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Categories</SelectItem>
+            {availableCategories.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="outline" onClick={() => setIsCategoryDialogOpen(true)}>
+          <Plus className="mr-1.5 h-3 w-3" /> Create Category
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+        {isLoading && restaurantId ? (
+          // Loading skeleton
+          Array.from({ length: 6 }).map((_, index) => (
+            <Card key={`loading-${index}`} className="flex flex-col overflow-hidden shadow-sm">
+              <div className="aspect-[3/2] w-full bg-muted animate-pulse" />
+              <CardContent className="p-4 space-y-3">
+                <div className="h-4 bg-muted animate-pulse rounded w-20" />
+                <div className="h-6 bg-muted animate-pulse rounded w-3/4" />
+                <div className="h-4 bg-muted animate-pulse rounded w-full" />
+                <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          filteredMenu.map((item) => (
+          <Card
+            key={item.id}
+            className="flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+          >
+            <CardHeader className="p-0 relative">
+              <div className="aspect-[3/2] w-full bg-muted flex items-center justify-center">
+                <Image
+                  alt={item.name}
+                  className="aspect-[3/2] w-full object-cover"
+                  height="200"
+                  src={item.image}
+                  width="300"
+                  data-ai-hint={item.aiHint}
+                />
+              </div>
+              <div className="absolute top-2 right-2 flex items-center gap-2">
+                <Badge
+                  className={cn(
+                    "z-10 text-xs font-semibold",
+                    item.available
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  )}
+                >
+                  {item.available ? "Available" : "Unavailable"}
+                </Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-background/70 backdrop-blur-sm"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleOpenEdit(item)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit Item
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleOpenDelete(item)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Item
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 flex-grow space-y-3">
+              <Badge variant="outline">{item.category}</Badge>
+              <div className="flex justify-between items-start gap-2">
+                <CardTitle className="text-lg font-bold leading-tight">
+                  {item.name}
+                </CardTitle>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-lg font-bold text-primary">
+                    ₹
+                    {item.price.toLocaleString("en-IN", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {item.description}
+              </p>
+            </CardContent>
+            <CardFooter className="p-4 flex justify-between items-center border-t bg-muted/50">
+              <p className="text-xs text-muted-foreground">
+                Portions:{" "}
+                {item.portionOptions && item.portionOptions.length > 0
+                  ? item.portionOptions.map((p) => p.name).join("/")
+                  : "Standard"}
+              </p>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id={`available-${item.id}`}
+                  checked={item.available}
+                  onCheckedChange={() => toggleMenuItemAvailability(item.id)}
+                  disabled={!isRestaurantOnline}
+                />
+                <label
+                  htmlFor={`available-${item.id}`}
+                  className="text-sm font-medium"
+                >
+                  Available
+                </label>
+              </div>
+            </CardFooter>
+          </Card>
+          ))
+        )}
+        {!isLoading && filteredMenu.length === 0 && (
+          <div className="text-center py-16 text-muted-foreground col-span-full">
+            <p>No {activeCategory.toLowerCase()} items to show.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Pagination Controls */}
+      {apiMenuData?.pagination && apiMenuData.pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {Array.from({ length: apiMenuData.pagination.totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <Button
+                key={pageNum}
+                variant={currentPage === pageNum ? "default" : "outline"}
+                size="sm"
+                className="w-10 h-10"
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </Button>
+            ))}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(apiMenuData.pagination.totalPages, prev + 1))}
+            disabled={currentPage === apiMenuData.pagination.totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+
+      {/* Pagination Info */}
+      {apiMenuData?.pagination && (
+        <div className="text-center text-sm text-muted-foreground mt-4">
+          Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, apiMenuData.pagination.totalItems)} of {apiMenuData.pagination.totalItems} items
         </div>
       )}
 
       {/* Add/Edit Sheet */}
-      <Sheet open={addSheetOpen} onOpenChange={setAddSheetOpen}>
-        <SheetContent side="bottom" className="sm:max-w-md mx-auto p-0 flex flex-col h-full max-h-[90vh]">
-          <MenuItemForm
-            editingItem={editingItem}
-            addSheetType={addSheetType}
-            categories={categories.filter(c => c !== "All")}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setAddSheetOpen(false)}
-          />
+      <Sheet
+        open={!!activeSheet}
+        onOpenChange={(isOpen) => !isOpen && setActiveSheet(null)}
+      >
+        <SheetContent
+          side="bottom"
+          className="sm:max-w-3xl mx-auto p-0 flex flex-col h-full max-h-[90vh]"
+        >
+          <SheetHeader className="p-6 pb-4 border-b flex-shrink-0">
+            <SheetTitle className="text-xl">
+              {editingItem ? `Edit ${activeSheet}` : `Add New ${activeSheet}`}
+            </SheetTitle>
+            <SheetDescription>
+              {editingItem
+                ? `Update the details for this ${activeSheet?.toLowerCase()}.`
+                : `Fill in the details to add a new ${activeSheet?.toLowerCase()} to your menu.`}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-grow overflow-y-auto">
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Enter item name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) =>
+                      handleInputChange("category", value)
+                    }
+                  >
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCategories.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Available</Label>
+                  <div className="flex items-center pt-2">
+                    <Switch
+                      checked={formData.available}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("available", checked)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe your menu item"
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Image</Label>
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleImageUploadClick}
+                  >
+                    <Upload className="mr-2 h-4 w-4" /> Upload Image
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                </div>
+              </div>
+              <Separator />
+
+              {showDetailedPricing ? (
+                <>
+                  <div className="space-y-3">
+                    <Label className="font-semibold">Priced By</Label>
+                    <RadioGroup
+                      value={formData.pricedBy}
+                      onValueChange={handlePricedByChange}
+                      className="flex flex-wrap gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value="quantity"
+                          id="priced-by-quantity"
+                        />
+                        <Label
+                          htmlFor="priced-by-quantity"
+                          className="font-normal"
+                        >
+                          Quantity
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="size" id="priced-by-size" />
+                        <Label htmlFor="priced-by-size" className="font-normal">
+                          Size
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="weight" id="priced-by-weight" />
+                        <Label
+                          htmlFor="priced-by-weight"
+                          className="font-normal"
+                        >
+                          Weight
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="ml" id="priced-by-ml" />
+                        <Label htmlFor="priced-by-ml" className="font-normal">
+                          Volume (ml)
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Pricing Options</h3>
+                    </div>
+                    {formData.portionOptions.map((portion, index) => (
+                      <div key={index} className="flex items-end gap-2">
+                        <div className="grid grid-cols-2 gap-2 flex-grow">
+                          <div className="space-y-1.5">
+                            <Label htmlFor={`portion-name-${index}`}>
+                              {portionLabels.name}
+                            </Label>
+                            <Input
+                              id={`portion-name-${index}`}
+                              placeholder={portionLabels.placeholder}
+                              value={portion.name}
+                              onChange={(e) =>
+                                handlePortionChange(
+                                  index,
+                                  "name",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor={`portion-price-${index}`}>
+                              {portionLabels.price}
+                            </Label>
+                            <Input
+                              id={`portion-price-${index}`}
+                              type="number"
+                              placeholder="e.g. 299"
+                              value={portion.price}
+                              onChange={(e) =>
+                                handlePortionChange(
+                                  index,
+                                  "price",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePortion(index)}
+                          className="text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addPortion}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add Option
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price (₹)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    placeholder="Enter price"
+                    value={formData.price}
+                    onChange={(e) => handleInputChange("price", e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <SheetFooter className="bg-muted/50 p-6 border-t mt-auto flex-shrink-0">
+            <Button variant="outline" onClick={() => setActiveSheet(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveItem}>
+              {editingItem ? "Save Changes" : `Add ${activeSheet}`}
+            </Button>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
 
-      {/* Create Category Dialog */}
-      <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Category</DialogTitle>
-            <DialogDescription>
-              Enter a name for the new menu category.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="category-name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="category-name"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                className="col-span-3"
-                placeholder="Enter category name"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleCreateCategory}>Create Category</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Add Category Dialog */}
+      <AlertDialog
+        open={isCategoryDialogOpen}
+        onOpenChange={setIsCategoryDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Create New Category</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the menu item
-              "{itemToDelete?.name}" from your menu.
+              Enter a name for your new food category.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="category-name">Category Name</Label>
+            <Input
+              id="category-name"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="e.g. Beverages"
+            />
+          </div>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCategoryDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddCategory}>Add Category</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              menu item "{itemToDelete?.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
