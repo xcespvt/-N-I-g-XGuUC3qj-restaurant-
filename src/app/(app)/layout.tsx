@@ -257,7 +257,7 @@ function AppLayoutClient({
         </header>
         <main className="flex-1 p-4 sm:px-6 pb-20 md:pb-6">
           <div className="md:hidden mb-4">
-            {pathname === '/dashboard' && <BranchSwitcher />}
+            <BranchSwitcher />
           </div>
           {children}
         </main>

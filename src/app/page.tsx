@@ -105,7 +105,9 @@ export default function LoginPage() {
                     {otp.map((digit, index) => (
                     <Input
                         key={index}
-                        ref={(el) => (inputRefs.current[index] = el)}
+                        ref={(el: HTMLInputElement | null) => {
+                          inputRefs.current[index] = el;
+                        }}
                         type="tel"
                         maxLength={1}
                         value={digit}
