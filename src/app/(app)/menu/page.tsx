@@ -145,7 +145,7 @@ export default function MenuPage() {
     { page: currentPage, limit: 10 },
     {
       enabled: !!restaurantId,
-      onError: () => {
+      onError: (err) => {
         toast({
           variant: "destructive",
           title: "Error",
