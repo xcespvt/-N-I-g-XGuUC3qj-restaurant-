@@ -428,7 +428,7 @@ export default function SubscriptionPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Current Plan</p>
                   <p className="font-medium text-lg">{subscriptionPlan} Plan</p>
@@ -459,9 +459,10 @@ export default function SubscriptionPage() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="flex gap-2 border-t pt-6">
+            <CardFooter className="flex flex-col sm:flex-row gap-2 border-t pt-6">
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() =>
                   handleActionClick(
                     "Updating Payment Method",
@@ -473,6 +474,7 @@ export default function SubscriptionPage() {
               </Button>
               <Button
                 variant="destructive"
+                className="w-full sm:w-auto"
                 onClick={() =>
                   handleActionClick(
                     "Subscription Cancelled",
@@ -493,7 +495,56 @@ export default function SubscriptionPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg">
+              {/* Mobile Card Layout */}
+              <div className="block md:hidden space-y-4">
+                {billingHistory.map((item) => (
+                  <div key={item.invoice} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-mono text-xs text-muted-foreground">Invoice ID</p>
+                        <p className="font-medium">{item.invoice}</p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={cn(statusStyles[item.status])}
+                      >
+                        {item.status}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Date</p>
+                        <p className="font-medium">{item.date}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Amount</p>
+                        <div className="flex items-center font-medium">
+                          <IndianRupee className="h-4 w-4 mr-1 text-muted-foreground" />
+                          {item.amount}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          handleActionClick(
+                            "Downloading Invoice",
+                            `Invoice ${item.invoice} will be downloaded.`
+                          )
+                        }
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table Layout */}
+              <div className="hidden md:block border rounded-lg overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -514,15 +565,17 @@ export default function SubscriptionPage() {
                         <TableCell className="font-mono text-xs">
                           {item.invoice}
                         </TableCell>
-                        <TableCell>{item.date}</TableCell>
-                        <TableCell className="flex items-center font-medium">
-                          <IndianRupee className="h-4 w-4 mr-1 text-muted-foreground" />
-                          {item.amount}
+                        <TableCell className="whitespace-nowrap">{item.date}</TableCell>
+                        <TableCell className="font-medium whitespace-nowrap">
+                          <div className="flex items-center">
+                            <IndianRupee className="h-4 w-4 mr-1 text-muted-foreground" />
+                            {item.amount}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={cn(statusStyles[item.status])}
+                            className={cn(statusStyles[item.status], "whitespace-nowrap")}
                           >
                             {item.status}
                           </Badge>
