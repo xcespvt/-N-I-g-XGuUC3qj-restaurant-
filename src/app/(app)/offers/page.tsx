@@ -19,6 +19,7 @@ import {
   Check,
   ChevronsUpDown,
   Clock,
+  Sparkles,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +105,7 @@ type OfferType = "Percentage" | "Flat" | "BOGO" | "Free Item" | "Happy Hour";
 type Offer = {
   id: string;
   title: string;
+  shortDescription: string;
   description: string;
   status: OfferStatus;
   type: OfferType;
@@ -113,12 +115,14 @@ type Offer = {
   usage: number;
   total: number;
   typeIcon: React.ReactNode;
+  couponCode: string;
 };
 
 const initialOffersData: Offer[] = [
   {
     id: "offer-1",
     title: "Summer Special",
+    shortDescription: "Sizzling summer savings!",
     description: "Get 20% off on all pizza orders above ₹500",
     status: "Active" as OfferStatus,
     type: "Percentage",
@@ -128,10 +132,12 @@ const initialOffersData: Offer[] = [
     usage: 145,
     total: 500,
     typeIcon: <Percent className="h-4 w-4" />,
+    couponCode: "SUMMER20",
   },
   {
     id: "offer-2",
     title: "Flat ₹50 OFF",
+    shortDescription: "Instant discount on your order.",
     description: "Flat ₹50 discount on orders above ₹300",
     status: "Active" as OfferStatus,
     type: "Flat",
@@ -141,10 +147,12 @@ const initialOffersData: Offer[] = [
     usage: 89,
     total: 200,
     typeIcon: <IndianRupee className="h-4 w-4" />,
+    couponCode: "FLAT50",
   },
   {
     id: "offer-3",
     title: "Buy 1 Get 1 Free Burgers",
+    shortDescription: "Double the delight!",
     description: "Buy any burger and get another burger absolutely free",
     status: "Active" as OfferStatus,
     type: "BOGO",
@@ -154,10 +162,12 @@ const initialOffersData: Offer[] = [
     usage: 67,
     total: 100,
     typeIcon: <Gift className="h-4 w-4" />,
+    couponCode: "BOGOSTAR",
   },
   {
     id: "offer-4",
     title: "Weekend Combo Deal",
+    shortDescription: "The perfect weekend treat.",
     description: "Special weekend combo: Pizza + Drink + Dessert for ₹399",
     status: "Scheduled" as OfferStatus,
     type: "Free Item",
@@ -167,10 +177,12 @@ const initialOffersData: Offer[] = [
     usage: 23,
     total: 150,
     typeIcon: <Ticket className="h-4 w-4" />,
+    couponCode: "WKNDCOMBO",
   },
   {
     id: "offer-5",
     title: "First Order Special",
+    shortDescription: "A welcome treat for new users.",
     description: "New customers get 30% off on their first order",
     status: "Active" as OfferStatus,
     type: "Percentage",
@@ -180,10 +192,12 @@ const initialOffersData: Offer[] = [
     usage: 234,
     total: 1000,
     typeIcon: <Percent className="h-4 w-4" />,
+    couponCode: "NEW30",
   },
   {
     id: "offer-6",
     title: "Happy Hours",
+    shortDescription: "Great deals during off-peak hours.",
     description: "15% off on all orders between 2 PM - 5 PM",
     status: "Paused" as OfferStatus,
     type: "Happy Hour",
@@ -193,6 +207,7 @@ const initialOffersData: Offer[] = [
     usage: 156,
     total: 300,
     typeIcon: <Percent className="h-4 w-4" />,
+    couponCode: "HAPPY15",
   },
 ];
 
@@ -207,8 +222,10 @@ const statusStyles: Record<OfferStatus, string> = {
 
 const defaultFormState = {
   title: "",
+  shortDescription: "",
   description: "",
   type: "Percentage" as OfferType,
+  couponCode: "",
   discount: "",
   minOrder: "",
   validUntil: "",
@@ -320,8 +337,10 @@ export default function OffersPage() {
     setFormState({
       ...defaultFormState,
       title: offer.title,
+      shortDescription: offer.shortDescription,
       description: offer.description,
       type: offer.type,
+      couponCode: offer.couponCode,
       discount: offer.discount,
       minOrder: offer.minOrder,
       validUntil: offer.validUntil,
@@ -356,8 +375,7 @@ export default function OffersPage() {
     );
     toast({
       title: "Offer Status Updated",
-      description: `The offer "${offerToToggle.title
-        }" is now ${newStatus.toLowerCase()}.`,
+      description: `The offer "${offerToToggle.title}" is now ${newStatus.toLowerCase()}.`,
     });
   };
 
@@ -380,15 +398,17 @@ export default function OffersPage() {
       const newOffer: Offer = {
         id: `offer-${Date.now()}`,
         title: formState.title,
+        shortDescription: formState.shortDescription,
         description: formState.description,
         type: formState.type,
+        couponCode: formState.couponCode,
         discount: formState.discount,
         minOrder: formState.minOrder,
         validUntil: formState.validUntil,
         status: "Scheduled",
         usage: 0,
-        total: 500, // Default value
-        typeIcon: formState.discount.includes("%") ? "%" : "₹",
+        total: 500,
+        typeIcon: formState.discount.includes("%") ? <Percent className="h-4 w-4" /> : <IndianRupee className="h-4 w-4" />,
       };
       setOffers([newOffer, ...offers]);
       toast({
@@ -423,6 +443,11 @@ export default function OffersPage() {
       default:
         return "";
     }
+  };
+
+  const generateCouponCode = () => {
+    const code = `CRV${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    handleInputChange("couponCode", code);
   };
 
   return (
@@ -483,7 +508,7 @@ export default function OffersPage() {
                     key={offer.id}
                     className="flex flex-col shadow-sm hover:shadow-lg transition-shadow"
                   >
-                    <CardContent className="p-4 flex-grow space-y-3">
+                    <CardContent className="p-4 flex-grow space-y-2">
                       <div className="flex justify-between items-start">
                         <h3 className="font-bold text-lg pr-4">
                           {offer.title}
@@ -498,50 +523,27 @@ export default function OffersPage() {
                           {offer.status}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground h-10 line-clamp-2">
-                        {offer.description}
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {offer.shortDescription}
                       </p>
 
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm pt-2">
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">
-                            Discount
-                          </p>
-                          <p className="font-semibold text-base text-primary">
-                            {offer.discount}
-                          </p>
+                      <div className="space-y-1 text-sm pt-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Discount</span>
+                          <span className="font-semibold text-base text-primary">{offer.discount}</span>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">Type</p>
-                          <p className="font-semibold">{offer.type}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Min. Order</span>
+                          <span className="font-semibold">{offer.minOrder}</span>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">
-                            Min Order
-                          </p>
-                          <p className="font-semibold">{offer.minOrder}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Expires</span>
+                          <span className="font-semibold">{new Date(offer.validUntil).toLocaleDateString()}</span>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">
-                            Valid Until
-                          </p>
-                          <p className="font-semibold">
-                            {new Date(offer.validUntil).toLocaleDateString()}
-                          </p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Coupon</span>
+                          <Badge variant="secondary">{offer.couponCode}</Badge>
                         </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1 text-xs">
-                          <span className="text-muted-foreground">Usage</span>
-                          <span>
-                            {offer.usage} / {offer.total} used
-                          </span>
-                        </div>
-                        <Progress
-                          value={(offer.usage / offer.total) * 100}
-                          className="h-1.5"
-                        />
                       </div>
                     </CardContent>
                     <CardFooter className="bg-muted/50 p-2 flex justify-end">
@@ -625,15 +627,47 @@ export default function OffersPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="short-description">Short Description</Label>
+                    <Input
+                      id="short-description"
+                      name="shortDescription"
+                      value={formState.shortDescription}
+                      onChange={(e) => handleInputChange("shortDescription", e.target.value)}
+                      placeholder="e.g. Enjoy a refreshing discount!"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="couponCode">Coupon Code</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="couponCode"
+                        name="couponCode"
+                        value={formState.couponCode}
+                        onChange={(e) =>
+                          handleInputChange("couponCode", e.target.value.toUpperCase())
+                        }
+                        placeholder="e.g. SUMMER20"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={generateCouponCode}
+                      >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="terms">Terms and Conditions</Label>
                     <Textarea
-                      id="description"
-                      name="description"
+                      id="terms"
+                      name="terms"
                       value={formState.description}
                       onChange={(e) =>
                         handleInputChange("description", e.target.value)
                       }
-                      placeholder="A short description of the offer."
+                      placeholder="Enter the terms and conditions for this offer."
                       required
                     />
                   </div>

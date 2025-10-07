@@ -1,7 +1,6 @@
-
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
     ArrowUpRight,
     BarChart as BarChartIcon,
@@ -32,6 +31,16 @@ import {
     TrendingUp,
     Activity,
     Wallet,
+    Wand2,
+    PowerOff,
+    Power,
+    Trash2,
+    Check,
+    ChevronsUpDown,
+    BadgePercent,
+    Mail,
+    Clock,
+    Sparkles,
 } from "lucide-react"
 import {
     Bar,
@@ -60,6 +69,12 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -81,12 +96,13 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Progress } from "@/components/ui/progress"
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet"
 import {
     AlertDialog,
@@ -98,6 +114,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle as AlertDialogTitleComponent,
 } from "@/components/ui/alert-dialog"
+
 import { Textarea } from "@/components/ui/textarea"
 import {
     Popover,
@@ -106,13 +123,16 @@ import {
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { DateRange } from "react-day-picker"
-import { format } from "date-fns"
+import { format, differenceInDays } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ProFeatureWrapper } from "@/components/pro-feature-wrapper"
 import { useAppStore } from "@/context/useAppStore"
 import { useToast } from "@/hooks/use-toast"
+import { Checkbox } from "@/components/ui/checkbox"
+import { DialogContent, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 
 
 const dashboardPerformanceData = [
@@ -150,70 +170,87 @@ const promotionTips = [
 ]
 
 type PromotionStatus = 'Active' | 'Scheduled' | 'Ended';
+type PromotionType = "Percentage" | "Flat" | "BOGO" | "Free Item" | "Happy Hour" | "Special";
 
 const promotionsData = [
     {
         id: "promo1",
         title: "Happy Hour",
         status: "Active" as PromotionStatus,
+        shortDescription: "Double the delight with our happy hour special.",
         description: "Buy one get one free on all drinks from 4-7 PM",
-        type: "Bogo",
+        type: "BOGO" as PromotionType,
         value: "BOGO",
         audience: "Returning",
         budget: "₹750",
-        dateRange: "5/15/2023 - 12/31/2023",
+        dateRange: "2024-05-15 - 2024-12-31",
         isActive: true,
-        views: "2,150 views",
-        image: "https://placehold.co/100x100.png"
+        usage: 178,
+        total: 250,
+        image: "https://picsum.photos/seed/promo1/400/300",
+        couponCode: "HAPPYBOGO",
+        objective: "Drive traffic to outlet"
     },
     {
         id: "promo2",
         title: "First Order Discount",
         status: "Ended" as PromotionStatus,
+        shortDescription: "A special welcome for our new customers.",
         description: "15% off on your first order",
-        type: "Discount",
+        type: "Percentage" as PromotionType,
         value: "15%",
         audience: "New",
         budget: "₹1000",
-        dateRange: "4/1/2023 - 5/31/2023",
+        dateRange: "2024-04-01 - 2024-05-31",
         isActive: false,
-        views: "3,200 views",
-        image: "https://placehold.co/100x100.png"
+        usage: 320,
+        total: 400,
+        image: "https://picsum.photos/seed/promo2/400/300",
+        couponCode: "NEW15",
+        objective: "Boost orders"
     },
     {
         id: "promo3",
         title: "Summer Special",
         status: "Active" as PromotionStatus,
+        shortDescription: "Sizzling summer savings on our new menu.",
         description: "Get 20% off on all summer menu items",
-        type: "Discount",
+        type: "Percentage" as PromotionType,
         value: "20%",
         audience: "All",
         budget: "₹500",
-        dateRange: "6/1/2023 - 8/31/2023",
+        dateRange: "2024-06-01 - 2024-08-31",
         isActive: true,
-        views: "1,245 views",
-        image: "https://placehold.co/100x100.png"
+        usage: 98,
+        total: 200,
+        image: "https://picsum.photos/seed/promo3/400/300",
+        couponCode: "SUMMER20",
+        objective: "Promote new dish/menu"
     },
     {
         id: "promo4",
         title: "Weekend Brunch",
         status: "Scheduled" as PromotionStatus,
+        shortDescription: "The perfect weekend treat for you.",
         description: "Special brunch menu with complimentary mimosa",
-        type: "Special",
+        type: "Special" as PromotionType,
         value: "Special Menu",
         audience: "New",
         budget: "₹600",
-        dateRange: "6/1/2023 - 12/31/2023",
+        dateRange: "2024-06-01 - 2024-12-31",
         isActive: false,
-        views: "0 views",
-        image: "https://placehold.co/100x100.png"
+        usage: 0,
+        total: 150,
+        image: "https://picsum.photos/seed/promo4/400/300",
+        couponCode: "WKNDBRUNCH",
+        objective: "Drive traffic to outlet"
     },
 ];
 
 const statusBadgeStyles: Record<PromotionStatus, string> = {
-    Active: "bg-green-100 text-green-700 border-green-200",
-    Scheduled: "bg-blue-100 text-blue-700 border-blue-200",
-    Ended: "bg-gray-100 text-gray-700 border-gray-200",
+    Active: "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-green-200",
+    Scheduled: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-blue-200",
+    Ended: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300",
 }
 
 const analyticsPerformanceData = [
@@ -311,6 +348,92 @@ const AnalyticsCustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
+const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </svg>
+);
+
+const MultiOfferSelect = ({
+    offers,
+    selectedOfferIds,
+    onSelectionChange,
+}: {
+    offers: typeof promotionsData;
+    selectedOfferIds: string[];
+    onSelectionChange: (offerIds: string[]) => void;
+}) => {
+    const [open, setOpen] = useState(false);
+
+    const handleSelect = (offerId: string) => {
+        const newSelection = selectedOfferIds.includes(offerId)
+            ? selectedOfferIds.filter((id) => id !== offerId)
+            : [...selectedOfferIds, offerId];
+        onSelectionChange(newSelection);
+    };
+
+    const selectedOffersText =
+        selectedOfferIds.length > 0
+            ? `${selectedOfferIds.length} offer${selectedOfferIds.length > 1 ? "s" : ""
+            } selected`
+            : "Choose existing offers...";
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between font-normal"
+                >
+                    <span className="truncate">{selectedOffersText}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                    <CommandInput placeholder="Search offers..." />
+                    <CommandList>
+                        <CommandEmpty>No offers found.</CommandEmpty>
+                        <CommandGroup>
+                            {offers.filter(o => o.status === 'Active').map((offer) => (
+                                <CommandItem
+                                    key={offer.id}
+                                    value={offer.title}
+                                    onSelect={() => handleSelect(offer.id)}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            selectedOfferIds.includes(offer.id)
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                        )}
+                                    />
+                                    {offer.title}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
+
 export default function PromotionsPage() {
     const { menuItems } = useAppStore();
     const { toast } = useToast();
@@ -323,12 +446,78 @@ export default function PromotionsPage() {
     const [activePromotionTab, setActivePromotionTab] = useState("All");
     const [mainTab, setMainTab] = useState("dashboard");
     const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
+    const [isWpCampaignSheetOpen, setIsWpCampaignSheetOpen] = useState(false);
     const [isWalletDialogOpen, setIsWalletDialogOpen] = useState(false);
     const [isWalletConfirmOpen, setIsWalletConfirmOpen] = useState(false);
     const [editingPromotion, setEditingPromotion] = useState<(typeof promotions)[0] | null>(null);
-    const [date, setDate] = useState<DateRange | undefined>();
+    
+    const [startDate, setStartDate] = useState<Date | undefined>();
+    const [endDate, setEndDate] = useState<Date | undefined>();
+    const [duration, setDuration] = useState<number | null>(null);
+
+    const [objective, setObjective] = useState("boost-orders");
+    const objectiveLabels: { [key: string]: string } = {
+        "boost-orders": "Boost orders",
+        "promote-dish": "Promote new dish/menu",
+        "drive-traffic": "Drive traffic to outlet",
+        "highlight-discounts": "Highlight discounts/offers",
+        "brand-awareness": "Brand awareness",
+    };
+
+
     const [walletBalance, setWalletBalance] = useState(2500);
     const [amountToAdd, setAmountToAdd] = useState(0);
+    const [isCrevingsStudioDialogOpen, setIsCrevingsStudioDialogOpen] = useState(false);
+
+    const [wpCampaignName, setWpCampaignName] = useState("");
+    const [wpDescription, setWpDescription] = useState("");
+    const [wpOffer, setWpOffer] = useState("");
+    const [wpBudget, setWpBudget] = useState<number | string>("");
+    const [adBudget, setAdBudget] = useState<number | string>("");
+    const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
+    
+    const [selectedPlacements, setSelectedPlacements] = useState<string[]>([]);
+
+    const impressions = typeof adBudget === 'number' ? adBudget * 20 : 0;
+    const wpImpressions = typeof wpBudget === 'number' ? wpBudget * 20 : 0;
+    
+    const placementOptions = [
+        { id: "homepage-banner", label: "Homepage Banner", cost: 100, tags: ["High Visibility"] },
+        { id: "search-boost", label: "Search Result Boost", cost: 75, tags: ["High Potential"] },
+        { id: "category-highlight", label: "Category Highlight", cost: 50, tags: [] },
+        { id: "offer-section", label: "Offer Section", cost: 40, tags: [] },
+        { id: "push-notification", label: "Push Notification", cost: 150, tags: ["High Engagement"] },
+        { id: "alert", label: "Alert", cost: 120, tags: [] }
+    ];
+
+    const handlePlacementChange = (placementId: string) => {
+        setSelectedPlacements(prev =>
+            prev.includes(placementId)
+                ? prev.filter(id => id !== placementId)
+                : [...prev, placementId]
+        );
+    };
+
+    const totalPlacementCost = useMemo(() => {
+        return selectedPlacements.reduce((total, id) => {
+            const placement = placementOptions.find(p => p.id === id);
+            return total + (placement ? placement.cost : 0);
+        }, 0);
+    }, [selectedPlacements]);
+
+    const finalPayable = useMemo(() => {
+        const baseBudget = typeof adBudget === 'number' ? adBudget : 0;
+        return baseBudget + totalPlacementCost;
+    }, [adBudget, totalPlacementCost]);
+
+
+    useEffect(() => {
+        if (startDate && endDate && endDate > startDate) {
+            setDuration(differenceInDays(endDate, startDate) + 1);
+        } else {
+            setDuration(null);
+        }
+    }, [startDate, endDate]);
 
     const filteredPromotions = promotions.filter(promo => {
         if (activePromotionTab === "All") return true;
@@ -337,17 +526,21 @@ export default function PromotionsPage() {
 
     const handleCreateClick = () => {
         setEditingPromotion(null);
-        setDate(undefined);
+        setStartDate(undefined);
+        setEndDate(undefined);
+        setSelectedPlacements([]);
         setIsPromotionDialogOpen(true);
     }
 
     const handleEditClick = (promo: (typeof promotions)[0]) => {
         setEditingPromotion(promo);
         const [startStr, endStr] = promo.dateRange.split(' - ');
-        setDate({ from: new Date(startStr), to: new Date(endStr) });
+        setStartDate(new Date(startStr));
+        setEndDate(new Date(endStr));
+        setSelectedPlacements([]); // Assuming placements are not saved in this mock data
         setIsPromotionDialogOpen(true);
     };
-
+    
     const handleTogglePromotionStatus = (promoId: string) => {
         setPromotions(currentPromos => currentPromos.map(p => p.id === promoId ? { ...p, isActive: !p.isActive } : p));
     };
@@ -388,6 +581,59 @@ export default function PromotionsPage() {
         }
         setIsWalletConfirmOpen(true);
     }
+    
+    const handleSubmitDesignRequest = () => {
+        toast({
+            title: "Request Submitted",
+            description: "Our design team will contact you shortly to create your campaign visuals.",
+        });
+        setIsCrevingsStudioDialogOpen(false);
+    };
+
+    const handleLaunchWpCampaign = () => {
+        if (!wpCampaignName || !wpBudget) {
+            toast({
+                title: "Missing Information",
+                description: "Please provide a campaign name and budget.",
+                variant: "destructive"
+            });
+            return;
+        }
+        
+        const newPromo = {
+            id: `promo-${Date.now()}`,
+            title: wpCampaignName,
+            status: "Scheduled" as PromotionStatus,
+            shortDescription: "Exclusive WhatsApp Offer",
+            description: wpDescription || "WhatsApp Campaign",
+            type: "Special" as PromotionType,
+            value: "WP",
+            audience: "All",
+            budget: `₹${wpBudget}`,
+            dateRange: `${format(new Date(), 'M/d/yyyy')} - ${format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'M/d/yyyy')}`,
+            isActive: false,
+            usage: 0,
+            total: 100, // default
+            image: "https://placehold.co/400/300",
+            couponCode: `WP${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+            objective: "Boost orders"
+        };
+        
+        setPromotions(prev => [newPromo, ...prev]);
+        
+        toast({
+            title: "Campaign Launched!",
+            description: `"${wpCampaignName}" is under review and will go live soon.`
+        });
+
+        // Reset form and close sheet
+        setIsWpCampaignSheetOpen(false);
+        setWpCampaignName("");
+        setWpDescription("");
+        setWpOffer("");
+        setWpBudget("");
+    };
+
 
     const confirmPayFromWallet = () => {
         const totalDeduction = amountToAdd * 1.18; // amount + 18% commission
@@ -400,8 +646,7 @@ export default function PromotionsPage() {
             description: `₹${totalDeduction.toFixed(2)} has been deducted from your earnings and added to your marketing wallet.`
         })
     }
-
-
+    
     return (
         <ProFeatureWrapper
             featureName="Marketing"
@@ -413,9 +658,17 @@ export default function PromotionsPage() {
                         <h1 className="text-2xl font-semibold md:text-3xl flex items-center gap-2"><Percent className="h-6 w-6" /> Marketing</h1>
                         <p className="text-muted-foreground">Create and manage your restaurant promotions</p>
                     </div>
-                    <Button onClick={handleCreateClick}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Create Promotion
-                    </Button>
+                    <div className="flex flex-col gap-2 sm:w-auto">
+                        <Button onClick={handleCreateClick} className="w-full">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Create Promotion
+                        </Button>
+                        <Button variant="outline" onClick={() => toast({ title: "Coming Soon!", description: "This feature will be available in a future update."})} className="w-full">
+                            <WhatsappIcon className="mr-2 h-4 w-4"/> Create WP Campaign
+                        </Button>
+                        <Button variant="outline" onClick={() => toast({ title: "Coming Soon!", description: "Email campaigns will be available in a future update."})} className="w-full">
+                            <Mail className="mr-2 h-4 w-4"/> Create Email Campaign
+                        </Button>
+                    </div>
                 </div>
 
                 <Tabs value={mainTab} onValueChange={setMainTab}>
@@ -427,17 +680,13 @@ export default function PromotionsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="dashboard">Dashboard</SelectItem>
-                                    <SelectItem value="all">All Promotions</SelectItem>
                                     <SelectItem value="analytics">Analytics</SelectItem>
-                                    <SelectItem value="permissions">Permissions</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
-                        <TabsList className="hidden sm:grid w-full grid-cols-2 sm:w-auto sm:grid-cols-4">
+                        <TabsList className="hidden sm:grid w-full grid-cols-2 sm:w-auto sm:grid-cols-2">
                             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                            <TabsTrigger value="all">All Promotions</TabsTrigger>
                             <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                            <TabsTrigger value="permissions">Permissions</TabsTrigger>
                         </TabsList>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -497,178 +746,100 @@ export default function PromotionsPage() {
                                 </CardContent>
                             </Card>
                         </div>
-
-                        <div className="grid lg:grid-cols-2 gap-6 mt-6">
-                            <Card className="lg:col-span-1">
-                                <CardHeader>
-                                    <CardTitle>Top Performing Promotions</CardTitle>
-                                    <CardDescription>Based on conversion rate</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {topPromotions.map((promo, index) => (
-                                        <div key={index}>
-                                            <div className="flex justify-between items-center">
-                                                <p className="font-medium">{promo.title}</p>
-                                                <Badge variant={promo.status === 'Active' ? 'secondary' : 'outline'} className={cn(promo.status === 'Active' ? "bg-primary/20 text-primary border-primary/20" : "")}>{promo.status}</Badge>
-                                            </div>
-                                            <p className="text-sm text-muted-foreground">{promo.description}</p>
-                                            <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                                                <span>Views: {promo.views}</span>
-                                                <span>Clicks: {promo.clicks}</span>
-                                                <span>Conversions: {promo.conversions}</span>
-                                            </div>
-                                            {index < topPromotions.length - 1 && <Separator className="my-4" />}
-                                        </div>
-                                    ))}
-                                    <Button variant="ghost" className="w-full justify-start text-primary p-2 h-auto" onClick={handleCreateClick}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Create New Promotion
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                            <Card className="lg:col-span-1">
-                                <Tabs defaultValue="activity" className="h-full flex flex-col">
-                                    <CardHeader className="p-4 border-b">
-                                        <TabsList className="grid w-full grid-cols-2">
-                                            <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-                                            <TabsTrigger value="tips">Promotion Tips</TabsTrigger>
-                                        </TabsList>
-                                    </CardHeader>
-                                    <TabsContent value="activity" className="flex-grow">
-                                        <CardContent className="p-6 space-y-4">
-                                            {recentActivity.map((activity, index) => (
-                                                <div key={index} className="flex items-start gap-4">
-                                                    <div className={cn("p-2 rounded-full flex-shrink-0", activity.color)}>
-                                                        {activity.icon}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-medium">{activity.title}</p>
-                                                        <p className="text-sm text-muted-foreground">{activity.description}</p>
-                                                        <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </CardContent>
-                                    </TabsContent>
-                                    <TabsContent value="tips" className="flex-grow">
-                                        <CardContent className="p-6 space-y-4">
-                                            {promotionTips.map((tip, index) => (
-                                                <div key={index} className="flex items-start gap-4">
-                                                    <div className={cn("p-2 rounded-full flex-shrink-0", tip.color)}>
-                                                        {tip.icon}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-medium">{tip.title}</p>
-                                                        <p className="text-sm text-muted-foreground">{tip.description}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            <Button variant="outline" className="w-full mt-4">
-                                                View All Tips
-                                            </Button>
-                                        </CardContent>
-                                    </TabsContent>
-                                </Tabs>
-                            </Card>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="all" className="mt-6">
-                        <div className="space-y-4">
-                            <div className="flex flex-col sm:flex-row items-center gap-4">
-                                <div className="relative flex-1 w-full">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input placeholder="Search promotions..." className="pl-9 w-full" />
-                                </div>
-                                <Button variant="outline" className="w-full sm:w-auto"><Filter className="mr-2 h-4 w-4" /> Filter</Button>
+                        <div className="mt-6">
+                            <div className="mb-4">
+                                <h2 className="text-xl font-semibold">All Campaigns</h2>
+                                <p className="text-muted-foreground text-sm">An overview of all your promotional campaigns.</p>
                             </div>
-
-                            <Tabs value={activePromotionTab} onValueChange={setActivePromotionTab} className="w-full">
-                                <div className="sm:hidden w-full">
-                                    <Select value={activePromotionTab} onValueChange={setActivePromotionTab}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="All">All</SelectItem>
-                                            <SelectItem value="Active">Active</SelectItem>
-                                            <SelectItem value="Scheduled">Scheduled</SelectItem>
-                                            <SelectItem value="Ended">Ended</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <TabsList className="hidden sm:grid bg-muted p-1 rounded-lg w-full sm:w-auto grid-cols-4">
-                                    <TabsTrigger value="All">All</TabsTrigger>
-                                    <TabsTrigger value="Active">Active</TabsTrigger>
-                                    <TabsTrigger value="Scheduled">Scheduled</TabsTrigger>
-                                    <TabsTrigger value="Ended">Ended</TabsTrigger>
-                                </TabsList>
-
-                                <div className="mt-6 space-y-4">
-                                    {filteredPromotions.map((promo) => (
-                                        <Card key={promo.id}>
-                                            <CardContent className="p-6 flex flex-col md:flex-row gap-6">
-                                                <div className="flex-shrink-0 w-24 h-24 bg-muted rounded-md flex items-center justify-center">
-                                                    <Image src={promo.image} alt={promo.title} width={96} height={96} data-ai-hint="promotion abstract" className="rounded-md object-cover" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <h3 className="text-lg font-semibold">{promo.title}</h3>
-                                                                <Badge className={cn("text-xs", statusBadgeStyles[promo.status])}>{promo.status}</Badge>
-                                                            </div>
-                                                            <p className="text-sm text-muted-foreground mt-1">{promo.description}</p>
-                                                        </div>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1"><MoreHorizontal className="h-4 w-4" /></Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                                                                <DropdownMenuItem>View Analytics</DropdownMenuItem>
-                                                                <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
-                                                        <div>
-                                                            <p className="text-muted-foreground">Type</p>
-                                                            <p className="font-medium">{promo.type}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-muted-foreground">Value</p>
-                                                            <p className="font-medium">{promo.value}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-muted-foreground">Audience</p>
-                                                            <p className="font-medium flex items-center gap-1"><Users className="h-4 w-4" /> {promo.audience}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-muted-foreground">Budget</p>
-                                                            <p className="font-medium">{promo.budget}</p>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1"><CalendarIcon className="h-3 w-3" />{promo.dateRange}</p>
-                                                </div>
-                                            </CardContent>
-                                            <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                                                <div className="flex items-center gap-3">
-                                                    <Switch id={`active-${promo.id}`} checked={promo.isActive} onCheckedChange={() => handleTogglePromotionStatus(promo.id)} disabled={promo.status === 'Ended'} />
-                                                    <Label htmlFor={`active-${promo.id}`} className="text-sm font-medium">Active</Label>
-                                                    {promo.views && promo.status !== "Scheduled" && <p className="text-sm text-muted-foreground">{promo.views}</p>}
-                                                </div>
-                                                <Button variant="outline" onClick={() => handleEditClick(promo)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                                            </CardFooter>
-                                        </Card>
-                                    ))}
-                                    {filteredPromotions.length === 0 && (
-                                        <div className="text-center py-16 text-muted-foreground col-span-full">
-                                            <p>No {activePromotionTab.toLowerCase()} promotions to show.</p>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {promotions.map((promo) => (
+                                    <Card
+                                    key={promo.id}
+                                    className="flex flex-col shadow-sm hover:shadow-lg transition-shadow"
+                                    >
+                                    <CardContent className="p-4 flex-grow space-y-2">
+                                        <div className="flex justify-between items-start">
+                                            <h3 className="font-bold text-lg pr-4">
+                                                {promo.title}
+                                            </h3>
+                                            <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                    "capitalize font-medium text-xs",
+                                                    statusBadgeStyles[promo.status]
+                                                )}
+                                            >
+                                                {promo.status}
+                                            </Badge>
                                         </div>
-                                    )}
-                                </div>
-                            </Tabs>
+                                        <p className="text-sm text-muted-foreground line-clamp-2">
+                                            {promo.shortDescription}
+                                        </p>
+
+                                        <div className="space-y-1 text-sm pt-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-muted-foreground">Offer</span>
+                                                <span className="font-semibold text-base text-primary">{promo.value}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-muted-foreground">Budget</span>
+                                                <span className="font-semibold">{promo.budget}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-muted-foreground">Expires</span>
+                                                <span className="font-semibold">{format(new Date(promo.dateRange.split(' - ')[1]), "MMM d, yyyy")}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-muted-foreground">Coupon</span>
+                                                <Badge variant="secondary">{promo.couponCode}</Badge>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="bg-muted/50 p-2 flex justify-end">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm">
+                                                Actions <MoreHorizontal className="ml-2 h-4 w-4" />
+                                            </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                                onClick={() => handleTogglePromotionStatus(promo.id)}
+                                                disabled={promo.status === 'Ended'}
+                                            >
+                                                {promo.isActive ? (
+                                                <PowerOff className="mr-2 h-4 w-4" />
+                                                ) : (
+                                                <Power className="mr-2 h-4 w-4" />
+                                                )}
+                                                {promo.isActive ? "Pause" : "Activate"}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() => handleEditClick(promo)}
+                                            >
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                className="text-destructive"
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </CardFooter>
+                                    </Card>
+                                ))}
+                                {filteredPromotions.length === 0 && (
+                                    <div className="text-center py-16 text-muted-foreground col-span-full">
+                                        <p>No {activePromotionTab.toLowerCase()} promotions to show.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </TabsContent>
+                    
                     <TabsContent value="analytics" className="mt-6 space-y-6">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div>
@@ -818,73 +989,6 @@ export default function PromotionsPage() {
                             </Card>
                         </div>
                     </TabsContent>
-
-                    <TabsContent value="permissions" className="mt-6 space-y-6">
-                        <Card>
-                            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <div>
-                                    <CardTitle>Staff Permissions</CardTitle>
-                                    <CardDescription>Manage who can create and edit promotions</CardDescription>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Staff</Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="overflow-x-auto">
-                                    <div className="border rounded-lg min-w-[800px]">
-                                        <div className="grid grid-cols-10 gap-4 px-4 py-3 font-medium text-muted-foreground bg-muted/50 border-b">
-                                            <div className="col-span-6">Staff Member</div>
-                                            <div className="text-center">View</div>
-                                            <div className="text-center">Create</div>
-                                            <div className="text-center">Edit</div>
-                                            <div className="text-center">Delete</div>
-                                        </div>
-                                        <div className="divide-y divide-border">
-                                            {staffPermissions.map((staff) => (
-                                                <div key={staff.email} className="grid grid-cols-10 gap-4 items-center p-4">
-                                                    <div className="col-span-6 flex items-center gap-3">
-                                                        <Avatar>
-                                                            <AvatarImage src={staff.avatar} alt={staff.name} />
-                                                            <AvatarFallback>{staff.avatarFallback}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <p className="font-medium">{staff.name}</p>
-                                                            <p className="text-sm text-muted-foreground">{staff.email}</p>
-                                                        </div>
-                                                        <Badge variant="outline">{staff.role}</Badge>
-                                                    </div>
-                                                    <div className="flex justify-center"><Switch checked={staff.permissions.view} onCheckedChange={(val) => handlePermissionChange(staff.email, 'view', val)} /></div>
-                                                    <div className="flex justify-center"><Switch checked={staff.permissions.create} onCheckedChange={(val) => handlePermissionChange(staff.email, 'create', val)} /></div>
-                                                    <div className="flex justify-center"><Switch checked={staff.permissions.edit} onCheckedChange={(val) => handlePermissionChange(staff.email, 'edit', val)} /></div>
-                                                    <div className="flex justify-center"><Switch checked={staff.permissions.delete} onCheckedChange={(val) => handlePermissionChange(staff.email, 'delete', val)} /></div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Permission Levels</CardTitle>
-                                <CardDescription>Understanding staff permission levels.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {permissionLevels.map(level => (
-                                    <div key={level.title} className="flex items-start gap-4">
-                                        <div className="p-2 bg-muted rounded-full">
-                                            <level.icon className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">{level.title}</p>
-                                            <p className="text-sm text-muted-foreground">{level.description}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
                 </Tabs>
 
                 <Sheet open={isPromotionDialogOpen} onOpenChange={setIsPromotionDialogOpen}>
@@ -901,151 +1005,272 @@ export default function PromotionsPage() {
                         <form className="flex-1 flex flex-col overflow-hidden">
                             <Tabs defaultValue="basic" className="flex-1 flex flex-col overflow-hidden">
                                 <div className="px-6 border-b py-2">
-                                    <TabsList className="w-full">
-                                        <TabsTrigger value="basic" className="flex-1">Basic Info</TabsTrigger>
-                                        <TabsTrigger value="type" className="flex-1">Promotion Type</TabsTrigger>
-                                        <TabsTrigger value="targeting" className="flex-1">Targeting</TabsTrigger>
-                                        <TabsTrigger value="preview" className="flex-1">Preview</TabsTrigger>
+                                    <TabsList className="grid w-full grid-cols-3 h-8">
+                                        <TabsTrigger value="basic" className="text-xs px-2 h-6">Basic Info</TabsTrigger>
+                                        <TabsTrigger value="targeting" className="text-xs px-2 h-6">Targeting</TabsTrigger>
+                                        <TabsTrigger value="preview" className="text-xs px-2 h-6">Preview</TabsTrigger>
                                     </TabsList>
                                 </div>
                                 <TabsContent value="basic" className="p-6 space-y-4 overflow-y-auto flex-1">
                                     <div className="space-y-2">
-                                        <Label htmlFor="promo-name">Promotion Name</Label>
+                                        <Label htmlFor="promo-name">Campaign Title</Label>
                                         <Input id="promo-name" defaultValue={editingPromotion?.title} placeholder="e.g. Weekend Bonanza" />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="promo-desc">Description</Label>
-                                        <Textarea id="promo-desc" defaultValue={editingPromotion?.description} placeholder="A short description of the promotion." />
+                                        <Label htmlFor="short-description">Short Description</Label>
+                                        <Input 
+                                            id="short-description" 
+                                            defaultValue={editingPromotion?.shortDescription} 
+                                            placeholder="e.g. Amazing weekend deals!" 
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Date Range</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    id="date"
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full justify-start text-left font-normal",
-                                                        !date && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {date?.from ? (
-                                                        date.to ? (
-                                                            <>
-                                                                {format(date.from, "LLL dd, y")} -{" "}
-                                                                {format(date.to, "LLL dd, y")}
-                                                            </>
-                                                        ) : (
-                                                            format(date.from, "LLL dd, y")
-                                                        )
-                                                    ) : (
-                                                        <span>Pick a date range</span>
-                                                    )}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    initialFocus
-                                                    mode="range"
-                                                    selected={date}
-                                                    onSelect={setDate}
-                                                    numberOfMonths={2}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
+                                        <Label htmlFor="couponCode">Coupon Code</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                id="couponCode"
+                                                defaultValue={editingPromotion?.couponCode}
+                                                placeholder="e.g. WEEKEND20"
+                                                className="flex-1"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    const code = `CRV${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+                                                    // Set the coupon code value
+                                                    const input = document.getElementById('couponCode') as HTMLInputElement;
+                                                    if (input) input.value = code;
+                                                }}
+                                            >
+                                                <Sparkles className="mr-2 h-4 w-4" />
+                                                Generate
+                                            </Button>
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Promotion Image</Label>
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-24 w-24 bg-muted rounded-md flex items-center justify-center">
-                                                <Image src={editingPromotion?.image || 'https://placehold.co/100x100.png'} alt="promotion image" width={96} height={96} data-ai-hint="promotion abstract" className="rounded-md object-cover" />
-                                            </div>
-                                            <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Upload Image</Button>
+                                        <Label htmlFor="ad-budget">Ad Budget</Label>
+                                        <div className="relative">
+                                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                            id="ad-budget"
+                                            type="number"
+                                            placeholder="e.g. 500"
+                                            className="pl-8"
+                                            value={adBudget}
+                                            onChange={(e) => setAdBudget(e.target.value === '' ? '' : Number(e.target.value))}
+                                            />
                                         </div>
-                                        <p className="text-xs text-muted-foreground">Recommended size: 800x400px. Max file size: 2MB</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Estimated impressions: <span className="font-semibold text-primary">{impressions.toLocaleString()}</span>
+                                        </p>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <Label className="text-base font-semibold">Objective</Label>
+                                        <RadioGroup value={objective} onValueChange={setObjective} className="grid grid-cols-1 gap-3">
+                                            {[
+                                                { value: "boost-orders", label: "Boost orders" },
+                                                { value: "promote-dish", label: "Promote new dish/menu" },
+                                                { value: "drive-traffic", label: "Drive traffic to outlet" },
+                                                { value: "highlight-discounts", label: "Highlight discounts/offers" },
+                                                { value: "brand-awareness", label: "Brand awareness" },
+                                            ].map(({value, label}) => (
+                                                <div key={value} className="flex items-center gap-2 rounded-md border p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                                                    <RadioGroupItem value={value} id={`objective-${value}`} />
+                                                    <Label htmlFor={`objective-${value}`} className="font-normal flex-1 cursor-pointer">{label}</Label>
+                                                </div>
+                                            ))}
+                                        </RadioGroup>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Select Offer(s)</Label>
+                                         <MultiOfferSelect
+                                            offers={promotionsData}
+                                            selectedOfferIds={selectedOffers}
+                                            onSelectionChange={setSelectedOffers}
+                                        />
+                                        <p className="text-xs text-muted-foreground">Select one or more active offers to use for this promotion. This offer will be used to promote your business.</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Start Date</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                            "w-full justify-start text-left font-normal",
+                                                            !startDate && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>End Date</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                            "w-full justify-start text-left font-normal",
+                                                            !endDate && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                    </div>
+                                    {duration !== null && (
+                                        <div className="text-sm text-center text-muted-foreground p-2 bg-muted rounded-md">
+                                            Total duration: <span className="font-semibold text-primary">{duration} day{duration !== 1 && 's'}</span>
+                                        </div>
+                                    )}
+                                   <div className="space-y-4">
+                                        <Label className="text-base font-semibold">Placement Options</Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Choose where your promotion will be displayed. Each placement is an add-on and may affect the cost.
+                                        </p>
+                                        <div className="space-y-3">
+                                            {placementOptions.map((placement) => (
+                                                <div key={placement.id} className="flex items-center gap-2 rounded-md border p-3 justify-between">
+                                                    <div className="flex items-start gap-3">
+                                                        <Checkbox id={placement.id} checked={selectedPlacements.includes(placement.id)} onCheckedChange={() => handlePlacementChange(placement.id)} className="mt-1" />
+                                                        <div>
+                                                            <Label htmlFor={placement.id} className="text-sm font-medium leading-none">{placement.label}</Label>
+                                                            <div className="flex items-center gap-1.5 mt-1.5">
+                                                                {placement.tags.map(tag => (
+                                                                    <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="font-semibold flex items-center"><IndianRupee className="h-3.5 w-3.5" />{placement.cost}</p>
+                                                        <p className="text-xs text-muted-foreground">Add-on</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <Card className="bg-muted/50">
+                                            <CardHeader>
+                                                <CardTitle className="text-lg">Campaign Summary</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-3 text-sm">
+                                                <div className="flex justify-between">
+                                                    <p className="text-muted-foreground">Base Ad Budget</p>
+                                                    <p className="font-medium flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-0.5"/>{(typeof adBudget === 'number' ? adBudget : 0).toFixed(2)}</p>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <p className="text-muted-foreground">Add-ons Cost</p>
+                                                    <p className="font-medium flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-0.5"/>{totalPlacementCost.toFixed(2)}</p>
+                                                </div>
+                                                <Separator/>
+                                                <div className="flex justify-between font-bold text-base">
+                                                    <p>Total Payable</p>
+                                                    <p className="flex items-center text-primary"><IndianRupee className="h-4 w-4 mr-0.5"/>{finalPayable.toFixed(2)}</p>
+                                                </div>
+                                            </CardContent>
+                                            <CardFooter>
+                                                <p className="text-xs text-muted-foreground">Note: The total payable amount will be deducted from your ad wallet. If your wallet has insufficient funds, please add money first.</p>
+                                            </CardFooter>
+                                        </Card>
                                     </div>
                                 </TabsContent>
-                                <TabsContent value="type" className="p-6 space-y-4 overflow-y-auto flex-1">
-                                    <RadioGroup defaultValue="discount" className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                        <div>
-                                            <RadioGroupItem value="discount" id="type-discount" className="peer sr-only" />
-                                            <Label htmlFor="type-discount" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                                <Percent className="mb-3 h-6 w-6" />
-                                                Discount
-                                            </Label>
-                                        </div>
-                                        <div>
-                                            <RadioGroupItem value="bogo" id="type-bogo" className="peer sr-only" />
-                                            <Label htmlFor="type-bogo" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                                <Gift className="mb-3 h-6 w-6" />
-                                                BOGO
-                                            </Label>
-                                        </div>
-                                        <div>
-                                            <RadioGroupItem value="free-item" id="type-free-item" className="peer sr-only" />
-                                            <Label htmlFor="type-free-item" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                                <Ticket className="mb-3 h-6 w-6" />
-                                                Free Item
-                                            </Label>
-                                        </div>
-                                    </RadioGroup>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="discount-type">Discount Type</Label>
-                                            <Select defaultValue="percentage">
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="percentage">Percentage</SelectItem>
-                                                    <SelectItem value="fixed">Fixed Amount</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="discount-value">Value</Label>
-                                            <Input id="discount-value" type="number" placeholder="e.g. 15 for 15%" />
+                                <TabsContent value="targeting" className="p-6 overflow-y-auto flex-1 space-y-6">
+                                     <div className="space-y-4">
+                                        <Label className="text-base font-semibold">Service</Label>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                            {['Delivery', 'Takeaway', 'Offline Takeaway', 'Dine-in', 'Booking'].map(service => (
+                                                <div key={service} className="flex items-center gap-2 rounded-md border p-3">
+                                                    <Checkbox id={`service-${service.toLowerCase().replace(' ', '-')}`} />
+                                                    <Label htmlFor={`service-${service.toLowerCase().replace(' ', '-')}`} className="text-sm font-normal">{service}</Label>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
-                                </TabsContent>
-                                <TabsContent value="targeting" className="p-6 space-y-6 overflow-y-auto flex-1">
                                     <div>
                                         <Label className="text-base font-semibold">Customer Segment</Label>
                                         <p className="text-sm text-muted-foreground">Choose which customers are eligible for this promotion.</p>
                                         <RadioGroup defaultValue="all" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                                            <Label htmlFor="target-all" className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-accent has-[:checked]:border-primary">
-                                                <RadioGroupItem value="all" id="target-all" /> All Customers
-                                            </Label>
-                                            <Label htmlFor="target-new" className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-accent has-[:checked]:border-primary">
-                                                <RadioGroupItem value="new" id="target-new" /> New Customers
-                                            </Label>
-                                            <Label htmlFor="target-returning" className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-accent has-[:checked]:border-primary">
-                                                <RadioGroupItem value="returning" id="target-returning" /> Returning Customers
-                                            </Label>
+                                            <div>
+                                                <RadioGroupItem value="all" id="target-all" className="peer sr-only" />
+                                                <Label htmlFor="target-all" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"> All Customers</Label>
+                                            </div>
+                                            <div>
+                                                <RadioGroupItem value="new" id="target-new" className="peer sr-only" />
+                                                <Label htmlFor="target-new" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"> New Customers</Label>
+                                            </div>
+                                            <div>
+                                                <RadioGroupItem value="returning" id="target-returning" className="peer sr-only" />
+                                                <Label htmlFor="target-returning" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"> Returning Customers</Label>
+                                            </div>
                                         </RadioGroup>
                                     </div>
-                                    <div>
-                                        <Label className="text-base font-semibold">Conditions</Label>
-                                        <p className="text-sm text-muted-foreground">Set conditions that must be met for the promotion to apply.</p>
-                                        <div className="grid grid-cols-2 gap-4 mt-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="min-order">Minimum Order Value</Label>
-                                                <Input id="min-order" type="number" placeholder="e.g. 500" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="max-discount">Maximum Discount</Label>
-                                                <Input id="max-discount" type="number" placeholder="e.g. 100" />
-                                            </div>
-                                        </div>
-                                    </div>
+                                    
                                 </TabsContent>
-                                <TabsContent value="preview" className="p-6 overflow-y-auto flex-1">
-                                    <div className="bg-muted aspect-[9/16] w-full max-w-sm mx-auto rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-lg">
-                                        <Gift className="h-16 w-16 text-primary mb-4" />
-                                        <h3 className="text-xl font-bold">Weekend Bonanza</h3>
-                                        <p className="text-muted-foreground mt-2">Get 20% off on all orders above ₹500 this weekend!</p>
-                                        <Button className="mt-6">Avail Offer</Button>
-                                    </div>
-                                    <p className="text-center text-xs text-muted-foreground mt-4">This is a preview of how your promotion will appear to customers.</p>
+                                <TabsContent value="preview" className="p-6 space-y-6 overflow-y-auto flex-1">
+                                    <h3 className="font-semibold text-lg">Campaign Summary</h3>
+                                    <Card>
+                                        <CardContent className="p-4 space-y-4">
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Campaign Title</p>
+                                                <p className="font-semibold">{editingPromotion?.title || "Weekend Bonanza"}</p>
+                                            </div>
+                                            <Separator />
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Objective</p>
+                                                <p className="font-semibold">{objectiveLabels[objective]}</p>
+                                            </div>
+                                            <Separator />
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Duration</p>
+                                                <p className="font-semibold">
+                                                    {startDate ? format(startDate, "PPP") : "Not set"} - {endDate ? format(endDate, "PPP") : "Not set"} 
+                                                    {duration && <span className="text-xs text-muted-foreground"> ({duration} days)</span>}
+                                                </p>
+                                            </div>
+                                            <Separator />
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Offers</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {selectedOffers.map(id => {
+                                                        const offer = promotions.find(p => p.id === id);
+                                                        return <Badge key={id} variant="secondary">{offer?.title}</Badge>
+                                                    })}
+                                                    {selectedOffers.length === 0 && <p className="text-sm text-muted-foreground">No offers selected.</p>}
+                                                </div>
+                                            </div>
+                                            <Separator />
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Placements</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {selectedPlacements.map(id => {
+                                                        const placement = placementOptions.find(p => p.id === id);
+                                                        return <Badge key={id} variant="outline">{placement?.label}</Badge>
+                                                    })}
+                                                    {selectedPlacements.length === 0 && <p className="text-sm text-muted-foreground">No placements selected.</p>}
+                                                </div>
+                                            </div>
+                                            <Separator />
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Total Payable</p>
+                                                <p className="font-bold text-xl flex items-center text-primary"><IndianRupee className="h-5 w-5 mr-1" />{finalPayable.toFixed(2)}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 </TabsContent>
                             </Tabs>
                         </form>
@@ -1057,72 +1282,13 @@ export default function PromotionsPage() {
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit">
-                                {editingPromotion ? 'Save Changes' : 'Create & Activate'}
+                            <Button type="button" onClick={() => toast({ title: "Next Step" })}>
+                                Next
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </SheetFooter>
                     </SheetContent>
                 </Sheet>
-                <Sheet open={isWalletDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setAmountToAdd(0); setIsWalletDialogOpen(isOpen); }}>
-                    <SheetContent side="bottom" className="sm:max-w-md mx-auto">
-                        <SheetHeader className="mb-6">
-                            <SheetTitle>Add Funds to Wallet</SheetTitle>
-                            <SheetDescription>
-                                Select or enter an amount to add to your marketing budget.
-                            </SheetDescription>
-                        </SheetHeader>
-                        <div className="py-4 space-y-4">
-                            <div className="grid grid-cols-3 gap-2">
-                                {[500, 1000, 2500].map(amount => (
-                                    <Button key={amount} variant="outline" onClick={() => setAmountToAdd(amount)}>
-                                        ₹{amount}
-                                    </Button>
-                                ))}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="custom-amount">Or enter a custom amount</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
-                                    <Input
-                                        id="custom-amount"
-                                        type="number"
-                                        className="pl-6"
-                                        value={amountToAdd || ""}
-                                        onChange={(e) => setAmountToAdd(parseInt(e.target.value) || 0)}
-                                        placeholder="0"
-                                    />
-                                </div>
-                            </div>
-                            {amountToAdd > 0 && (
-                                <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <p>Amount</p>
-                                        <p className="font-medium">₹{amountToAdd.toFixed(2)}</p>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <p>GST (18%)</p>
-                                        <p className="font-medium">₹{(amountToAdd * 0.18).toFixed(2)}</p>
-                                    </div>
-                                    <Separator />
-                                    <div className="flex justify-between font-bold">
-                                        <p>Total Payable</p>
-                                        <p>₹{(amountToAdd * 1.18).toFixed(2)}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex flex-col gap-2 mt-6">
-                            <Button className="w-full" onClick={handleAddFunds} disabled={amountToAdd <= 0}>
-                                Proceed to Pay
-                            </Button>
-                            <Button variant="secondary" className="w-full" onClick={handlePayFromWallet} disabled={amountToAdd <= 0}>
-                                Pay with App Wallet
-                            </Button>
-                        </div>
-                    </SheetContent>
-                </Sheet>
-
                 <AlertDialog open={isWalletConfirmOpen} onOpenChange={setIsWalletConfirmOpen}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
@@ -1133,7 +1299,7 @@ export default function PromotionsPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={confirmPayFromWallet}>Confirm & Pay</AlertDialogAction>
+                            <AlertDialogAction onClick={confirmPayFromWallet}>Confirm &amp; Pay</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
