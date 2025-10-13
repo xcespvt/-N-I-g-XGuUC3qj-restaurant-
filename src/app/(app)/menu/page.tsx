@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAdd, useGet } from "@/hooks/useApi";
+import { useAdd, useGet, usePut, useQueryHelpers } from "@/hooks/useApi";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,8 @@ import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { MenuItemForm } from "@/components/menu/MenuItemForm";
 import { MenuSearchAndFilter } from "@/components/menu/MenuSearchAndFilter";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { useFilteredPagination } from "@/hooks/useFilteredPagination";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/pagination/PaginationControls";
 import { buildMenuItemApiPayload } from "@/lib/menuUtils";
 
 // Removed legacy local form state; MenuItemForm manages its own form values
@@ -60,6 +61,7 @@ export default function MenuPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const [pendingNewItem, setPendingNewItem] = useState<any | null>(null);
+  const { invalidate } = useQueryHelpers();
 
   // Get the current branch's restaurantId
   const currentBranch = branches.find(branch => branch.id === selectedBranch);
@@ -71,6 +73,7 @@ export default function MenuPage() {
     message: string;
     data: Array<{
       _id: string;
+      itemId?: string;
       restaurantId: string;
       name: string;
       description: string;
@@ -123,6 +126,7 @@ export default function MenuPage() {
     
     return apiMenuData.data.map((item, index) => ({
       id: Date.now() + index, // Generate unique ID
+      itemId: item.itemId ?? item._id,
       name: item.name,
       description: item.description,
       price: item.pricing_options[0]?.price || 0,
@@ -179,6 +183,52 @@ export default function MenuPage() {
 
   const [activeSheet, setActiveSheet] = useState<AddSheetType>(null);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  // Edit API coordination state
+  const [editTarget, setEditTarget] = useState<{ itemId: string } | null>(null);
+  const [pendingUpdatePayload, setPendingUpdatePayload] = useState<any | null>(null);
+
+  // Build dynamic update URL based on restaurantId and edit target
+  const updateUrl = restaurantId && editTarget?.itemId
+    ? `https://backend.crevings.com/api/menu/updateitems/${restaurantId}/${editTarget.itemId}`
+    : `https://backend.crevings.com/api/menu/updateitems/${restaurantId ?? ''}/`;
+
+  // PUT mutation for editing menu items
+  const updateMenuItemMutation = usePut<any, any>(updateUrl, {
+    onSuccess: () => {
+      toast({
+        title: "Menu Item Updated",
+        description: "The menu item has been updated successfully.",
+      });
+      // Ensure UI reflects latest server state
+      if (restaurantId) {
+        invalidate(['menu-items', restaurantId, currentPage]);
+      }
+      setEditTarget(null);
+      setPendingUpdatePayload(null);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error Updating Menu Item",
+        description: "Failed to update the menu item. Please try again.",
+      });
+      console.error("Error updating menu item:", error);
+      // Re-sync with server on failure too
+      if (restaurantId) {
+        invalidate(['menu-items', restaurantId, currentPage]);
+      }
+      setEditTarget(null);
+      setPendingUpdatePayload(null);
+    },
+  });
+
+  // Trigger mutation after URL becomes valid and payload is ready
+  useEffect(() => {
+    if (restaurantId && editTarget?.itemId && pendingUpdatePayload) {
+      updateMenuItemMutation.mutate(pendingUpdatePayload);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId, editTarget?.itemId, pendingUpdatePayload]);
 
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -194,23 +244,53 @@ export default function MenuPage() {
 
   // Removed legacy local form handlers; MenuItemForm manages these internally
 
-  // Pagination logic that respects search and category filters
+  // Pagination logic using reusable hook and server metadata
   const itemsPerPage = apiMenuData?.pagination?.itemsPerPage ?? 10;
-  const {
-    pageItems,
-    totalItems: computedTotalItems,
-    totalPages: computedTotalPages,
-    startIndex,
-    endIndex,
-  } = useFilteredPagination(
-    displayMenuItems,
-    activeCategory,
-    searchTerm,
-    currentPage,
-    setCurrentPage,
-    itemsPerPage,
-    apiMenuData?.pagination?.totalItems
-  );
+
+  const filteredMenu = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return displayMenuItems.filter(
+      (item) =>
+        (activeCategory === "All" || item.category === activeCategory) &&
+        item.name.toLowerCase().includes(term)
+    );
+  }, [displayMenuItems, activeCategory, searchTerm]);
+
+  const localIsFiltered = searchTerm.trim() !== "" || activeCategory !== "All";
+
+  let pageItems: MenuItem[] = [];
+  let computedTotalItems = 0;
+  let computedTotalPages = 1;
+  let startIndex = 0;
+  let endIndex = 0;
+
+  if (localIsFiltered) {
+    const {
+      pageItems: pageFiltered,
+      totalItems,
+      totalPages,
+      startIndex: sIdx,
+      endIndex: eIdx,
+    } = usePagination<MenuItem>(filteredMenu, currentPage, setCurrentPage, itemsPerPage);
+    pageItems = pageFiltered;
+    computedTotalItems = totalItems;
+    computedTotalPages = totalPages;
+    startIndex = sIdx;
+    endIndex = eIdx;
+  } else {
+    const apiTotalItems = apiMenuData?.pagination?.totalItems ?? displayMenuItems.length;
+    computedTotalItems = apiTotalItems;
+    computedTotalPages = Math.max(1, Math.ceil((apiTotalItems || 0) / itemsPerPage));
+    startIndex = Math.min((currentPage - 1) * itemsPerPage, Math.max(0, apiTotalItems - 1));
+    endIndex = Math.min(startIndex + itemsPerPage, apiTotalItems);
+    // In unfiltered mode, items are already server-limited to the current page
+    pageItems = displayMenuItems;
+  }
+
+  // Reset to first page on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, activeCategory, setCurrentPage]);
 
   const handleOpenAdd = (type: AddSheetType) => {
     setEditingItem(null);
@@ -311,39 +391,12 @@ export default function MenuPage() {
 
       {/* Pagination Controls */}
       {computedTotalItems > 0 && computedTotalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          
-          <div className="flex items-center gap-1">
-            {Array.from({ length: computedTotalPages }, (_, i) => i + 1).map((pageNum) => (
-              <Button
-                key={pageNum}
-                variant={currentPage === pageNum ? "default" : "outline"}
-                size="sm"
-                className="w-10 h-10"
-                onClick={() => setCurrentPage(pageNum)}
-              >
-                {pageNum}
-              </Button>
-            ))}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(computedTotalPages, prev + 1))}
-            disabled={currentPage === computedTotalPages}
-          >
-            Next
-          </Button>
-        </div>
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={computedTotalPages}
+          onPageChange={setCurrentPage}
+          className="mt-8"
+        />
       )}
 
       {/* Pagination Info */}
@@ -370,6 +423,41 @@ export default function MenuPage() {
               // If editing, update local store with full MenuItem object
               if (editingItem) {
                 updateMenuItem({ ...editingItem, ...itemData });
+                // Prepare and send API update if we have required identifiers
+                if (!restaurantId) {
+                  toast({
+                    variant: "destructive",
+                    title: "Restaurant ID Missing",
+                    description: "Please select a valid branch with restaurant ID.",
+                  });
+                } else {
+                  const targetId = (editingItem as any)?.itemId;
+                  if (!targetId) {
+                    // If editing an item without backend id, skip API call
+                    toast({
+                      variant: "destructive",
+                      title: "Item ID Missing",
+                      description: "This item lacks a backend ID; cannot update on server.",
+                    });
+                  } else {
+                    const payload = {
+                      name: itemData.name,
+                      description: itemData.description,
+                      available: itemData.available,
+                      type: "item",
+                      category: itemData.category,
+                      images: [
+                        (editingItem?.image || "https://placehold.co/300x200.png")
+                      ],
+                      pricing_unit: "quantity",
+                      pricing_options: [
+                        { label: "Regular", price: itemData.price, default: true }
+                      ],
+                    };
+                    setPendingUpdatePayload(payload);
+                    setEditTarget({ itemId: targetId });
+                  }
+                }
                 setActiveSheet(null);
                 setEditingItem(null);
                 return;

@@ -118,6 +118,8 @@ export interface MenuItem {
     available: boolean;
     dietaryType: 'Veg' | 'Non-Veg';
     portionOptions?: { name: string; price: number }[];
+    // Optional server identifier for API operations
+    itemId?: string;
 }
 
 export type TakeawayCartItem = Omit<MenuItem, 'price'> & { 
