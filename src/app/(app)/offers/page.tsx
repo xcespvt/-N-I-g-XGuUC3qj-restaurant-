@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart2,
   Gift,
@@ -70,6 +70,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useGet, usePost, usePut, useQueryHelpers } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/pagination/PaginationControls";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
@@ -305,9 +310,11 @@ const ItemCombobox = ({
 };
 
 export default function OffersPage() {
-  const { menuItems } = useAppStore();
+  const { menuItems, branches, selectedBranch } = useAppStore();
   const [offers, setOffers] = useState<Offer[]>(initialOffersData);
   const [activeTab, setActiveTab] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -318,12 +325,304 @@ export default function OffersPage() {
 
   const { toast } = useToast();
 
-  const filteredOffers = offers.filter(
+  // Resolve restaurantId from selected branch
+  const restaurantId = branches.find((b) => b.id === selectedBranch)?.restaurantId;
+
+  // Query helpers for cache control
+  const { invalidate, set } = useQueryHelpers();
+
+  // Fetch offers from backend
+  type OfferApi = {
+    restaurantId: string;
+    offerId: string;
+    offerTitle: string;
+    description?: string;
+    offerType:
+      | "Percentage Discount"
+      | "Flat Discount"
+      | "Buy-One-Get-One (BOGO)"
+      | "Free Item"
+      | "Happy Hour";
+    discountPercentage?: number;
+    discountAmount?: number;
+    freeItem?: string;
+    bogoItems?: string;
+    minimumOrder?: number;
+    validUntil: string;
+    isActive?: boolean;
+    offerStatus?: "Active" | "Paused" | "Scheduled";
+    createdAt?: string;
+    updatedAt?: string;
+    __v?: number;
+  };
+
+  const {
+    data: apiOffersData,
+    error: offersError,
+    isLoading: offersLoading,
+  } = useGet<{ data?: OfferApi[]; [k: string]: any }>(
+    ["offers", restaurantId ?? "no-rid", `${currentPage}`, `${pageSize}`],
+    restaurantId
+      ? `https://backend.crevings.com/api/offers/offers/${restaurantId}`
+      : `https://backend.crevings.com/api/offers/offers/__restaurant__`,
+    { page: currentPage, limit: pageSize },
+    { enabled: !!restaurantId }
+  );
+
+  useEffect(() => {
+    if (offersError) {
+      toast({
+        variant: "destructive",
+        title: "Failed to load offers",
+        description: (offersError as any)?.message || "Please try again.",
+      });
+    }
+  }, [offersError, toast]);
+
+  const apiOffers = (apiOffersData as any)?.data as OfferApi[] | undefined;
+
+  const transformedOffers: Offer[] = (apiOffers ?? []).map((item) => {
+    const status: OfferStatus = (item.offerStatus as OfferStatus) || (item.isActive ? "Active" : "Paused");
+    const type: OfferType =
+      item.offerType === "Percentage Discount" || item.offerType === "Happy Hour"
+        ? "Percentage"
+        : item.offerType === "Flat Discount"
+        ? "Flat"
+        : item.offerType === "Buy-One-Get-One (BOGO)"
+        ? "BOGO"
+        : item.offerType === "Free Item"
+        ? "Free Item"
+        : "Percentage";
+    const discount =
+      type === "Percentage"
+        ? `${item.discountPercentage ?? 0}%`
+        : type === "Flat"
+        ? `₹${item.discountAmount ?? 0}`
+        : type === "BOGO"
+        ? "BOGO"
+        : type === "Free Item"
+        ? `Free ${item.freeItem ?? "Item"}`
+        : `${item.discountPercentage ?? 0}%`;
+    const minOrder =
+      typeof item.minimumOrder === "number" ? `₹${item.minimumOrder}` : "N/A";
+    const validUntil = item.validUntil;
+    const typeIcon =
+      type === "Percentage"
+        ? <Percent className="h-4 w-4" />
+        : type === "Flat"
+        ? <IndianRupee className="h-4 w-4" />
+        : type === "BOGO"
+        ? <Gift className="h-4 w-4" />
+        : <Ticket className="h-4 w-4" />;
+
+    return {
+      id: item.offerId,
+      title: item.offerTitle,
+      shortDescription: item.description || "",
+      description: item.description || "",
+      status,
+      type,
+      discount,
+      minOrder,
+      validUntil,
+      usage: 0,
+      total: 0,
+      typeIcon,
+      couponCode: "-",
+    };
+  });
+
+  // Map UI offer type to API offerType strings
+  const toApiOfferType = (type: OfferType):
+    | "Percentage Discount"
+    | "Flat Discount"
+    | "Buy-One-Get-One (BOGO)"
+    | "Free Item"
+    | "Happy Hour" => {
+    switch (type) {
+      case "Percentage":
+        return "Percentage Discount";
+      case "Flat":
+        return "Flat Discount";
+      case "BOGO":
+        return "Buy-One-Get-One (BOGO)";
+      case "Free Item":
+        return "Free Item";
+      case "Happy Hour":
+        return "Happy Hour";
+    }
+  };
+
+  type AddOfferPayload = {
+    restaurantId: string;
+    offerTitle: string;
+    description?: string;
+    offerType:
+      | "Percentage Discount"
+      | "Flat Discount"
+      | "Buy-One-Get-One (BOGO)"
+      | "Free Item"
+      | "Happy Hour";
+    discountPercentage?: number;
+    discountAmount?: number;
+    freeItem?: string;
+    bogoItems?: string;
+    happyHourTiming?: { startTime: number; endTime: number };
+    minimumOrder?: number;
+    validUntil: number;
+    isActive?: boolean;
+  };
+
+  // Build API payload from form state
+  const buildOfferPayload = (rid: string, state: typeof defaultFormState): AddOfferPayload => {
+    const offerType = toApiOfferType(state.type);
+    const discountNum = state.discount ? parseFloat(state.discount) : undefined;
+    const minOrderNum = state.minOrder ? parseFloat(state.minOrder) : undefined;
+
+    // Resolve item names from IDs for Free Item / BOGO
+    const freeItemName = state.freeItem
+      ? menuItems.find((m) => m.id.toString() === state.freeItem)?.name
+      : undefined;
+    const bogoItemName = state.bogoItem
+      ? menuItems.find((m) => m.id.toString() === state.bogoItem)?.name
+      : undefined;
+
+    // validUntil as epoch ms
+    const validUntilMs = state.validUntil ? new Date(state.validUntil).getTime() : Date.now();
+
+    // Happy Hour timing: derive today’s date with provided HH:mm
+    let happyHourTiming: { startTime: number; endTime: number } | undefined;
+    if (state.type === "Happy Hour" && state.startTime && state.endTime) {
+      const today = new Date();
+      const [sh, sm] = state.startTime.split(":").map(Number);
+      const [eh, em] = state.endTime.split(":").map(Number);
+      const start = new Date(today);
+      start.setHours(sh ?? 0, sm ?? 0, 0, 0);
+      const end = new Date(today);
+      end.setHours(eh ?? 0, em ?? 0, 0, 0);
+      happyHourTiming = { startTime: start.getTime(), endTime: end.getTime() };
+    }
+
+    const payload: AddOfferPayload = {
+      restaurantId: rid,
+      offerTitle: state.title,
+      description: state.description || undefined,
+      offerType,
+      minimumOrder: minOrderNum,
+      validUntil: validUntilMs,
+      isActive: true,
+    };
+
+    // Attach type-specific fields
+    if (offerType === "Percentage Discount") {
+      if (typeof discountNum === "number") payload.discountPercentage = discountNum;
+    } else if (offerType === "Flat Discount") {
+      if (typeof discountNum === "number") payload.discountAmount = discountNum;
+    } else if (offerType === "Free Item") {
+      if (freeItemName) payload.freeItem = freeItemName;
+    } else if (offerType === "Buy-One-Get-One (BOGO)") {
+      // Prefer a friendly default string if available
+      payload.bogoItems = bogoItemName ? `Buy 1 ${bogoItemName} Get 1 Free` : undefined;
+    } else if (offerType === "Happy Hour") {
+      if (typeof discountNum === "number") payload.discountPercentage = discountNum;
+      if (happyHourTiming) payload.happyHourTiming = happyHourTiming;
+    }
+
+    return payload;
+  };
+
+  // Create offer mutation
+  const addOfferMutation = usePost<any, AddOfferPayload>(
+    "https://backend.crevings.com/api/offers/offers/add",
+    {
+      onMutate: async (variables) => {
+        if (!restaurantId) return;
+        const keyExact = [
+          "offers",
+          restaurantId,
+          `${currentPage}`,
+          `${pageSize}`,
+          { page: currentPage, limit: pageSize },
+        ];
+        const prevData = apiOffersData as { data?: any[] } | undefined;
+        const prevList = (prevData as any)?.data as any[] | undefined;
+        const optimistic: OfferApi = {
+          restaurantId,
+          offerId: `temp-${Date.now()}`,
+          offerTitle: variables.offerTitle,
+          description: variables.description,
+          offerType: variables.offerType,
+          discountPercentage: variables.discountPercentage,
+          discountAmount: variables.discountAmount,
+          freeItem: variables.freeItem,
+          bogoItems: variables.bogoItems,
+          minimumOrder: variables.minimumOrder,
+          validUntil: typeof variables.validUntil === "number"
+            ? new Date(variables.validUntil).toISOString()
+            : variables.validUntil as any,
+          isActive: true,
+          offerStatus: "Scheduled",
+        };
+        const updated = { ...(prevData || {}), data: [ ...(prevList ?? []), optimistic ] } as any;
+        set(keyExact as unknown as any[], updated);
+        return { previous: prevData, keyExact } as any;
+      },
+      onSuccess: (_data, variables) => {
+        if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
+        toast({ title: "Offer created", description: `"${variables?.offerTitle}" added.` });
+        // Close the sheet after successful save
+        setIsFormOpen(false);
+        setEditingOffer(null);
+      },
+      onError: (_error, _variables, context: any) => {
+        try {
+          if (context?.keyExact && context?.previous) {
+            set(context.keyExact as unknown as any[], context.previous);
+          }
+        } catch {}
+        toast({
+          variant: "destructive",
+          title: "Couldn’t create offer",
+          description: "Please try again.",
+        });
+      },
+    }
+  );
+
+  const displayOffers = transformedOffers.length > 0 ? transformedOffers : offers;
+  const filteredOffers = displayOffers.filter(
     (offer) => activeTab === "All" || offer.status === activeTab
   );
 
+  // Generic pagination for filtered offers
+  const itemsPerPage = pageSize;
+  const {
+    pageItems: pageOffers,
+    totalItems: computedTotalItems,
+    totalPages: computedTotalPages,
+    startIndex,
+    endIndex,
+  } = usePagination<Offer>(filteredOffers, currentPage, setCurrentPage, itemsPerPage);
+
+  // Reset to first page when tab filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, setCurrentPage]);
+
   const handleInputChange = (field: keyof typeof formState, value: string) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Normalize various date string formats to HTML date input value (YYYY-MM-DD)
+  const toDateInputValue = (value: string | number | Date | undefined | null): string => {
+    if (value === undefined || value === null) return "";
+    try {
+      const d = new Date(value as any);
+      if (isNaN(d.getTime())) return "";
+      return d.toISOString().slice(0, 10);
+    } catch {
+      return "";
+    }
   };
 
   const handleCreateClick = () => {
@@ -343,7 +642,8 @@ export default function OffersPage() {
       couponCode: offer.couponCode,
       discount: offer.discount,
       minOrder: offer.minOrder,
-      validUntil: offer.validUntil,
+      // Ensure date input is pre-filled correctly
+      validUntil: toDateInputValue(offer.validUntil),
     });
     setIsFormOpen(true);
   };
@@ -366,17 +666,78 @@ export default function OffersPage() {
     }
   };
 
+  // Integrate PUT for toggling status with dynamic URL per call
+  const toApiToggleStatus = (status: OfferStatus): "Activate" | "Pause" =>
+    status === "Active" ? "Activate" : "Pause";
+
+  const toggleOfferMutation = useMutation<any, Error, { offerId: string; status: "Activate" | "Pause"; title?: string }>({
+    mutationFn: async (variables: { offerId: string; status: "Activate" | "Pause"; title?: string }) => {
+      const finalUrl = `https://backend.crevings.com/api/offers/offers/toggle/${restaurantId}/${variables.offerId}`;
+      return apiClient<any>(finalUrl, {
+        method: "PUT",
+        body: JSON.stringify({ status: variables.status }),
+      });
+    },
+    onMutate: async (variables) => {
+      if (!restaurantId) return;
+      const keyExact = [
+        "offers",
+        restaurantId,
+        `${currentPage}`,
+        `${pageSize}`,
+        { page: currentPage, limit: pageSize },
+      ];
+      const nextStatus = variables.status === "Activate" ? "Active" : "Paused";
+      const prevData = apiOffersData as { data?: any[] } | undefined;
+      const prevList = (prevData as any)?.data as any[] | undefined;
+      const updatedList = (prevList ?? []).map((item) =>
+        item.offerId === variables.offerId
+          ? { ...item, offerStatus: nextStatus, isActive: nextStatus === "Active" }
+          : item
+      );
+      const updated = { ...(prevData || {}), data: updatedList } as any;
+      // Optimistically set exact cache key so UI reflects immediately
+      // @ts-ignore - helper expects unknown[] key
+      set(keyExact as unknown as any[], updated);
+      return { previous: prevData, keyExact } as any;
+    },
+    onSuccess: (_data, variables) => {
+      if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
+    },
+    onError: (error: Error, _variables, context: any) => {
+      // Roll back to previous cache snapshot if available
+      try {
+        if (context?.keyExact && context?.previous) {
+          // @ts-ignore
+          useQueryHelpers().set(context.keyExact, context.previous);
+        }
+      } catch {}
+      toast({
+        variant: "destructive",
+        title: "Couldn’t update offer",
+        description: "Restoring previous status. Please try again.",
+      });
+    },
+  });
+
   const handleToggleStatus = (offerToToggle: Offer) => {
-    const newStatus = offerToToggle.status === "Active" ? "Paused" : "Active";
-    setOffers(
-      offers.map((o) =>
-        o.id === offerToToggle.id ? { ...o, status: newStatus } : o
-      )
-    );
+    const newStatus: OfferStatus = offerToToggle.status === "Active" ? "Paused" : "Active";
+    // Friendly immediate feedback
     toast({
-      title: "Offer Status Updated",
-      description: `The offer "${offerToToggle.title}" is now ${newStatus.toLowerCase()}.`,
+      title: newStatus === "Active" ? "Offer activated" : "Offer paused",
+      description: `"${offerToToggle.title}" is now ${newStatus.toLowerCase()}.`,
     });
+
+    // Trigger backend sync
+    if (!restaurantId) {
+      toast({
+        variant: "destructive",
+        title: "Restaurant ID Missing",
+        description: "Please select a valid branch with restaurant ID.",
+      });
+      return;
+    }
+    toggleOfferMutation.mutate({ offerId: offerToToggle.id, status: toApiToggleStatus(newStatus), title: offerToToggle.title });
   };
 
   const handleSaveOffer = (e: React.FormEvent<HTMLFormElement>) => {
@@ -394,31 +755,22 @@ export default function OffersPage() {
         title: "Offer Updated",
         description: `"${formState.title}" has been updated.`,
       });
+      // Close immediately for edit
+      setIsFormOpen(false);
+      setEditingOffer(null);
     } else {
-      const newOffer: Offer = {
-        id: `offer-${Date.now()}`,
-        title: formState.title,
-        shortDescription: formState.shortDescription,
-        description: formState.description,
-        type: formState.type,
-        couponCode: formState.couponCode,
-        discount: formState.discount,
-        minOrder: formState.minOrder,
-        validUntil: formState.validUntil,
-        status: "Scheduled",
-        usage: 0,
-        total: 500,
-        typeIcon: formState.discount.includes("%") ? <Percent className="h-4 w-4" /> : <IndianRupee className="h-4 w-4" />,
-      };
-      setOffers([newOffer, ...offers]);
-      toast({
-        title: "Offer Created",
-        description: `"${formState.title}" has been created.`,
-      });
-    }
+      if (!restaurantId) {
+        toast({
+          variant: "destructive",
+          title: "Restaurant ID Missing",
+          description: "Please select a valid branch with restaurant ID.",
+        });
+        return;
+      }
 
-    setIsFormOpen(false);
-    setEditingOffer(null);
+      const apiPayload = buildOfferPayload(restaurantId, formState);
+      addOfferMutation.mutate(apiPayload);
+    }
   };
 
   const getDiscountFieldLabel = () => {
@@ -503,7 +855,7 @@ export default function OffersPage() {
           <TabsContent value={activeTab}>
             <ScrollArea className="h-[60vh]">
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 pr-4">
-                {filteredOffers.map((offer) => (
+                {pageOffers.map((offer) => (
                   <Card
                     key={offer.id}
                     className="flex flex-col shadow-sm hover:shadow-lg transition-shadow"
@@ -582,7 +934,7 @@ export default function OffersPage() {
                     </CardFooter>
                   </Card>
                 ))}
-                {filteredOffers.length === 0 && (
+                {pageOffers.length === 0 && (
                   <div className="text-center py-16 text-muted-foreground col-span-full">
                     <p>No {activeTab.toLowerCase()} offers to show.</p>
                   </div>
@@ -591,6 +943,23 @@ export default function OffersPage() {
             </ScrollArea>
           </TabsContent>
         </Tabs>
+
+        {/* Pagination Controls */}
+        {computedTotalItems > 0 && computedTotalPages > 1 && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={computedTotalPages}
+            onPageChange={setCurrentPage}
+            className="mt-8"
+          />
+        )}
+
+        {/* Pagination Info */}
+        {computedTotalItems > 0 && (
+          <div className="text-center text-sm text-muted-foreground mt-4">
+            Showing {startIndex + 1} to {endIndex} of {computedTotalItems} offers
+          </div>
+        )}
 
         <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
           <SheetContent
@@ -815,7 +1184,9 @@ export default function OffersPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Save Offer</Button>
+                <Button type="submit" disabled={addOfferMutation.isPending}>
+                  {addOfferMutation.isPending ? "Saving…" : "Save Offer"}
+                </Button>
               </SheetFooter>
             </form>
           </SheetContent>
