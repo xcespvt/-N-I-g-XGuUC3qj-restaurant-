@@ -59,6 +59,7 @@ import { useAppStore } from "@/context/useAppStore";
 import { NotificationBell } from "@/components/notification-bell";
 import { BottomNav } from "@/components/bottom-nav";
 import dynamic from 'next/dynamic';
+import { useGet } from "@/hooks/useApi";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -103,7 +104,60 @@ function AppLayoutClient({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
-  const { subscriptionPlan, orders } = useAppStore();
+  const { subscriptionPlan, orders, setBranches } = useAppStore();
+
+  type ApiBranch = {
+    _id: string;
+    branchId?: string;
+    name: string;
+    cuisineType?: string;
+    address?: {
+      street?: string;
+      city?: string;
+      state?: string;
+      country?: string;
+      postalCode?: string;
+      coordinates?: number[];
+    };
+    contact?: {
+      phone?: string;
+      email?: string;
+      website?: string;
+    };
+    operatingHours?: Record<string, { open?: string; close?: string }>;
+    isActive?: boolean;
+  };
+
+  const { data: apiBranchesData } = useGet<{
+    success: boolean;
+    message: string;
+    data: ApiBranch[];
+  }>(
+    ["branches", "main"],
+    "https://backend.crevings.com/api/branches/mainbranch",
+    undefined,
+    { enabled: true }
+  );
+
+  React.useEffect(() => {
+    if (apiBranchesData?.success && Array.isArray(apiBranchesData.data)) {
+      const mapped = apiBranchesData.data.map((b) => ({
+        id: b.branchId || b._id,
+        name: b.name,
+        address: b.address?.street ?? "",
+        city: b.address?.city ?? "",
+        pincode: b.address?.postalCode ?? "",
+        manager: "Branch Manager",
+        managerPhone: b.contact?.phone ?? "",
+        hours: "See schedule",
+        ordersToday: 0,
+        status: b.isActive ? ("Active" as const) : ("Inactive" as const),
+        isOnline: !!b.isActive,
+        restaurantId: b.branchId || b._id,
+      }));
+      setBranches(mapped);
+    }
+  }, [apiBranchesData, setBranches]);
 
   const newOrdersCount = orders.filter(o => o.status === "New").length;
 

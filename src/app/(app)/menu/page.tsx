@@ -33,7 +33,6 @@ import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { MenuItemForm } from "@/components/menu/MenuItemForm";
 import { MenuSearchAndFilter } from "@/components/menu/MenuSearchAndFilter";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/pagination/PaginationControls";
 import { buildMenuItemApiPayload } from "@/lib/menuUtils";
 
@@ -61,7 +60,7 @@ export default function MenuPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const [pendingNewItem, setPendingNewItem] = useState<any | null>(null);
-  const { invalidate } = useQueryHelpers();
+  const { invalidate, set } = useQueryHelpers();
 
   // Get the current branch's restaurantId
   const currentBranch = branches.find(branch => branch.id === selectedBranch);
@@ -120,7 +119,7 @@ export default function MenuPage() {
     }
   }, [apiError, toast]);
 
-  // Transform API data to MenuItem format
+  // Transform API data (paged) to MenuItem format
   const transformedMenuItems = useMemo(() => {
     if (!apiMenuData?.data) return menuItems;
     
@@ -147,28 +146,51 @@ export default function MenuPage() {
   // Use transformed data if API data is available, otherwise use store data
   const displayMenuItems = apiMenuData?.data ? transformedMenuItems : menuItems;
 
+  // Removed full-dataset fetch; search will be handled via API later
+
   // API hook for adding menu items
   const addMenuItemMutation = useAdd({
-    onSuccess: (data) => {
+    onMutate: async () => {
+      if (!restaurantId || !pendingNewItem) return;
+      const key = ['menu-items', restaurantId, currentPage, { page: currentPage, limit: 10 }];
+      const current: any = apiMenuData ?? { data: [], pagination: { currentPage, itemsPerPage: 10, totalItems: 0, totalPages: 1, hasNextPage: false, hasPreviousPage: false } };
+      const optimisticServerItem = {
+        _id: `temp-${Date.now()}`,
+        itemId: `temp-${Date.now()}`,
+        restaurantId,
+        name: pendingNewItem.name,
+        description: pendingNewItem.description,
+        type: 'item',
+        category: pendingNewItem.category,
+        images: [pendingNewItem.image || 'https://placehold.co/300x200.png'],
+        available: !!pendingNewItem.available,
+        pricing_unit: 'quantity',
+        pricing_options: (pendingNewItem.portionOptions && pendingNewItem.portionOptions.length > 0)
+          ? pendingNewItem.portionOptions.map((p: any) => ({ label: p.name, price: p.price }))
+          : [{ label: 'Regular', price: pendingNewItem.price, default: true }],
+        portions: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const updated = {
+        ...current,
+        data: [...(current?.data || []), optimisticServerItem],
+        pagination: {
+          ...current?.pagination,
+          totalItems: (current?.pagination?.totalItems || 0) + 1,
+          totalPages: Math.max(1, Math.ceil(((current?.pagination?.totalItems || 0) + 1) / (current?.pagination?.itemsPerPage || 10))),
+        },
+      };
+      set(key, updated);
+    },
+    onSuccess: () => {
       toast({
         title: "Menu Item Added",
         description: "The menu item has been successfully added to the restaurant.",
       });
-      // Also add to local store for immediate UI update using the last submitted item
-      if (pendingNewItem) {
-        const localItem = {
-          id: Date.now(),
-          name: pendingNewItem.name,
-          description: pendingNewItem.description,
-          price: pendingNewItem.price,
-          category: pendingNewItem.category,
-          available: pendingNewItem.available,
-          image: pendingNewItem.image || "https://placehold.co/300x200.png",
-          aiHint: pendingNewItem.aiHint || pendingNewItem.name.toLowerCase(),
-          dietaryType: (pendingNewItem?.dietaryType === 'Non-Veg' ? 'Non-Veg' : 'Veg') as MenuItem['dietaryType'],
-        };
-        addMenuItem(localItem as any);
-        setPendingNewItem(null);
+      setPendingNewItem(null);
+      if (restaurantId) {
+        invalidate(['menu-items', restaurantId, currentPage]);
       }
     },
     onError: (error) => {
@@ -178,6 +200,9 @@ export default function MenuPage() {
         description: "Failed to add the menu item. Please try again.",
       });
       console.error("Error adding menu item:", error);
+      if (restaurantId) {
+        invalidate(['menu-items', restaurantId, currentPage]);
+      }
     },
   });
 
@@ -247,16 +272,7 @@ export default function MenuPage() {
   // Pagination logic using reusable hook and server metadata
   const itemsPerPage = apiMenuData?.pagination?.itemsPerPage ?? 10;
 
-  const filteredMenu = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    return displayMenuItems.filter(
-      (item) =>
-        (activeCategory === "All" || item.category === activeCategory) &&
-        item.name.toLowerCase().includes(term)
-    );
-  }, [displayMenuItems, activeCategory, searchTerm]);
-
-  const localIsFiltered = searchTerm.trim() !== "" || activeCategory !== "All";
+  // Remove local category filtering; items come directly from server for current page
 
   let pageItems: MenuItem[] = [];
   let computedTotalItems = 0;
@@ -264,33 +280,15 @@ export default function MenuPage() {
   let startIndex = 0;
   let endIndex = 0;
 
-  if (localIsFiltered) {
-    const {
-      pageItems: pageFiltered,
-      totalItems,
-      totalPages,
-      startIndex: sIdx,
-      endIndex: eIdx,
-    } = usePagination<MenuItem>(filteredMenu, currentPage, setCurrentPage, itemsPerPage);
-    pageItems = pageFiltered;
-    computedTotalItems = totalItems;
-    computedTotalPages = totalPages;
-    startIndex = sIdx;
-    endIndex = eIdx;
-  } else {
-    const apiTotalItems = apiMenuData?.pagination?.totalItems ?? displayMenuItems.length;
-    computedTotalItems = apiTotalItems;
-    computedTotalPages = Math.max(1, Math.ceil((apiTotalItems || 0) / itemsPerPage));
-    startIndex = Math.min((currentPage - 1) * itemsPerPage, Math.max(0, apiTotalItems - 1));
-    endIndex = Math.min(startIndex + itemsPerPage, apiTotalItems);
-    // In unfiltered mode, items are already server-limited to the current page
-    pageItems = displayMenuItems;
-  }
+  // Always use server pagination; filter current page items by category only
+  const apiTotalItems = apiMenuData?.pagination?.totalItems ?? displayMenuItems.length;
+  computedTotalItems = apiTotalItems;
+  computedTotalPages = Math.max(1, Math.ceil((apiTotalItems || 0) / itemsPerPage));
+  startIndex = Math.min((currentPage - 1) * itemsPerPage, Math.max(0, apiTotalItems - 1));
+  endIndex = Math.min(startIndex + itemsPerPage, apiTotalItems);
+  pageItems = displayMenuItems;
 
-  // Reset to first page on filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, activeCategory, setCurrentPage]);
+  // Keep current page when filters change; clamping in usePagination prevents out-of-range pages
 
   const handleOpenAdd = (type: AddSheetType) => {
     setEditingItem(null);
@@ -328,8 +326,103 @@ export default function MenuPage() {
     [categories]
   );
 
+  // Toggle availability via PUT with optimistic UI
+  const [toggleTarget, setToggleTarget] = useState<{ itemId: string } | null>(null);
+  const [pendingTogglePayload, setPendingTogglePayload] = useState<any | null>(null);
+  const [pendingToggleInfo, setPendingToggleInfo] = useState<{ itemId: string; nextAvailable: boolean } | null>(null);
+
+  const toggleUrl = restaurantId && toggleTarget?.itemId
+    ? `https://backend.crevings.com/api/menu/updateitems/${restaurantId}/${toggleTarget.itemId}`
+    : `https://backend.crevings.com/api/menu/updateitems/${restaurantId ?? ''}/`;
+
+  const toggleAvailabilityMutation = usePut<any, any>(toggleUrl, {
+    onSuccess: () => {
+      toast({
+        title: "Availability Updated",
+        description: "Menu item availability has been updated.",
+      });
+      if (restaurantId) {
+        invalidate(['menu-items', restaurantId, currentPage]);
+      }
+      setToggleTarget(null);
+      setPendingTogglePayload(null);
+      setPendingToggleInfo(null);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error Updating Availability",
+        description: "Failed to update availability. Restoring previous state.",
+      });
+      console.error('Error updating availability', error);
+      if (restaurantId && pendingToggleInfo) {
+        const key = ['menu-items', restaurantId, currentPage, { page: currentPage, limit: 10 }];
+        const current = apiMenuData as any;
+        if (current?.data) {
+          const reverted = {
+            ...current,
+            data: current.data.map((i: any) => ((i.itemId ?? i._id) === pendingToggleInfo.itemId ? { ...i, available: !pendingToggleInfo.nextAvailable } : i)),
+          };
+          set(key, reverted);
+        }
+      }
+      setToggleTarget(null);
+      setPendingTogglePayload(null);
+      setPendingToggleInfo(null);
+      if (restaurantId) {
+        invalidate(['menu-items', restaurantId, currentPage]);
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (restaurantId && toggleTarget?.itemId && pendingTogglePayload) {
+      toggleAvailabilityMutation.mutate(pendingTogglePayload);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId, toggleTarget?.itemId, pendingTogglePayload]);
+
+  const handleToggleAvailability = (item: MenuItem, nextAvailable: boolean) => {
+    if (!restaurantId || !item.itemId) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Identifiers',
+        description: 'Cannot update availability without restaurant and item IDs.',
+      });
+      return;
+    }
+
+    const key = ['menu-items', restaurantId, currentPage, { page: currentPage, limit: 10 }];
+    const current = apiMenuData as any;
+    if (current?.data) {
+      const updated = {
+        ...current,
+        data: current.data.map((i: any) => ((i.itemId ?? i._id) === item.itemId ? { ...i, available: nextAvailable } : i)),
+      };
+      set(key, updated);
+    } else {
+      toggleMenuItemAvailability(item.id);
+    }
+
+    const payload = {
+      name: item.name,
+      description: item.description,
+      available: nextAvailable,
+      type: 'item',
+      category: item.category,
+      images: [item.image || 'https://placehold.co/300x200.png'],
+      pricing_unit: 'quantity',
+      pricing_options: item.portionOptions && item.portionOptions.length > 0
+        ? item.portionOptions.map((p) => ({ label: p.name, price: p.price }))
+        : [{ label: 'Regular', price: item.price, default: true }],
+    };
+    setPendingToggleInfo({ itemId: item.itemId!, nextAvailable });
+    setToggleTarget({ itemId: item.itemId! });
+    setPendingTogglePayload(payload);
+  };
+
   // Whether the list is currently filtered by search or category
-  const isFilteredMode = searchTerm.trim() !== "" || activeCategory !== "All";
+  // Category filter will be moved to search API query params later
 
   // Removed legacy save handler and pricing helpers; MenuItemForm handles form interactions
 
@@ -347,14 +440,7 @@ export default function MenuPage() {
         onOpenCategoryDialog={() => setIsCategoryDialogOpen(true)}
       />
 
-      {/* Results mode badge */}
-      <div className="flex justify-end">
-        <Badge variant={isFilteredMode ? "secondary" : "outline"}>
-          {isFilteredMode
-            ? `Filtered results: ${computedTotalItems}`
-            : `All results: ${computedTotalItems}`}
-        </Badge>
-      </div>
+      {/* Removed results badge to keep pagination UI simple */}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
         {isLoading && restaurantId ? (
@@ -376,7 +462,7 @@ export default function MenuPage() {
               key={item.id}
               item={item}
               isRestaurantOnline={isRestaurantOnline}
-              onToggleAvailability={toggleMenuItemAvailability}
+              onToggleAvailability={(targetItem, nextAvailable) => handleToggleAvailability(targetItem, nextAvailable)}
               onEdit={handleOpenEdit}
               onDelete={handleOpenDelete}
             />

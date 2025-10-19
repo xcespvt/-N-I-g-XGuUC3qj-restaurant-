@@ -71,6 +71,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGet, usePost, usePut, useQueryHelpers } from "@/hooks/useApi";
+import { useMutation } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
 import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/pagination/PaginationControls";
 import { Separator } from "@/components/ui/separator";
@@ -326,8 +328,8 @@ export default function OffersPage() {
   // Resolve restaurantId from selected branch
   const restaurantId = branches.find((b) => b.id === selectedBranch)?.restaurantId;
 
-  // Query helpers for cache invalidation
-  const { invalidate } = useQueryHelpers();
+  // Query helpers for cache control
+  const { invalidate, set } = useQueryHelpers();
 
   // Fetch offers from backend
   type OfferApi = {
@@ -533,15 +535,55 @@ export default function OffersPage() {
   const addOfferMutation = usePost<any, AddOfferPayload>(
     "https://backend.crevings.com/api/offers/offers/add",
     {
-      onSuccess: () => {
-        toast({ title: "Offer Created", description: "Offer added to backend successfully." });
-        if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
+      onMutate: async (variables) => {
+        if (!restaurantId) return;
+        const keyExact = [
+          "offers",
+          restaurantId,
+          `${currentPage}`,
+          `${pageSize}`,
+          { page: currentPage, limit: pageSize },
+        ];
+        const prevData = apiOffersData as { data?: any[] } | undefined;
+        const prevList = (prevData as any)?.data as any[] | undefined;
+        const optimistic: OfferApi = {
+          restaurantId,
+          offerId: `temp-${Date.now()}`,
+          offerTitle: variables.offerTitle,
+          description: variables.description,
+          offerType: variables.offerType,
+          discountPercentage: variables.discountPercentage,
+          discountAmount: variables.discountAmount,
+          freeItem: variables.freeItem,
+          bogoItems: variables.bogoItems,
+          minimumOrder: variables.minimumOrder,
+          validUntil: typeof variables.validUntil === "number"
+            ? new Date(variables.validUntil).toISOString()
+            : variables.validUntil as any,
+          isActive: true,
+          offerStatus: "Scheduled",
+        };
+        const updated = { ...(prevData || {}), data: [ ...(prevList ?? []), optimistic ] } as any;
+        set(keyExact as unknown as any[], updated);
+        return { previous: prevData, keyExact } as any;
       },
-      onError: (error) => {
+      onSuccess: (_data, variables) => {
+        if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
+        toast({ title: "Offer created", description: `"${variables?.offerTitle}" added.` });
+        // Close the sheet after successful save
+        setIsFormOpen(false);
+        setEditingOffer(null);
+      },
+      onError: (_error, _variables, context: any) => {
+        try {
+          if (context?.keyExact && context?.previous) {
+            set(context.keyExact as unknown as any[], context.previous);
+          }
+        } catch {}
         toast({
           variant: "destructive",
-          title: "Offer Creation Failed",
-          description: error.message || "Unable to add offer",
+          title: "Couldn’t create offer",
+          description: "Please try again.",
         });
       },
     }
@@ -571,6 +613,18 @@ export default function OffersPage() {
     setFormState((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Normalize various date string formats to HTML date input value (YYYY-MM-DD)
+  const toDateInputValue = (value: string | number | Date | undefined | null): string => {
+    if (value === undefined || value === null) return "";
+    try {
+      const d = new Date(value as any);
+      if (isNaN(d.getTime())) return "";
+      return d.toISOString().slice(0, 10);
+    } catch {
+      return "";
+    }
+  };
+
   const handleCreateClick = () => {
     setEditingOffer(null);
     setFormState(defaultFormState);
@@ -588,7 +642,8 @@ export default function OffersPage() {
       couponCode: offer.couponCode,
       discount: offer.discount,
       minOrder: offer.minOrder,
-      validUntil: offer.validUntil,
+      // Ensure date input is pre-filled correctly
+      validUntil: toDateInputValue(offer.validUntil),
     });
     setIsFormOpen(true);
   };
@@ -611,52 +666,66 @@ export default function OffersPage() {
     }
   };
 
-  // Track which offer is being toggled to build dynamic URL for PUT
-  const [toggleTarget, setToggleTarget] = useState<{ offerId: string; newStatus: OfferStatus } | null>(null);
-
-  // Build toggle URL when we have a target
-  const toggleUrl = restaurantId && toggleTarget
-    ? `https://backend.crevings.com/api/offers/offer/toggle/${restaurantId}/${toggleTarget.offerId}`
-    : `https://backend.crevings.com/api/offers/offer/toggle/__restaurant__/__offer__`;
-
-  // Integrate PUT for toggling status
-  const toggleOfferMutation = usePut<any, { status: "Activate" | "Pause" }>(toggleUrl, {
-    onSuccess: () => {
-      toast({ title: "Offer Status Synced", description: "Backend updated successfully." });
-      if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
-    },
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Toggle Failed",
-        description: error.message || "Unable to toggle offer status",
-      });
-      if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
-    },
-  });
-
-  // Drive the API call when toggle target changes
+  // Integrate PUT for toggling status with dynamic URL per call
   const toApiToggleStatus = (status: OfferStatus): "Activate" | "Pause" =>
     status === "Active" ? "Activate" : "Pause";
 
-  // Fire mutation when we have a valid target
-  useEffect(() => {
-    if (toggleTarget && restaurantId) {
-      const apiStatus = toApiToggleStatus(toggleTarget.newStatus);
-      toggleOfferMutation.mutate({ status: apiStatus });
-      setToggleTarget(null);
-    }
-  }, [toggleTarget, restaurantId]);
+  const toggleOfferMutation = useMutation<any, Error, { offerId: string; status: "Activate" | "Pause"; title?: string }>({
+    mutationFn: async (variables: { offerId: string; status: "Activate" | "Pause"; title?: string }) => {
+      const finalUrl = `https://backend.crevings.com/api/offers/offers/toggle/${restaurantId}/${variables.offerId}`;
+      return apiClient<any>(finalUrl, {
+        method: "PUT",
+        body: JSON.stringify({ status: variables.status }),
+      });
+    },
+    onMutate: async (variables) => {
+      if (!restaurantId) return;
+      const keyExact = [
+        "offers",
+        restaurantId,
+        `${currentPage}`,
+        `${pageSize}`,
+        { page: currentPage, limit: pageSize },
+      ];
+      const nextStatus = variables.status === "Activate" ? "Active" : "Paused";
+      const prevData = apiOffersData as { data?: any[] } | undefined;
+      const prevList = (prevData as any)?.data as any[] | undefined;
+      const updatedList = (prevList ?? []).map((item) =>
+        item.offerId === variables.offerId
+          ? { ...item, offerStatus: nextStatus, isActive: nextStatus === "Active" }
+          : item
+      );
+      const updated = { ...(prevData || {}), data: updatedList } as any;
+      // Optimistically set exact cache key so UI reflects immediately
+      // @ts-ignore - helper expects unknown[] key
+      set(keyExact as unknown as any[], updated);
+      return { previous: prevData, keyExact } as any;
+    },
+    onSuccess: (_data, variables) => {
+      if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
+    },
+    onError: (error: Error, _variables, context: any) => {
+      // Roll back to previous cache snapshot if available
+      try {
+        if (context?.keyExact && context?.previous) {
+          // @ts-ignore
+          useQueryHelpers().set(context.keyExact, context.previous);
+        }
+      } catch {}
+      toast({
+        variant: "destructive",
+        title: "Couldn’t update offer",
+        description: "Restoring previous status. Please try again.",
+      });
+    },
+  });
 
   const handleToggleStatus = (offerToToggle: Offer) => {
     const newStatus: OfferStatus = offerToToggle.status === "Active" ? "Paused" : "Active";
-    // Optimistic UI update
-    setOffers(
-      offers.map((o) => (o.id === offerToToggle.id ? { ...o, status: newStatus } : o))
-    );
+    // Friendly immediate feedback
     toast({
-      title: "Offer Status Updated",
-      description: `The offer "${offerToToggle.title}" is now ${newStatus.toLowerCase()}.`,
+      title: newStatus === "Active" ? "Offer activated" : "Offer paused",
+      description: `"${offerToToggle.title}" is now ${newStatus.toLowerCase()}.`,
     });
 
     // Trigger backend sync
@@ -668,7 +737,7 @@ export default function OffersPage() {
       });
       return;
     }
-    setToggleTarget({ offerId: offerToToggle.id, newStatus });
+    toggleOfferMutation.mutate({ offerId: offerToToggle.id, status: toApiToggleStatus(newStatus), title: offerToToggle.title });
   };
 
   const handleSaveOffer = (e: React.FormEvent<HTMLFormElement>) => {
@@ -686,6 +755,9 @@ export default function OffersPage() {
         title: "Offer Updated",
         description: `"${formState.title}" has been updated.`,
       });
+      // Close immediately for edit
+      setIsFormOpen(false);
+      setEditingOffer(null);
     } else {
       if (!restaurantId) {
         toast({
@@ -697,34 +769,8 @@ export default function OffersPage() {
       }
 
       const apiPayload = buildOfferPayload(restaurantId, formState);
-
-      // Optimistically add to local list
-      const newOffer: Offer = {
-        id: `offer-${Date.now()}`,
-        title: formState.title,
-        shortDescription: formState.shortDescription,
-        description: formState.description,
-        type: formState.type,
-        couponCode: formState.couponCode,
-        discount: formState.discount,
-        minOrder: formState.minOrder,
-        validUntil: formState.validUntil,
-        status: "Scheduled",
-        usage: 0,
-        total: 500,
-        typeIcon: formState.discount.includes("%") ? (
-          <Percent className="h-4 w-4" />
-        ) : (
-          <IndianRupee className="h-4 w-4" />
-        ),
-      };
-      setOffers([newOffer, ...offers]);
-
       addOfferMutation.mutate(apiPayload);
     }
-
-    setIsFormOpen(false);
-    setEditingOffer(null);
   };
 
   const getDiscountFieldLabel = () => {
@@ -1138,7 +1184,9 @@ export default function OffersPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Save Offer</Button>
+                <Button type="submit" disabled={addOfferMutation.isPending}>
+                  {addOfferMutation.isPending ? "Saving…" : "Save Offer"}
+                </Button>
               </SheetFooter>
             </form>
           </SheetContent>

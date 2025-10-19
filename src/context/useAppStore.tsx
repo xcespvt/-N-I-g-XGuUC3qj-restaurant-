@@ -203,6 +203,7 @@ interface AppStore {
   takeawayCart: TakeawayCartItem[];
 
   // Actions
+  setBranches: (branches: Branch[]) => void;
   setSelectedBranch: (branchId: string) => void;
   addBranch: (branchData: Omit<Branch, 'id' | 'ordersToday' | 'isOnline'>) => void;
   updateBranch: (branch: Branch) => void;
@@ -586,6 +587,14 @@ export const useAppStore = create<AppStore>()(
       },
 
       // Actions
+      setBranches: (newBranches: Branch[]) => {
+        const currentSelected = get().selectedBranch;
+        const exists = newBranches.some(b => b.id === currentSelected);
+        set({
+          branches: newBranches,
+          selectedBranch: exists ? currentSelected : (newBranches[0]?.id ?? currentSelected),
+        });
+      },
       setSelectedBranch: (branchId: string) => {
         set({ selectedBranch: branchId });
       },

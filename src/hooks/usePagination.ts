@@ -14,7 +14,8 @@ export function usePagination<T>(
   currentPage: number,
   setCurrentPage: (n: number) => void,
   itemsPerPage: number,
-  totalItemsOverride?: number
+  totalItemsOverride?: number,
+  clamp: boolean = true
 ): PaginationResult<T> {
   const totalItems = typeof totalItemsOverride === "number" ? totalItemsOverride : items.length;
   const totalPages = Math.max(1, Math.ceil((totalItems || 0) / itemsPerPage));
@@ -29,10 +30,10 @@ export function usePagination<T>(
 
   // Clamp currentPage if it exceeds totalPages
   useEffect(() => {
-    if (currentPage > totalPages) {
+    if (clamp && currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
-  }, [totalPages, currentPage, setCurrentPage]);
+  }, [clamp, totalPages, currentPage, setCurrentPage]);
 
   return { pageItems, totalItems, totalPages, startIndex, endIndex };
 }

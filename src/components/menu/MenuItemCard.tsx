@@ -22,7 +22,7 @@ import type { MenuItem } from "@/context/useAppStore";
 interface MenuItemCardProps {
   item: MenuItem;
   isRestaurantOnline: boolean;
-  onToggleAvailability: (id: number) => void;
+  onToggleAvailability: (item: MenuItem, nextAvailable: boolean) => void;
   onEdit: (item: MenuItem) => void;
   onDelete: (item: MenuItem) => void;
 }
@@ -119,7 +119,7 @@ export function MenuItemCard({
           <span className="text-sm font-medium">Available</span>
           <Switch
             checked={item.available}
-            onCheckedChange={() => onToggleAvailability(item.id)}
+            onCheckedChange={(checked) => onToggleAvailability(item, checked)}
             disabled={!isRestaurantOnline}
           />
         </div>
