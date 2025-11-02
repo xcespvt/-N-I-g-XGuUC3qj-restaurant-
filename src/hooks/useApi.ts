@@ -90,7 +90,7 @@ export function useDelete<TData, TVariables = void>(
 export function useAdd<TData = any>(
   options?: Omit<UseMutationOptions<TData, Error, any>, "mutationFn">
 ) {
-  return usePost<TData, any>(`${API_BASE_URL}/restaurant/add-menu-item`, options);
+  return usePost<TData, any>(`${API_BASE_URL}/api/menu/add-menu-item`, options);
 }
 
 // ✅ Query Helpers
