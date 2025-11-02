@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -16,6 +17,10 @@ import {
   ChevronRight,
   Package,
   Bike,
+  Users2,
+  Table,
+  PlusCircle,
+  PenSquare,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +32,13 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppStore } from "@/context/useAppStore";
@@ -323,6 +335,7 @@ export default function Dashboard() {
     isBusy,
     setBusy,
     orders,
+    tables,
     updateOrderStatus,
     acceptNewOrder,
   } = useAppStore();
@@ -372,44 +385,37 @@ export default function Dashboard() {
   };
 
   const {
-    activeOrders,
     deliveryOrders,
     takeawayOrders,
     dineInOrders,
-    totalRevenue,
-    totalOrders,
-    deliveryRevenue,
-    takeawayRevenue,
-    dineInRevenue,
+    tableStats,
   } = useMemo(() => {
     const active = orders.filter(
       (o) => !["Delivered", "Cancelled", "Rejected"].includes(o.status)
     );
 
     const delivery = active.filter((o) => o.type === "Delivery");
-    const takeaway = active.filter((o) => o.type === "Takeaway");
+    const takeaway = active.filter(o => o.type === 'Takeaway');
     const dineIn = active.filter(
       (o) =>
         o.type === "Dine-in" &&
         !o.items.some((item) => item.category === "Booking")
     );
-
-    const revenue = active.reduce((sum, order) => sum + order.total, 0);
+    
+    const occupiedTables = tables.filter(t => t.status === 'Occupied').length;
+    const availableTables = tables.length - occupiedTables;
 
     return {
-      activeOrders: active.filter(
-        (o) => !o.items.some((item) => item.category === "Booking")
-      ),
       deliveryOrders: delivery,
       takeawayOrders: takeaway,
       dineInOrders: dineIn,
-      totalRevenue: revenue,
-      totalOrders: active.length,
-      deliveryRevenue: delivery.reduce((sum, order) => sum + order.total, 0),
-      takeawayRevenue: takeaway.reduce((sum, order) => sum + order.total, 0),
-      dineInRevenue: dineIn.reduce((sum, order) => sum + order.total, 0),
+      tableStats: {
+        occupied: occupiedTables,
+        available: availableTables,
+        total: tables.length,
+      }
     };
-  }, [orders]);
+  }, [orders, tables]);
 
   return (
     <div className="flex flex-col gap-6 pb-20">
@@ -465,26 +471,72 @@ export default function Dashboard() {
         </Card>
       </div>
       <Card>
-        <CardContent className="p-0">
-          <Link
-            href="/takeaway"
-            className="block p-4 hover:bg-accent transition-colors rounded-lg"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">For Offline Orders</CardTitle>
-                <CardDescription className="text-xs mt-1">
-                  Manually create a takeaway order
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <ShoppingBag className="h-5 w-5 text-primary" />
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
+        <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+                <PenSquare className="h-5 w-5"/>
+                Manual Orders
+            </CardTitle>
+            <CardDescription className="text-xs mt-1">
+              Manually create orders for walk-in customers or offline scenarios.
+            </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 flex flex-col gap-2">
+            <Button asChild variant="ghost" className="w-full justify-between p-4 h-auto">
+                <Link href="/takeaway?type=takeaway">
+                    <div className="flex items-center gap-3">
+                        <ShoppingBag className="h-6 w-6 text-primary" />
+                        <div>
+                            <p className="font-semibold text-base text-left">New Takeaway</p>
+                            <p className="text-xs text-muted-foreground text-left">For walk-in customers</p>
+                        </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+            </Button>
+            <Separator />
+            <Button asChild variant="ghost" className="w-full justify-between p-4 h-auto">
+                <Link href="/takeaway?type=dine-in">
+                    <div className="flex items-center gap-3">
+                        <UtensilsCrossed className="h-6 w-6 text-primary" />
+                        <div>
+                            <p className="font-semibold text-base text-left">New Dine-in</p>
+                            <p className="text-xs text-muted-foreground text-left">For customers at a table</p>
+                        </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+            </Button>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+                <Users2 className="h-5 w-5"/>
+                Table Status
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-3 gap-4 text-center">
+            <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold text-red-600">{tableStats.occupied}</p>
+                <p className="text-xs text-muted-foreground">Occupied</p>
             </div>
-          </Link>
+            <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">{tableStats.available}</p>
+                <p className="text-xs text-muted-foreground">Available</p>
+            </div>
+             <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold">{tableStats.total}</p>
+                <p className="text-xs text-muted-foreground">Total Tables</p>
+            </div>
+        </CardContent>
+        <CardContent className="px-4 pb-4">
+             <Button asChild variant="outline" size="sm" className="w-full">
+                <Link href="/bookings">
+                    Go to Table Management
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                </Link>
+             </Button>
         </CardContent>
       </Card>
 

@@ -596,13 +596,24 @@ export default function OffersPage() {
 
   // Generic pagination for filtered offers
   const itemsPerPage = pageSize;
-  const {
-    pageItems: pageOffers,
-    totalItems: computedTotalItems,
-    totalPages: computedTotalPages,
-    startIndex,
-    endIndex,
-  } = usePagination<Offer>(filteredOffers, currentPage, setCurrentPage, itemsPerPage);
+  // For server-driven pagination, do not re-slice locally
+  const pageOffers = filteredOffers;
+
+  // Use API pagination metadata for UI totals and pages
+  const apiPagination = (apiOffersData as any)?.pagination as {
+    currentPage?: number;
+    itemsPerPage?: number;
+    totalItems?: number;
+    totalPages?: number;
+    hasNextPage?: boolean;
+    hasPreviousPage?: boolean;
+  } | undefined;
+
+  const effectiveItemsPerPage = apiPagination?.itemsPerPage ?? itemsPerPage;
+  const uiTotalItems = apiPagination?.totalItems ?? filteredOffers.length;
+  const uiTotalPages = apiPagination?.totalPages ?? Math.max(1, Math.ceil((uiTotalItems || 0) / effectiveItemsPerPage));
+  const uiStartIndex = (currentPage - 1) * effectiveItemsPerPage + 1;
+  const uiEndIndex = Math.min(currentPage * effectiveItemsPerPage, uiTotalItems);
 
   // Reset to first page when tab filter changes
   useEffect(() => {
@@ -945,19 +956,19 @@ export default function OffersPage() {
         </Tabs>
 
         {/* Pagination Controls */}
-        {computedTotalItems > 0 && computedTotalPages > 1 && (
+        {uiTotalItems > 0 && uiTotalPages > 1 && (
           <PaginationControls
             currentPage={currentPage}
-            totalPages={computedTotalPages}
+            totalPages={uiTotalPages}
             onPageChange={setCurrentPage}
             className="mt-8"
           />
         )}
 
         {/* Pagination Info */}
-        {computedTotalItems > 0 && (
+        {uiTotalItems > 0 && (
           <div className="text-center text-sm text-muted-foreground mt-4">
-            Showing {startIndex + 1} to {endIndex} of {computedTotalItems} offers
+            Showing {uiStartIndex} to {uiEndIndex} of {uiTotalItems} offers
           </div>
         )}
 

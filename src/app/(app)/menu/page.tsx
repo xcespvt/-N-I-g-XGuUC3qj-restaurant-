@@ -108,6 +108,44 @@ export default function MenuPage() {
     }
   );
 
+  // Debounced search term
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 500);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
+
+  // Search API call (enabled only when user pauses typing)
+  const { data: apiSearchData, error: searchError, isLoading: isSearchLoading } = useGet<{
+    success: number;
+    count: number;
+    data: Array<{
+      name: string;
+      description: string;
+      category: string;
+      images: string[];
+    }>;
+  }>(
+    ['menu-search', restaurantId || '', debouncedSearchTerm, activeCategory !== 'All' ? activeCategory : ''],
+    `https://backend.crevings.com/api/menu/${restaurantId}/search`,
+    { query: debouncedSearchTerm, category: activeCategory !== 'All' ? activeCategory : '' },
+    {
+      enabled: !!restaurantId && (debouncedSearchTerm.length > 0 || (!!activeCategory && activeCategory !== 'All')),
+    }
+  );
+
+  useEffect(() => {
+    if (searchError) {
+      toast({
+        variant: 'destructive',
+        title: 'Search failed',
+        description: 'Could not fetch search results. Please try again.',
+      });
+    }
+  }, [searchError, toast]);
+
   // Show a toast when the menu fetch encounters an error
   useEffect(() => {
     if (apiError) {
@@ -143,12 +181,28 @@ export default function MenuPage() {
     }));
   }, [apiMenuData, menuItems]);
 
+  // Transform Search API data to MenuItem format
+  const transformedSearchItems = useMemo(() => {
+    const src = apiSearchData?.data ?? [];
+    return src.map((item, index) => ({
+      id: Date.now() + index,
+      itemId: undefined,
+      name: item.name,
+      description: item.description,
+      price: 0,
+      category: item.category,
+      image: item.images?.[0] || 'https://placehold.co/300x200.png',
+      aiHint: item.name.toLowerCase(),
+      available: true,
+      dietaryType: 'Veg' as const,
+      portionOptions: undefined,
+    }));
+  }, [apiSearchData]);
+
   // Use transformed data if API data is available, otherwise use store data
   const displayMenuItems = apiMenuData?.data ? transformedMenuItems : menuItems;
 
-  // Removed full-dataset fetch; search will be handled via API later
-
-  // API hook for adding menu items
+  // API hook for adding menu items (kept intact)
   const addMenuItemMutation = useAdd({
     onMutate: async () => {
       if (!restaurantId || !pendingNewItem) return;
@@ -265,31 +319,6 @@ export default function MenuPage() {
     setSearchTerm(transcript);
   });
 
-  // Voice recognition is handled by useSpeechRecognition hook
-
-  // Removed legacy local form handlers; MenuItemForm manages these internally
-
-  // Pagination logic using reusable hook and server metadata
-  const itemsPerPage = apiMenuData?.pagination?.itemsPerPage ?? 10;
-
-  // Remove local category filtering; items come directly from server for current page
-
-  let pageItems: MenuItem[] = [];
-  let computedTotalItems = 0;
-  let computedTotalPages = 1;
-  let startIndex = 0;
-  let endIndex = 0;
-
-  // Always use server pagination; filter current page items by category only
-  const apiTotalItems = apiMenuData?.pagination?.totalItems ?? displayMenuItems.length;
-  computedTotalItems = apiTotalItems;
-  computedTotalPages = Math.max(1, Math.ceil((apiTotalItems || 0) / itemsPerPage));
-  startIndex = Math.min((currentPage - 1) * itemsPerPage, Math.max(0, apiTotalItems - 1));
-  endIndex = Math.min(startIndex + itemsPerPage, apiTotalItems);
-  pageItems = displayMenuItems;
-
-  // Keep current page when filters change; clamping in usePagination prevents out-of-range pages
-
   const handleOpenAdd = (type: AddSheetType) => {
     setEditingItem(null);
     setActiveSheet(type);
@@ -312,19 +341,6 @@ export default function MenuPage() {
       setItemToDelete(null);
     }
   };
-
-  const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
-      addCategory(newCategoryName.trim());
-      setNewCategoryName("");
-      setIsCategoryDialogOpen(false);
-    }
-  };
-
-  const availableCategories = useMemo(
-    () => categories.filter((c) => c !== "All"),
-    [categories]
-  );
 
   // Toggle availability via PUT with optimistic UI
   const [toggleTarget, setToggleTarget] = useState<{ itemId: string } | null>(null);
@@ -421,8 +437,49 @@ export default function MenuPage() {
     setPendingTogglePayload(payload);
   };
 
-  // Whether the list is currently filtered by search or category
-  // Category filter will be moved to search API query params later
+  // Pagination and category helpers
+  const itemsPerPage = apiMenuData?.pagination?.itemsPerPage ?? 10;
+  const isFiltering = debouncedSearchTerm.length > 0 || (!!activeCategory && activeCategory !== 'All');
+
+  let pageItems: MenuItem[] = [];
+  let computedTotalItems = 0;
+  let computedTotalPages = 1;
+  let startIndex = 0;
+  let endIndex = 0;
+
+  if (isFiltering) {
+    const searchList = transformedSearchItems;
+    const totalItems = searchList.length;
+    computedTotalItems = totalItems;
+    computedTotalPages = Math.max(1, Math.ceil((totalItems || 0) / itemsPerPage));
+    startIndex = Math.min((currentPage - 1) * itemsPerPage, Math.max(0, totalItems - 1));
+    endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    pageItems = searchList.slice(startIndex, endIndex);
+  } else {
+    const apiTotalItems = apiMenuData?.pagination?.totalItems ?? displayMenuItems.length;
+    computedTotalItems = apiTotalItems;
+    computedTotalPages = Math.max(1, Math.ceil((apiTotalItems || 0) / itemsPerPage));
+    startIndex = Math.min((currentPage - 1) * itemsPerPage, Math.max(0, apiTotalItems - 1));
+    endIndex = Math.min(startIndex + itemsPerPage, apiTotalItems);
+    pageItems = displayMenuItems;
+  }
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, activeCategory]);
+
+  const availableCategories = useMemo(
+    () => categories.filter((c) => c !== "All"),
+    [categories]
+  );
+
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      addCategory(newCategoryName.trim());
+      setNewCategoryName("");
+      setIsCategoryDialogOpen(false);
+    }
+  };
 
   // Removed legacy save handler and pricing helpers; MenuItemForm handles form interactions
 
@@ -443,7 +500,7 @@ export default function MenuPage() {
       {/* Removed results badge to keep pagination UI simple */}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {isLoading && restaurantId ? (
+        {(isFiltering ? isSearchLoading : (isLoading && restaurantId)) ? (
           // Loading skeleton
           Array.from({ length: 6 }).map((_, index) => (
             <Card key={`loading-${index}`} className="flex flex-col overflow-hidden shadow-sm">
@@ -468,9 +525,14 @@ export default function MenuPage() {
             />
           ))
         )}
-        {!isLoading && pageItems.length === 0 && (
+        {!isFiltering && !isLoading && pageItems.length === 0 && (
           <div className="text-center py-16 text-muted-foreground col-span-full">
             <p>No {activeCategory.toLowerCase()} items to show.</p>
+          </div>
+        )}
+        {isFiltering && !isSearchLoading && pageItems.length === 0 && (
+          <div className="text-center py-16 text-muted-foreground col-span-full">
+            <p>No results for "{debouncedSearchTerm}"{activeCategory !== 'All' ? ` in ${activeCategory}` : ''}.</p>
           </div>
         )}
       </div>
@@ -526,15 +588,26 @@ export default function MenuPage() {
                       description: "This item lacks a backend ID; cannot update on server.",
                     });
                   } else {
+                    const existingImages: string[] = Array.isArray((editingItem as any)?.images)
+                      ? ((editingItem as any).images as string[])
+                      : ((editingItem as any)?.image ? [ (editingItem as any).image as string ] : []);
+
+                    const isImageDelivery = (url: string): boolean => {
+                      try { return new URL(url).hostname.endsWith("imagedelivery.net"); } catch { return url.includes("imagedelivery.net"); }
+                    };
+
+                    // Remove imagedelivery.net entries (likely deleted) and put the new one first
+                    const retained = existingImages.filter(url => !isImageDelivery(url));
+                    const primary = itemData.image || "https://placehold.co/300x200.png";
+                    const nextImages = [primary, ...retained];
+
                     const payload = {
                       name: itemData.name,
                       description: itemData.description,
                       available: itemData.available,
                       type: "item",
                       category: itemData.category,
-                      images: [
-                        (editingItem?.image || "https://placehold.co/300x200.png")
-                      ],
+                      images: nextImages,
                       pricing_unit: "quantity",
                       pricing_options: [
                         { label: "Regular", price: itemData.price, default: true }
