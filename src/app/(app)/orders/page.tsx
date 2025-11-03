@@ -23,6 +23,9 @@ export default function OrdersPage() {
 
   return (
     <div className="flex flex-col">
+       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-semibold md:text-3xl">Orders</h1>
+      </div>
       <Tabs defaultValue="active-orders" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="active-orders">Active Orders</TabsTrigger>

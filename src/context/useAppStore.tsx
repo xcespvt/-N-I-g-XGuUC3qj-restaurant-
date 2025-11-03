@@ -59,7 +59,7 @@ export interface Order {
   };
   payment: {
     method: string;
-    status: 'Paid' | 'Pending';
+    status: 'Paid' | 'On Hold';
   };
   offer?: {
     code: string;
