@@ -117,11 +117,27 @@ export function MenuItemCard({
       <CardFooter className="p-4 pt-0">
         <div className="flex items-center justify-between w-full">
           <span className="text-sm font-medium">Available</span>
-          <Switch
-            checked={item.available}
-            onCheckedChange={(checked) => onToggleAvailability(item, checked)}
-            disabled={!isRestaurantOnline}
-          />
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              if (isRestaurantOnline) {
+                onToggleAvailability(item, !item.available);
+              }
+            }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            className={!isRestaurantOnline ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          >
+            <Switch
+              checked={item.available}
+              onCheckedChange={(checked) => isRestaurantOnline && onToggleAvailability(item, checked)}
+              disabled={!isRestaurantOnline}
+              onClick={(e) => e.stopPropagation()}
+              className="touch-manipulation"
+            />
+          </div>
         </div>
       </CardFooter>
     </Card>
