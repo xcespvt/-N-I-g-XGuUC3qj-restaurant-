@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Image from "next/image";
 import {
   IndianRupee,
@@ -10,6 +11,12 @@ import {
   Minus,
   ShoppingCart,
   ArrowRight,
+  Users,
+  Table,
+  ArrowLeft,
+  Clock,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
 import {
   Dialog,
@@ -35,8 +42,93 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import type { MenuItem, TakeawayCartItem } from "@/context/useAppStore";
+import type { MenuItem, TakeawayCartItem, Table as TableType } from "@/context/useAppStore";
 import { cn } from "@/lib/utils";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+
+const MultiTableSelect = ({
+  tables,
+  selectedTableIds,
+  onSelectionChange,
+}: {
+  tables: TableType[];
+  selectedTableIds: string[];
+  onSelectionChange: (tableIds: string[]) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (tableId: string) => {
+    const newSelection = selectedTableIds.includes(tableId)
+      ? selectedTableIds.filter((id) => id !== tableId)
+      : [...selectedTableIds, tableId];
+    onSelectionChange(newSelection);
+  };
+  
+  const selectedTables = tables.filter(t => selectedTableIds.includes(t.id));
+  const selectedTablesText =
+    selectedTables.length > 0
+      ? selectedTables.map(t => t.name).join(', ')
+      : "Select tables...";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className="truncate">{selectedTablesText}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <Command>
+          <CommandInput placeholder="Search tables..." />
+          <CommandList>
+            <CommandEmpty>No tables found.</CommandEmpty>
+            <CommandGroup>
+              {tables.map((table) => (
+                <CommandItem
+                  key={table.id}
+                  value={table.name}
+                  onSelect={() => handleSelect(table.id)}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedTableIds.includes(table.id)
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
+                  {table.name} (Capacity: {table.capacity})
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 
 const MenuItemCard = ({ item }: { item: MenuItem }) => {
   const { takeawayCart, addToTakeawayCart } = useAppStore();
@@ -294,16 +386,25 @@ const ItemSelectionDialog = ({
   );
 };
 
-export default function TakeawayPage() {
+function TakeawayPageContent() {
   const {
     menuItems,
     takeawayCart,
     clearTakeawayCart,
     incrementTakeawayCartItem,
     decrementTakeawayCartItem,
+    tables,
   } = useAppStore();
+  
+  const searchParams = useSearchParams();
+  const orderType = searchParams.get('type') || 'takeaway';
+  
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTableIds, setSelectedTableIds] = useState<string[]>([]);
+  const [guestCount, setGuestCount] = useState<number | string>(1);
+  const [prepTime, setPrepTime] = useState('15');
+
 
   const categories = useMemo(() => {
     const allCategories = new Set(menuItems.map((item) => item.category));
@@ -321,18 +422,37 @@ export default function TakeawayPage() {
       return matchesCategory && matchesSearch;
     });
   }, [menuItems, activeCategory, searchTerm]);
-
+  
+  const availableTables = useMemo(() => tables.filter(t => t.status === 'Available'), [tables]);
+  
   const cartTotal = useMemo(() => {
     return takeawayCart.reduce(
       (total, item) => total + item.price * item.quantity,
       0
     );
   }, [takeawayCart]);
+  
+  const checkoutHref = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('type', orderType);
+    if (orderType === 'dine-in') {
+      const selectedTableNames = tables.filter(t => selectedTableIds.includes(t.id)).map(t => t.name);
+      if(selectedTableNames.length > 0) params.set('table', selectedTableNames.join(', '));
+      if(guestCount) params.set('guests', guestCount.toString());
+    }
+    params.set('prepTime', prepTime);
+    return `/takeaway/checkout?${params.toString()}`;
+  }, [orderType, selectedTableIds, tables, guestCount, prepTime]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
       <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold md:text-3xl">Takeaway Orders</h1>
+        <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="icon" className="h-10 w-10">
+                <Link href="/dashboard"><ArrowLeft/></Link>
+            </Button>
+            <h1 className="text-2xl font-semibold md:text-3xl capitalize">{orderType} Orders</h1>
+        </div>
 
         <div className="flex flex-col gap-4">
           <div className="relative">
@@ -382,6 +502,25 @@ export default function TakeawayPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+           {orderType === 'dine-in' && (
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-2 col-span-2">
+                        <Label htmlFor="table-select">Table(s)</Label>
+                         <MultiTableSelect
+                            tables={availableTables}
+                            selectedTableIds={selectedTableIds}
+                            onSelectionChange={setSelectedTableIds}
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="guest-count">Guests</Label>
+                        <Input id="guest-count" type="number" placeholder="No. of guests" value={guestCount} onChange={(e) => setGuestCount(e.target.value)} />
+                    </div>
+                </div>
+                <Separator className="mb-4" />
+              </>
+            )}
           {takeawayCart.length > 0 ? (
             <div className="space-y-4">
               <div className="max-h-64 overflow-y-auto pr-2 space-y-4">
@@ -435,6 +574,21 @@ export default function TakeawayPage() {
                 ))}
               </div>
               <Separator />
+               <div className="space-y-2">
+                <Label htmlFor="prep-time">Preparation Time (minutes)</Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="prep-time" 
+                    type="number" 
+                    value={prepTime} 
+                    onChange={(e) => setPrepTime(e.target.value)} 
+                    placeholder="e.g., 15"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <Separator />
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <p className="text-muted-foreground">Subtotal</p>
@@ -469,8 +623,10 @@ export default function TakeawayPage() {
           )}
         </CardContent>
         <CardFooter className="flex-col gap-2 border-t pt-4">
-          <Link href="/takeaway/checkout" className="w-full">
-            <Button className="w-full" disabled={takeawayCart.length === 0}>
+          <Link href={checkoutHref} className="w-full">
+            <Button 
+                className="w-full" 
+                disabled={takeawayCart.length === 0 || (orderType === 'dine-in' && selectedTableIds.length === 0)}>
               Proceed to Pay <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
@@ -486,4 +642,13 @@ export default function TakeawayPage() {
       </Card>
     </div>
   );
+}
+
+
+export default function TakeawayPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <TakeawayPageContent />
+        </Suspense>
+    )
 }

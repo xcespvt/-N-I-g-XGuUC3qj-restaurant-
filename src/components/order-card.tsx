@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -16,6 +17,7 @@ import {
   Calendar,
   Users2,
   Table,
+  Wallet,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/context/useAppStore";
 import { useAppStore } from "@/context/useAppStore";
@@ -23,6 +25,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DeliveryOrderDetails } from "./delivery-order-details";
 import { TakeawayDineinOrderDetails } from "./takeaway-dinein-order-details";
 import { Separator } from "@/components/ui/separator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const statusConfig: Record<
   string,
@@ -99,10 +102,11 @@ const DetailsSheet = ({
   children: React.ReactNode;
 }) => {
   const isDelivery = order.type === "Delivery";
+  const isMobile = useIsMobile();
   return (
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent className="p-0 flex flex-col" side="bottom">
+      <SheetContent className="p-0 flex flex-col" side={isMobile ? "bottom" : "right"}>
         {isDelivery ? (
           <DeliveryOrderDetails order={order} />
         ) : (
@@ -206,6 +210,15 @@ export const OrderCard = ({ order }: { order: Order }) => {
                   {status.label}
                 </Badge>
               )}
+               {order.payment.status === 'On Hold' && (
+                <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1.5 font-semibold text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 border-yellow-200"
+                >
+                    <Wallet className="h-3 w-3" />
+                    On Hold
+                </Badge>
+              )}
               {type && (
                 <Badge
                   variant="secondary"
@@ -301,6 +314,7 @@ export const OrderCard = ({ order }: { order: Order }) => {
             size="sm"
             className="h-9 w-full rounded-t-none"
             onClick={() => updateOrderStatus(order.id, nextAction.newStatus)}
+            disabled={order.payment.status === 'On Hold' && nextAction.newStatus === 'Delivered'}
           >
             {nextAction.label}
           </Button>

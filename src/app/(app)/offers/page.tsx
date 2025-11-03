@@ -232,7 +232,7 @@ const defaultFormState = {
   type: "Percentage" as OfferType,
   couponCode: "",
   discount: "",
-  minOrder: "",
+  minimumOrder: "",
   validUntil: "",
   bogoItem: "",
   freeItem: "",
@@ -354,6 +354,7 @@ export default function OffersPage() {
     createdAt?: string;
     updatedAt?: string;
     __v?: number;
+    couponCode?: string;
   };
 
   const {
@@ -428,7 +429,7 @@ export default function OffersPage() {
       usage: 0,
       total: 0,
       typeIcon,
-      couponCode: "-",
+      couponCode: item.couponCode ?? "-",
     };
   });
 
@@ -455,6 +456,7 @@ export default function OffersPage() {
 
   type AddOfferPayload = {
     restaurantId: string;
+    couponCode: string;
     offerTitle: string;
     description?: string;
     offerType:
@@ -477,7 +479,7 @@ export default function OffersPage() {
   const buildOfferPayload = (rid: string, state: typeof defaultFormState): AddOfferPayload => {
     const offerType = toApiOfferType(state.type);
     const discountNum = state.discount ? parseFloat(state.discount) : undefined;
-    const minOrderNum = state.minOrder ? parseFloat(state.minOrder) : undefined;
+    const minOrderNum = state.minimumOrder ? parseFloat(state.minimumOrder.replace(/[^0-9.]/g, "")) : undefined;
 
     // Resolve item names from IDs for Free Item / BOGO
     const freeItemName = state.freeItem
@@ -505,6 +507,7 @@ export default function OffersPage() {
 
     const payload: AddOfferPayload = {
       restaurantId: rid,
+      couponCode: (state.couponCode || "").trim(),
       offerTitle: state.title,
       description: state.description || undefined,
       offerType,
@@ -562,6 +565,7 @@ export default function OffersPage() {
             : variables.validUntil as any,
           isActive: true,
           offerStatus: "Scheduled",
+          couponCode: variables.couponCode,
         };
         const updated = { ...(prevData || {}), data: [ ...(prevList ?? []), optimistic ] } as any;
         set(keyExact as unknown as any[], updated);
@@ -644,6 +648,9 @@ export default function OffersPage() {
 
   const handleEditClick = (offer: Offer) => {
     setEditingOffer(offer);
+    const prefillMinOrder = typeof offer.minOrder === "string"
+      ? offer.minOrder.replace(/[^0-9.]/g, "")
+      : "";
     setFormState({
       ...defaultFormState,
       title: offer.title,
@@ -652,7 +659,7 @@ export default function OffersPage() {
       type: offer.type,
       couponCode: offer.couponCode,
       discount: offer.discount,
-      minOrder: offer.minOrder,
+      minimumOrder: prefillMinOrder,
       // Ensure date input is pre-filled correctly
       validUntil: toDateInputValue(offer.validUntil),
     });
@@ -751,24 +758,87 @@ export default function OffersPage() {
     toggleOfferMutation.mutate({ offerId: offerToToggle.id, status: toApiToggleStatus(newStatus), title: offerToToggle.title });
   };
 
+  const updateOfferMutation = useMutation<any, Error, { offerId: string; payload: AddOfferPayload; title?: string }>({
+    mutationFn: async ({ offerId, payload }) => {
+      const finalUrl = `https://backend.crevings.com/api/offers/offers/update/${restaurantId}/${offerId}`;
+      return apiClient<any>(finalUrl, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+    },
+    onMutate: async (variables) => {
+      if (!restaurantId) return;
+      const keyExact = [
+        "offers",
+        restaurantId,
+        `${currentPage}`,
+        `${pageSize}`,
+        { page: currentPage, limit: pageSize },
+      ];
+      const prevData = apiOffersData as { data?: any[] } | undefined;
+      const prevList = (prevData as any)?.data as any[] | undefined;
+      const updatedList = (prevList ?? []).map((item) =>
+        item.offerId === variables.offerId
+          ? {
+              ...item,
+              offerTitle: variables.payload.offerTitle,
+              description: variables.payload.description,
+              offerType: variables.payload.offerType,
+              discountPercentage: variables.payload.discountPercentage,
+              discountAmount: variables.payload.discountAmount,
+              freeItem: variables.payload.freeItem,
+              bogoItems: variables.payload.bogoItems,
+              minimumOrder: variables.payload.minimumOrder,
+              validUntil:
+                typeof variables.payload.validUntil === "number"
+                  ? new Date(variables.payload.validUntil).toISOString()
+                  : (variables.payload.validUntil as any),
+              isActive:
+                variables.payload.isActive !== undefined
+                  ? variables.payload.isActive
+                  : item.isActive,
+              couponCode: variables.payload.couponCode,
+            }
+          : item
+      );
+      const updated = { ...(prevData || {}), data: updatedList } as any;
+      set(keyExact as unknown as any[], updated);
+      toast({ title: "Offer updated", description: `"${variables?.payload?.offerTitle}" updated.` });
+      return { previous: prevData, keyExact } as any;
+    },
+    onSuccess: (_data, _variables) => {
+      if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
+      setIsFormOpen(false);
+      setEditingOffer(null);
+    },
+    onError: (_error, _variables, context: any) => {
+      try {
+        if (context?.keyExact && context?.previous) {
+          set(context.keyExact as unknown as any[], context.previous);
+        }
+      } catch {}
+      toast({
+        variant: "destructive",
+        title: "Couldn’t update offer",
+        description: "Restoring previous data. Please try again.",
+      });
+    },
+  });
+
   const handleSaveOffer = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (editingOffer) {
-      setOffers(
-        offers.map((o) =>
-          o.id === editingOffer.id
-            ? ({ ...o, ...formState, type: formState.type } as Offer)
-            : o
-        )
-      );
-      toast({
-        title: "Offer Updated",
-        description: `"${formState.title}" has been updated.`,
-      });
-      // Close immediately for edit
-      setIsFormOpen(false);
-      setEditingOffer(null);
+      if (!restaurantId) {
+        toast({
+          variant: "destructive",
+          title: "Restaurant ID Missing",
+          description: "Please select a valid branch with restaurant ID.",
+        });
+        return;
+      }
+      const apiPayload = buildOfferPayload(restaurantId, formState);
+      updateOfferMutation.mutate({ offerId: editingOffer.id, payload: apiPayload, title: formState.title });
     } else {
       if (!restaurantId) {
         toast({
@@ -1158,14 +1228,14 @@ export default function OffersPage() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <Label htmlFor="minOrder">Minimum Order (₹)</Label>
+                        <Label htmlFor="minimumOrder">Minimum Order (₹)</Label>
                         <Input
-                          id="minOrder"
-                          name="minOrder"
+                          id="minimumOrder"
+                          name="minimumOrder"
                           type="number"
-                          value={formState.minOrder}
+                          value={formState.minimumOrder}
                           onChange={(e) =>
-                            handleInputChange("minOrder", e.target.value)
+                            handleInputChange("minimumOrder", e.target.value)
                           }
                           placeholder="e.g. 500"
                         />

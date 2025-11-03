@@ -25,6 +25,11 @@ import {
   Plus,
   Tag,
   X,
+  UtensilsCrossed,
+  Clock,
+  CircleDollarSign,
+  UserCheck,
+  ClipboardList,
 } from "lucide-react";
 import {
   Sheet,
@@ -52,7 +57,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/context/useAppStore";
-import type { Table } from "@/context/useAppStore";
+import type { Table, Order, Booking } from "@/context/useAppStore";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
@@ -74,7 +79,7 @@ const initialSeriesFormState = {
 };
 
 export default function TableManagementPage() {
-  const { tables, addTable, updateTable, deleteTable, tableTypes, addTableType, deleteTableType } = useAppStore();
+  const { tables, addTable, updateTable, deleteTable, tableTypes, addTableType, deleteTableType, orders, bookings } = useAppStore();
   const { toast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -91,6 +96,50 @@ export default function TableManagementPage() {
   
   const [isTableTypeDialogOpen, setIsTableTypeDialogOpen] = useState(false);
   const [newTableTypeName, setNewTableTypeName] = useState("");
+  
+  const getTableOccupationInfo = (table: Table): { type: "Booking" | "Dine-in" | null; order: Order | null, guests: number | null, booking: Booking | null } => {
+    if (table.status === "Available") return { type: null, order: null, guests: null, booking: null };
+
+    const activeBooking = bookings.find(b => 
+        (b.status === "Confirmed" || b.status === "Pending") && 
+        b.tables.some(t => t.id === table.id)
+    );
+
+    if (activeBooking) {
+        const preOrder = orders.find(o => o.id.includes(activeBooking.id));
+        const preOrderedItems = preOrder?.items.filter(item => item.category !== 'Booking');
+        return { 
+            type: "Booking", 
+            order: preOrderedItems && preOrderedItems.length > 0 ? { ...preOrder, items: preOrderedItems } as Order : null,
+            guests: activeBooking.partySize,
+            booking: activeBooking,
+        };
+    }
+    
+    const dineInOrder = orders.find(order => 
+        order.type === 'Dine-in' &&
+        !["Delivered", "Cancelled", "Rejected"].includes(order.status) &&
+        order.customerDetails.address.includes(table.name) &&
+        !order.items.some(item => item.category === 'Booking')
+    );
+
+    if (dineInOrder) {
+        return { type: "Dine-in", order: dineInOrder, guests: dineInOrder.items.reduce((acc, item) => acc + item.quantity, 0) || 2, booking: null };
+    }
+
+    return { type: 'Dine-in', order: null, guests: table.capacity, booking: null };
+  };
+
+  const groupedTables = useMemo(() => {
+    return tables.reduce((acc, table) => {
+        const type = table.type || 'Uncategorized';
+        if (!acc[type]) {
+            acc[type] = [];
+        }
+        acc[type].push(table);
+        return acc;
+    }, {} as Record<string, Table[]>);
+  }, [tables]);
 
   useEffect(() => {
     if (isFormOpen && editingTable) {
@@ -134,7 +183,7 @@ export default function TableManagementPage() {
     if (!formData.name || !formData.capacity) {
       toast({
         title: "Missing Information",
-        description: "Please provide both a name and capacity for the table.",
+        description: "Please provide both a name and capacity.",
         variant: "destructive",
       });
       return;
@@ -216,122 +265,137 @@ export default function TableManagementPage() {
         setNewTableTypeName("");
     }
   };
-  const actionButtons = [
-    {
-      id: 'add-table',
-      label: 'Add New Table',
-      icon: <PlusCircle className="mr-2 h-4 w-4" />,
-      variant: 'default' as const,
-      onClick: () => setIsFormOpen(true),
-      className: 'flex-1'
-    },
-    {
-      id: 'add-series',
-      label: 'Add Table Series',
-      icon: <Plus className="mr-2 h-4 w-4" />,
-      variant: 'outline' as const,
-      onClick: () => setIsSeriesFormOpen(true)
-    },
-    {
-      id: 'manage-types',
-      label: 'Manage Table Types',
-      icon: <Tag className="mr-2 h-4 w-4" />,
-      variant: 'outline' as const,
-      onClick: () => setIsTableTypeDialogOpen(true)
-    },
-    {
-      id: 'booking-settings',
-      label: 'Booking Settings',
-      icon: <Settings className="mr-2 h-4 w-4" />,
-      variant: 'outline' as const,
-      onClick: () => setIsBookingSettingsOpen(true)
-    }
-  ];
   
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <h1 className="text-2xl font-semibold md:text-3xl flex items-center gap-2">
-          <Users className="h-6 w-6" /> Table Management
-        </h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
-          {actionButtons.map((button) => (
-            <Button
-              key={button.id}
-              variant={button.variant}
-              onClick={button.onClick}
-              className={`w-full ${button.className || ''}`}
-            >
-              {button.icon}
-              {button.label}
-            </Button>
-          ))}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <h1 className="text-2xl font-semibold md:text-3xl flex items-center gap-2">
+                <Users className="h-6 w-6" /> Table Management
+            </h1>
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                <Button onClick={() => setIsFormOpen(true)} className="w-full">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Table
+                </Button>
+                <Button onClick={() => setIsSeriesFormOpen(true)} variant="outline" className="w-full">
+                    <Plus className="mr-2 h-4 w-4" /> Add Series
+                </Button>
+                <Button onClick={() => setIsTableTypeDialogOpen(true)} variant="outline" className="w-full">
+                    <Tag className="mr-2 h-4 w-4" /> Manage Types
+                </Button>
+                <Button onClick={() => setIsBookingSettingsOpen(true)} variant="outline" className="w-full">
+                    <Settings className="mr-2 h-4 w-4" /> Booking Settings
+                </Button>
+            </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {tables.map((table) => (
-          <Card
-            key={table.id}
-            className="flex flex-col shadow-sm hover:shadow-md transition-shadow"
-          >
-            <CardHeader className="flex flex-row items-start justify-between">
-              <div>
-                <CardTitle className="text-xl">{table.name}</CardTitle>
-                <CardDescription className="flex items-center gap-1.5 pt-1">
-                  <Users className="h-4 w-4" /> Capacity: {table.capacity}
-                </CardDescription>
-                <CardDescription className="flex items-center gap-1.5">
-                  <Tag className="h-4 w-4" /> Type: {table.type}
-                </CardDescription>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleEditClick(table)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleDeleteClick(table)}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <Badge
-                variant={table.status === "Available" ? "secondary" : "outline"}
-                className={cn(
-                  "capitalize text-sm",
-                  table.status === "Available"
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300"
-                    : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
-                )}
-              >
-                {table.status}
-              </Badge>
-            </CardContent>
-            <CardFooter>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => handlePrintQR(table.name)}
-              >
-                <QrCode className="mr-2 h-4 w-4" /> Print QR Code
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+        <div className="space-y-8">
+            {Object.entries(groupedTables).map(([type, tablesOfType]) => (
+                <div key={type}>
+                    <h2 className="text-xl font-semibold mb-4 capitalize flex items-center gap-2">
+                        <Tag className="h-5 w-5 text-primary"/>
+                        {type}
+                    </h2>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {tablesOfType.map((table) => {
+                            const occupationInfo = getTableOccupationInfo(table);
+                            const isAvailable = table.status === "Available";
+                            const isBooking = occupationInfo.type === 'Booking';
+                            const preOrderItems = occupationInfo.order?.items.filter(item => item.category !== 'Booking') || [];
+                            const subtotal = preOrderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+                            return (
+                                <Card
+                                    key={table.id}
+                                    className={cn(
+                                        "flex flex-col shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden",
+                                        !isAvailable && "border-2",
+                                        isBooking && "border-blue-500",
+                                        !isBooking && !isAvailable && "border-red-500",
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-0 right-0 h-16 w-16 bg-gradient-to-bl from-transparent via-transparent to-card",
+                                        !isAvailable && "from-card/0 via-card/50 to-card"
+                                    )}></div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 absolute top-2 right-2 z-10">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleEditClick(table)}>
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handlePrintQR(table.name)}>
+                                                <QrCode className="mr-2 h-4 w-4" />
+                                                Print QR
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() => handleDeleteClick(table)}
+                                                className="text-destructive"
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+
+                                    <CardHeader className="flex-grow">
+                                        <CardTitle className="text-3xl font-bold">{table.name}</CardTitle>
+                                        <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
+                                            <div className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {table.capacity} Guests</div>
+                                        </div>
+                                    </CardHeader>
+                                    
+                                    <CardContent className="p-4 pt-0">
+                                        {isAvailable ? (
+                                            <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                                                <p className="font-semibold text-green-700 dark:text-green-300">Available</p>
+                                            </div>
+                                        ) : (
+                                            <div className={cn("p-3 rounded-lg space-y-2", isBooking ? "bg-blue-50 dark:bg-blue-900/30" : "bg-red-50 dark:bg-red-900/30")}>
+                                                <div className="flex items-center justify-between text-xs font-semibold">
+                                                     <Badge variant="outline" className={cn("capitalize", isBooking ? "text-blue-700 border-blue-300 bg-white" : "text-red-700 border-red-300 bg-white")}>
+                                                        {occupationInfo.type === 'Booking' ? <UserCheck className="mr-1.5 h-3 w-3" /> : <UtensilsCrossed className="mr-1.5 h-3 w-3" />}
+                                                        {occupationInfo.type}
+                                                    </Badge>
+                                                    {occupationInfo.guests && (
+                                                        <div className="flex items-center gap-1"><Users className="h-3.5 w-3.5"/>{occupationInfo.guests}</div>
+                                                    )}
+                                                </div>
+                                                {preOrderItems.length > 0 ? (
+                                                    <div className="text-xs space-y-1">
+                                                        <div className="flex justify-between items-center text-muted-foreground">
+                                                            <span className="flex items-center gap-1"><ClipboardList className="h-3 w-3" />Pre-order</span>
+                                                            <span className="font-semibold text-foreground flex items-center">
+                                                                <IndianRupee className="h-3 w-3 mr-0.5" />
+                                                                {subtotal.toFixed(0)}
+                                                            </span>
+                                                        </div>
+                                                         <div className="flex justify-between items-center text-muted-foreground">
+                                                            <span className="flex items-center gap-1"><CircleDollarSign className="h-3 w-3" />Payment</span>
+                                                            <Badge variant={occupationInfo.order?.payment.status === 'Paid' ? 'default' : 'destructive'} className={cn("px-1.5 py-0 text-[10px]", occupationInfo.order?.payment.status === 'Paid' && "bg-green-600")}>
+                                                                {occupationInfo.order?.payment.status}
+                                                            </Badge>
+                                                         </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-muted-foreground italic text-center py-2">
+                                                        {isBooking ? 'No pre-order items.' : 'Waiting for order...'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                </div>
+            ))}
+        </div>
 
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
         <SheetContent
@@ -346,7 +410,7 @@ export default function TableManagementPage() {
               <SheetDescription>
                 {editingTable
                   ? "Update the details for this table."
-                  : "Provide a name and capacity for the new table."}
+                  : "Provide a name, capacity, and type for the new table."}
               </SheetDescription>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -358,7 +422,7 @@ export default function TableManagementPage() {
                   onChange={(e) =>
                     setFormData((p) => ({ ...p, name: e.target.value }))
                   }
-                  placeholder="e.g., T1, P2"
+                  placeholder="e.g., T1, P2, Rooftop-A"
                 />
               </div>
               <div className="space-y-2">
@@ -492,7 +556,7 @@ export default function TableManagementPage() {
       </Sheet>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent side="bottom" className="sm:max-w-md">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitleComponent>
               Are you absolutely sure?
@@ -586,7 +650,7 @@ export default function TableManagementPage() {
           <div className="flex flex-col h-full">
             <SheetHeader className="p-6 pb-4 border-b">
               <SheetTitle className="text-xl">Manage Table Types</SheetTitle>
-              <SheetDescription>Add new types or remove existing ones.</SheetDescription>
+              <SheetDescription>Add new types or remove existing ones. This helps in organizing your tables.</SheetDescription>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div className="flex gap-2">
@@ -607,18 +671,19 @@ export default function TableManagementPage() {
                 <Label>Existing Types</Label>
                 <div className="max-h-48 overflow-y-auto pr-2 space-y-2">
                   {tableTypes.map(type => (
-                    <div key={type} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                      <span className="font-medium text-sm">{type}</span>
+                    <div key={type} className="flex items-center justify-between p-3 bg-muted rounded-md">
+                      <span className="font-medium text-sm capitalize">{type}</span>
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-7 w-7 text-destructive hover:text-destructive/80" 
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive" 
                         onClick={() => deleteTableType(type)}
                       >
                         <X className="h-4 w-4"/>
                       </Button>
                     </div>
                   ))}
+                  {tableTypes.length === 0 && <p className="text-sm text-center text-muted-foreground py-4">No custom types added.</p>}
                 </div>
               </div>
             </div>
@@ -637,3 +702,5 @@ export default function TableManagementPage() {
     </div>
   );
 }
+
+    
