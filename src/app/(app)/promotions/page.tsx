@@ -133,6 +133,8 @@ import { useToast } from "@/hooks/use-toast"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DialogContent, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { useGet, usePost, usePut, useQueryHelpers } from "@/hooks/useApi"
+import { PaginationControls } from "@/components/pagination/PaginationControls"
 
 
 const dashboardPerformanceData = [
@@ -435,7 +437,7 @@ const MultiOfferSelect = ({
 
 
 export default function PromotionsPage() {
-    const { menuItems } = useAppStore();
+    const { menuItems, branches, selectedBranch } = useAppStore();
     const { toast } = useToast();
     const [promotions, setPromotions] = useState(promotionsData);
     const [staffPermissions, setStaffPermissions] = useState(staffPermissionsData);
@@ -464,6 +466,14 @@ export default function PromotionsPage() {
         "brand-awareness": "Brand awareness",
     };
 
+    // Creation form state
+    const [createTab, setCreateTab] = useState<'basic' | 'targeting' | 'preview'>('basic');
+    const [campaignTitle, setCampaignTitle] = useState("");
+    const [shortDescription, setShortDescription] = useState("");
+    const [couponCode, setCouponCode] = useState("");
+    const [selectedService, setSelectedService] = useState<string>("");
+    const [selectedSegment, setSelectedSegment] = useState<string>("all");
+
 
     const [walletBalance, setWalletBalance] = useState(2500);
     const [amountToAdd, setAmountToAdd] = useState(0);
@@ -477,6 +487,346 @@ export default function PromotionsPage() {
     const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
     
     const [selectedPlacements, setSelectedPlacements] = useState<string[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Resolve restaurantId for API call, fallback to provided sample id
+    const currentBranch = branches.find(b => b.id === selectedBranch);
+    const restaurantId = currentBranch?.restaurantId ?? "b1a2c3d4-e5f6-7890-1234-56789abcdefg";
+
+    // Live promotions API typing
+    type PromotionApiItem = {
+      restaurantId: string;
+      promotionId: string;
+      campaignTitle: string;
+      shortDescription: string;
+      couponCode?: string;
+      adBudget?: number;
+      estimatedImpressions?: number;
+      objective?: string;
+      offers?: Array<{ offerId: string; offerTitle: string; _id?: string }>;
+      startDate?: string;
+      endDate?: string;
+      placementOptions?: any;
+      totalCost?: number;
+      service?: string;
+      customerSegment?: "NEW" | "RETURNING" | "ALL";
+      promotionStatus?: "Active" | "Scheduled" | "Paused" | "Ended";
+      createdAt?: string;
+      updatedAt?: string;
+    };
+
+    type PromotionApiResponse = {
+      success: boolean;
+      message: string;
+      data: PromotionApiItem[];
+      pagination: {
+        currentPage: number;
+        itemsPerPage: number;
+        totalItems: number;
+        totalPages: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+      };
+    };
+
+    // Fetch promotions from backend
+    const { data: promotionsApi, error: promotionsError, isLoading: promotionsLoading } = useGet<PromotionApiResponse>(
+      ["promotions", restaurantId],
+      `https://backend.crevings.com/api/promotions/promotions/${restaurantId}`,
+      { page: currentPage, limit: 10 },
+      { enabled: !!restaurantId }
+    );
+
+    function mapStatus(status?: string): PromotionStatus {
+      switch (status) {
+        case "Active": return "Active";
+        case "Scheduled": return "Scheduled";
+        default: return "Ended";
+      }
+    }
+
+    function mapAudience(seg?: string) {
+      if (seg === "NEW") return "New";
+      if (seg === "RETURNING") return "Returning";
+      return "All";
+    }
+
+    function toDateRange(start?: string, end?: string) {
+      const s = start ? format(new Date(start), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+      const e = end ? format(new Date(end), "yyyy-MM-dd") : s;
+      return `${s} - ${e}`;
+    }
+
+    function transformPromotions(items: PromotionApiItem[]): typeof promotionsData {
+      return items.map((p) => {
+        const firstOfferTitle = p.offers?.[0]?.offerTitle ?? "Special";
+        const imageSeed = p.promotionId ?? Math.random().toString(36).slice(2);
+        return {
+          id: p.promotionId ?? imageSeed,
+          title: p.campaignTitle ?? firstOfferTitle,
+          status: mapStatus(p.promotionStatus),
+          shortDescription: p.shortDescription ?? "",
+          description: p.shortDescription ?? "",
+          type: firstOfferTitle.includes("BOGO") ? "BOGO" : firstOfferTitle.includes("%") ? "Percentage" : firstOfferTitle.includes("Happy Hour") ? "Happy Hour" : "Special",
+          value: firstOfferTitle,
+          audience: mapAudience(p.customerSegment),
+          budget: typeof p.adBudget === "number" ? `₹${p.adBudget}` : "₹0",
+          dateRange: toDateRange(p.startDate, p.endDate),
+          isActive: p.promotionStatus === "Active",
+          usage: Math.min( (p.estimatedImpressions ?? 0) * 0.3, p.estimatedImpressions ?? 0),
+          total: p.estimatedImpressions ?? 0,
+          image: `https://picsum.photos/seed/${imageSeed}/400/300`,
+          couponCode: p.couponCode ?? "",
+          objective: p.objective ?? "Highlight discounts/offers",
+        };
+      });
+    }
+
+    useEffect(() => {
+      if (promotionsApi?.success && Array.isArray(promotionsApi.data)) {
+        const mapped = transformPromotions(promotionsApi.data);
+        setPromotions(mapped.length ? mapped : promotionsData);
+      } else if (promotionsError) {
+        toast({
+          title: "Failed to fetch promotions",
+          description: "Showing local sample data.",
+          variant: "destructive",
+        });
+      }
+    }, [promotionsApi, promotionsError]);
+
+    // Add Promotion: mutation setup and helpers
+    const { invalidate } = useQueryHelpers();
+
+    type AddPromotionPayload = {
+      restaurantId: string;
+      campaignTitle: string;
+      shortDescription: string;
+      couponCode?: string;
+      adBudget: number;
+      estimatedImpressions: number;
+      objective: string;
+      offers: { offerId: string; offerTitle: string }[];
+      startDate: string;
+      endDate: string;
+      placementOptions: Record<string, { isEnabled: boolean; price: number; tags: string[] }>;
+      totalCost: number;
+      service: "DELIVERY" | "TAKEAWAY" | "OFFLINE_TAKEAWAY" | "DINEIN" | "BOOKING";
+      customerSegment: "ALL" | "NEW" | "RETURNING";
+    };
+
+    const placementKeyMap: Record<string, string> = {
+      "homepage-banner": "homepageBanner",
+      "search-boost": "searchResultBoost",
+      "category-highlight": "categoryHighlight",
+      "offer-section": "offerSection",
+      "push-notification": "pushNotification",
+      alert: "alert",
+    };
+
+    function buildPlacementPayload() {
+      const payload: Record<string, { isEnabled: boolean; price: number; tags: string[] }> = {};
+      for (const p of placementOptions) {
+        const key = placementKeyMap[p.id] || p.id;
+        payload[key] = {
+          isEnabled: selectedPlacements.includes(p.id),
+          price: p.cost,
+          tags: p.tags,
+        };
+      }
+      return payload;
+    }
+
+    function mapService(service: string): AddPromotionPayload["service"] {
+      switch (service) {
+        case "Delivery": return "DELIVERY";
+        case "Takeaway": return "TAKEAWAY";
+        case "Offline Takeaway": return "OFFLINE_TAKEAWAY";
+        case "Dine-in": return "DINEIN";
+        case "Booking": return "BOOKING";
+        default: return "DELIVERY";
+      }
+    }
+
+    function segmentToApi(seg: string): AddPromotionPayload["customerSegment"] {
+      if (seg === "new") return "NEW";
+      if (seg === "returning") return "RETURNING";
+      return "ALL";
+    }
+
+    function resetCreateForm() {
+      setCampaignTitle("");
+      setShortDescription("");
+      setCouponCode("");
+      setAdBudget("");
+      setSelectedOffers([]);
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setSelectedPlacements([]);
+      setSelectedService("");
+      setSelectedSegment("all");
+      setObjective("boost-orders");
+    }
+
+    const addPromotionMutation = usePost<any, AddPromotionPayload>(
+      "https://backend.crevings.com/api/promotions/promotions/add",
+      {
+        onSuccess: (_data, variables) => {
+          invalidate(["promotions", restaurantId, { page: currentPage, limit: 10 }]);
+          toast({ title: "Promotion created", description: `"${variables.campaignTitle}" added.` });
+          setIsPromotionDialogOpen(false);
+          setCreateTab("basic");
+          resetCreateForm();
+        },
+        onError: (_error) => {
+          toast({ variant: "destructive", title: "Couldn’t create promotion", description: "Please try again." });
+        },
+      }
+    );
+
+    function handleCreatePromotion() {
+      if (!restaurantId) {
+        toast({ variant: "destructive", title: "Restaurant ID Missing", description: "Please select a valid branch with restaurant ID." });
+        return;
+      }
+
+      const numericBudget = typeof adBudget === 'number' ? adBudget : Number(adBudget || 0);
+      const estImpressions = numericBudget * 20;
+      const offersPayload = selectedOffers.map(id => {
+        const offer = promotions.find(p => p.id === id);
+        return { offerId: id, offerTitle: offer?.title || "Offer" };
+      });
+
+      const payload: AddPromotionPayload = {
+        restaurantId,
+        campaignTitle: campaignTitle || "Untitled Campaign",
+        shortDescription: shortDescription || "",
+        couponCode: couponCode || undefined,
+        adBudget: numericBudget,
+        estimatedImpressions: estImpressions,
+        objective: objectiveLabels[objective] || "Boost orders",
+        offers: offersPayload,
+        startDate: startDate ? new Date(startDate).toISOString() : new Date().toISOString(),
+        endDate: endDate ? new Date(endDate).toISOString() : new Date().toISOString(),
+        placementOptions: buildPlacementPayload(),
+        totalCost: finalPayable,
+        service: mapService(selectedService || "Delivery"),
+        customerSegment: segmentToApi(selectedSegment || "all"),
+      };
+
+      addPromotionMutation.mutate(payload);
+    }
+
+    // Edit Promotion: payload, helpers, and mutation
+    type EditPromotionPayload = {
+      campaignTitle: string;
+      shortDescription: string;
+      couponCode?: string;
+      adBudget: number;
+      estimatedImpressions: number;
+      objective: string;
+      offers: { offerId: string; offerTitle: string }[];
+      startDate: string;
+      endDate: string;
+      placementOptions: Record<string, { isEnabled: boolean; price: number; tags: string[] }>;
+      service: "DELIVERY" | "TAKEAWAY" | "OFFLINE_TAKEAWAY" | "DINEIN" | "BOOKING";
+      customerSegment: "ALL" | "NEW" | "RETURNING";
+      promotionStatus: "Active" | "Scheduled" | "Ended";
+    };
+
+    function objectiveKeyFromLabel(label: string) {
+      const entry = Object.entries(objectiveLabels).find(([k, v]) => v === label);
+      return entry?.[0] ?? "highlight-discounts";
+    }
+
+    const placementKeyReverseMap: Record<string, string> = {
+      homepageBanner: "homepage-banner",
+      searchResultBoost: "search-boost",
+      categoryHighlight: "category-highlight",
+      offerSection: "offer-section",
+      pushNotification: "push-notification",
+      alert: "alert",
+      alertNotification: "alert",
+    };
+
+    function serviceLabelFromApi(s?: string) {
+      switch (s) {
+        case "DELIVERY": return "Delivery";
+        case "TAKEAWAY": return "Takeaway";
+        case "OFFLINE_TAKEAWAY": return "Offline Takeaway";
+        case "DINEIN": return "Dine-in";
+        case "BOOKING": return "Booking";
+        default: return "";
+      }
+    }
+
+    function segmentUiFromApi(seg?: string) {
+      if (seg === "NEW") return "new";
+      if (seg === "RETURNING") return "returning";
+      return "all";
+    }
+
+    useEffect(() => {
+      if (!editingPromotion) return;
+      const apiItem = promotionsApi?.data?.find(i => i.promotionId === editingPromotion.id);
+      if (!apiItem) return;
+      setCampaignTitle(apiItem.campaignTitle || editingPromotion.title || "");
+      setShortDescription(apiItem.shortDescription || editingPromotion.shortDescription || "");
+      setCouponCode(apiItem.couponCode || "");
+      setAdBudget(typeof apiItem.adBudget === "number" ? apiItem.adBudget : Number((editingPromotion.budget || "").replace(/[^\d]/g, "")) || "");
+      setObjective(objectiveKeyFromLabel(apiItem.objective || editingPromotion.objective || objectiveLabels["highlight-discounts"]));
+      setSelectedOffers((apiItem.offers || []).map(o => o.offerId));
+      const enabledKeys = Object.entries(apiItem.placementOptions || {}).filter(([_, v]: any) => (v as any)?.isEnabled).map(([k]) => k);
+      setSelectedPlacements(enabledKeys.map(k => placementKeyReverseMap[k]).filter(Boolean));
+      setSelectedService(serviceLabelFromApi(apiItem.service));
+      setSelectedSegment(segmentUiFromApi(apiItem.customerSegment));
+      setCreateTab("basic");
+    }, [editingPromotion]);
+
+    const updatePromotionMutation = usePut<any, EditPromotionPayload>(
+      `https://backend.crevings.com/api/promotions/promotions/update/${restaurantId}/${editingPromotion?.id}`,
+      {
+        onSuccess: () => {
+          invalidate(["promotions", restaurantId, { page: currentPage, limit: 10 }]);
+          toast({ title: "Promotion updated", description: "Changes saved successfully." });
+          setIsPromotionDialogOpen(false);
+          setEditingPromotion(null);
+          setCreateTab("basic");
+        },
+        onError: () => {
+          toast({ variant: "destructive", title: "Couldn’t update promotion", description: "Please try again." });
+        },
+      }
+    );
+
+    function handleUpdatePromotion() {
+      if (!restaurantId || !editingPromotion?.id) {
+        toast({ variant: "destructive", title: "Update failed", description: "Missing restaurant or promotion ID." });
+        return;
+      }
+      const numericBudget = typeof adBudget === 'number' ? adBudget : Number(adBudget || 0);
+      const estImpressions = numericBudget * 20;
+      const offersPayload = selectedOffers.map(id => {
+        const offer = promotions.find(p => p.id === id);
+        return { offerId: id, offerTitle: offer?.title || "Offer" };
+      });
+      const payload: EditPromotionPayload = {
+        campaignTitle: campaignTitle || "Untitled Campaign",
+        shortDescription: shortDescription || "",
+        couponCode: couponCode || undefined,
+        adBudget: numericBudget,
+        estimatedImpressions: estImpressions,
+        objective: objectiveLabels[objective] || "Boost orders",
+        offers: offersPayload,
+        startDate: startDate ? new Date(startDate).toISOString() : new Date().toISOString(),
+        endDate: endDate ? new Date(endDate).toISOString() : new Date().toISOString(),
+        placementOptions: buildPlacementPayload(),
+        service: mapService(selectedService || "Delivery"),
+        customerSegment: segmentToApi(selectedSegment || "all"),
+        promotionStatus: (promotionsApi?.data?.find(i => i.promotionId === editingPromotion.id)?.promotionStatus as any) || (editingPromotion.status as any) || "Scheduled",
+      };
+      updatePromotionMutation.mutate(payload);
+    }
 
     const impressions = typeof adBudget === 'number' ? adBudget * 20 : 0;
     const wpImpressions = typeof wpBudget === 'number' ? wpBudget * 20 : 0;
@@ -523,6 +873,28 @@ export default function PromotionsPage() {
         if (activePromotionTab === "All") return true;
         return promo.status === activePromotionTab;
     });
+
+    const itemsPerPage = promotionsApi?.pagination?.itemsPerPage ?? 10;
+    const isFiltering = activePromotionTab !== "All";
+
+    let pageItems = promotions as typeof promotions;
+    let computedTotalItems = (promotionsApi?.pagination?.totalItems ?? promotions.length);
+    let computedTotalPages = Math.max(1, Math.ceil((computedTotalItems || 0) / itemsPerPage));
+
+    if (isFiltering) {
+        const totalItems = filteredPromotions.length;
+        computedTotalItems = totalItems;
+        computedTotalPages = Math.max(1, Math.ceil((totalItems || 0) / itemsPerPage));
+        const startIndex = Math.min((currentPage - 1) * itemsPerPage, Math.max(0, totalItems - 1));
+        const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+        pageItems = filteredPromotions.slice(startIndex, endIndex);
+    } else {
+        pageItems = promotions;
+    }
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activePromotionTab]);
 
     const handleCreateClick = () => {
         setEditingPromotion(null);
@@ -752,7 +1124,7 @@ export default function PromotionsPage() {
                                 <p className="text-muted-foreground text-sm">An overview of all your promotional campaigns.</p>
                             </div>
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {promotions.map((promo) => (
+                                {pageItems.map((promo) => (
                                     <Card
                                     key={promo.id}
                                     className="flex flex-col shadow-sm hover:shadow-lg transition-shadow"
@@ -837,6 +1209,14 @@ export default function PromotionsPage() {
                                     </div>
                                 )}
                             </div>
+                            {computedTotalItems > 0 && computedTotalPages > 1 && (
+                              <PaginationControls
+                                currentPage={currentPage}
+                                totalPages={computedTotalPages}
+                                onPageChange={setCurrentPage}
+                                className="mt-8"
+                              />
+                            )}
                         </div>
                     </TabsContent>
                     
@@ -1003,7 +1383,7 @@ export default function PromotionsPage() {
                             </SheetDescription>
                         </SheetHeader>
                         <form className="flex-1 flex flex-col overflow-hidden">
-                            <Tabs defaultValue="basic" className="flex-1 flex flex-col overflow-hidden">
+                            <Tabs value={createTab} onValueChange={(v) => setCreateTab(v as any)} className="flex-1 flex flex-col overflow-hidden">
                                 <div className="px-6 border-b py-2">
                                     <TabsList className="grid w-full grid-cols-3 h-8">
                                         <TabsTrigger value="basic" className="text-xs px-2 h-6">Basic Info</TabsTrigger>
@@ -1014,13 +1394,14 @@ export default function PromotionsPage() {
                                 <TabsContent value="basic" className="p-6 space-y-4 overflow-y-auto flex-1">
                                     <div className="space-y-2">
                                         <Label htmlFor="promo-name">Campaign Title</Label>
-                                        <Input id="promo-name" defaultValue={editingPromotion?.title} placeholder="e.g. Weekend Bonanza" />
+                                        <Input id="promo-name" value={campaignTitle} onChange={(e) => setCampaignTitle(e.target.value)} placeholder="e.g. Weekend Bonanza" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="short-description">Short Description</Label>
                                         <Input 
                                             id="short-description" 
-                                            defaultValue={editingPromotion?.shortDescription} 
+                                            value={shortDescription}
+                                            onChange={(e) => setShortDescription(e.target.value)}
                                             placeholder="e.g. Amazing weekend deals!" 
                                         />
                                     </div>
@@ -1029,7 +1410,8 @@ export default function PromotionsPage() {
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 id="couponCode"
-                                                defaultValue={editingPromotion?.couponCode}
+                                                value={couponCode}
+                                                onChange={(e) => setCouponCode(e.target.value)}
                                                 placeholder="e.g. WEEKEND20"
                                                 className="flex-1"
                                             />
@@ -1038,9 +1420,7 @@ export default function PromotionsPage() {
                                                 variant="outline"
                                                 onClick={() => {
                                                     const code = `CRV${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-                                                    // Set the coupon code value
-                                                    const input = document.getElementById('couponCode') as HTMLInputElement;
-                                                    if (input) input.value = code;
+                                                    setCouponCode(code);
                                                 }}
                                             >
                                                 <Sparkles className="mr-2 h-4 w-4" />
@@ -1118,6 +1498,7 @@ export default function PromotionsPage() {
                                                 <PopoverTrigger asChild>
                                                     <Button
                                                         variant={"outline"}
+                                                        disabled={!startDate}
                                                         className={cn(
                                                             "w-full justify-start text-left font-normal",
                                                             !endDate && "text-muted-foreground"
@@ -1195,7 +1576,11 @@ export default function PromotionsPage() {
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                             {['Delivery', 'Takeaway', 'Offline Takeaway', 'Dine-in', 'Booking'].map(service => (
                                                 <div key={service} className="flex items-center gap-2 rounded-md border p-3">
-                                                    <Checkbox id={`service-${service.toLowerCase().replace(' ', '-')}`} />
+                                                    <Checkbox 
+                                                      id={`service-${service.toLowerCase().replace(' ', '-')}`}
+                                                      checked={selectedService === service}
+                                                      onCheckedChange={(checked) => { if (checked) setSelectedService(service); }}
+                                                    />
                                                     <Label htmlFor={`service-${service.toLowerCase().replace(' ', '-')}`} className="text-sm font-normal">{service}</Label>
                                                 </div>
                                             ))}
@@ -1204,7 +1589,7 @@ export default function PromotionsPage() {
                                     <div>
                                         <Label className="text-base font-semibold">Customer Segment</Label>
                                         <p className="text-sm text-muted-foreground">Choose which customers are eligible for this promotion.</p>
-                                        <RadioGroup defaultValue="all" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                                        <RadioGroup value={selectedSegment} onValueChange={setSelectedSegment} className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                                             <div>
                                                 <RadioGroupItem value="all" id="target-all" className="peer sr-only" />
                                                 <Label htmlFor="target-all" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"> All Customers</Label>
@@ -1227,7 +1612,7 @@ export default function PromotionsPage() {
                                         <CardContent className="p-4 space-y-4">
                                             <div className="space-y-2">
                                                 <p className="text-sm text-muted-foreground">Campaign Title</p>
-                                                <p className="font-semibold">{editingPromotion?.title || "Weekend Bonanza"}</p>
+                                                <p className="font-semibold">{campaignTitle || "Weekend Bonanza"}</p>
                                             </div>
                                             <Separator />
                                             <div className="space-y-2">
@@ -1250,6 +1635,9 @@ export default function PromotionsPage() {
                                                         const offer = promotions.find(p => p.id === id);
                                                         return <Badge key={id} variant="secondary">{offer?.title}</Badge>
                                                     })}
+                                                    {selectedOffers.length > 0 && (
+                                                        <p className="text-xs text-muted-foreground">Service: {selectedService || 'Not set'} • Segment: {selectedSegment.toUpperCase()}</p>
+                                                    )}
                                                     {selectedOffers.length === 0 && <p className="text-sm text-muted-foreground">No offers selected.</p>}
                                                 </div>
                                             </div>
@@ -1282,8 +1670,17 @@ export default function PromotionsPage() {
                             >
                                 Cancel
                             </Button>
-                            <Button type="button" onClick={() => toast({ title: "Next Step" })}>
-                                Next
+                            <Button 
+                                type="button" 
+                                disabled={createTab === 'basic' ? !(campaignTitle && shortDescription && typeof adBudget === 'number' && adBudget > 0 && selectedOffers.length > 0 && startDate && endDate && endDate > startDate) : createTab === 'targeting' ? !(selectedService && selectedSegment) : !(campaignTitle && shortDescription && typeof adBudget === 'number' && adBudget > 0 && selectedOffers.length > 0 && startDate && endDate && endDate > startDate && selectedService && selectedSegment)}
+                                onClick={() => {
+                                    if (createTab === 'basic') { setCreateTab('targeting'); return; }
+                                    if (createTab === 'targeting') { setCreateTab('preview'); return; }
+                                    if (editingPromotion) { handleUpdatePromotion(); return; }
+                                    handleCreatePromotion();
+                                }}
+                            >
+                                {createTab === 'preview' ? (editingPromotion ? 'Save Changes' : 'Create Promotion') : 'Next'}
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </SheetFooter>
