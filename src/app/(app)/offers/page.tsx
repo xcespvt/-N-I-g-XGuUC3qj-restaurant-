@@ -525,7 +525,7 @@ export default function OffersPage() {
       if (freeItemName) payload.freeItem = freeItemName;
     } else if (offerType === "Buy-One-Get-One (BOGO)") {
       // Prefer a friendly default string if available
-      payload.bogoItems = bogoItemName ? `Buy 1 ${bogoItemName} Get 1 Free` : undefined;
+      if (bogoItemName) payload.bogoItems = `Buy 1 ${bogoItemName} Get 1 Free`;
     } else if (offerType === "Happy Hour") {
       if (typeof discountNum === "number") payload.discountPercentage = discountNum;
       if (happyHourTiming) payload.happyHourTiming = happyHourTiming;
@@ -533,6 +533,39 @@ export default function OffersPage() {
 
     return payload;
   };
+
+// Prune payload to only include keys relevant to the current offerType
+const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
+  const base: AddOfferPayload = {
+    restaurantId: p.restaurantId,
+    couponCode: p.couponCode,
+    offerTitle: p.offerTitle,
+    description: p.description,
+    offerType: p.offerType,
+    minimumOrder: p.minimumOrder,
+    validUntil: p.validUntil,
+    isActive: p.isActive,
+  };
+  switch (p.offerType) {
+    case "Percentage Discount":
+      if (p.discountPercentage !== undefined) base.discountPercentage = p.discountPercentage;
+      break;
+    case "Flat Discount":
+      if (p.discountAmount !== undefined) base.discountAmount = p.discountAmount;
+      break;
+    case "Free Item":
+      if (p.freeItem) base.freeItem = p.freeItem;
+      break;
+    case "Buy-One-Get-One (BOGO)":
+      if (p.bogoItems) base.bogoItems = p.bogoItems;
+      break;
+    case "Happy Hour":
+      if (p.discountPercentage !== undefined) base.discountPercentage = p.discountPercentage;
+      if (p.happyHourTiming) base.happyHourTiming = p.happyHourTiming;
+      break;
+  }
+  return base;
+};
 
   // Create offer mutation
   const addOfferMutation = usePost<any, AddOfferPayload>(
@@ -761,9 +794,10 @@ export default function OffersPage() {
   const updateOfferMutation = useMutation<any, Error, { offerId: string; payload: AddOfferPayload; title?: string }>({
     mutationFn: async ({ offerId, payload }) => {
       const finalUrl = `https://backend.crevings.com/api/offers/offers/update/${restaurantId}/${offerId}`;
+      const pruned = pruneUpdatePayload(payload);
       return apiClient<any>(finalUrl, {
         method: "PUT",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(pruned),
       });
     },
     onMutate: async (variables) => {
