@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { UtensilsCrossed } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/apiClient";
 
 const CrevingsLogo = () => (
   <div className="flex items-center gap-2 text-2xl font-semibold">
@@ -20,21 +22,51 @@ const CrevingsLogo = () => (
 
 export default function LoginPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState("");
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleSendOtp = () => {
-    if (phone.length === 10) {
+  const isValidEmail = (val: string) => /.+@.+\..+/.test(val);
+
+  const handleSendOtp = async () => {
+    if (!isValidEmail(email)) {
+      toast({ title: "Invalid email", description: "Please enter a valid email.", variant: "destructive" });
+      return;
+    }
+    try {
+      setSendingOtp(true);
+      await apiClient<any>("https://backend.crevings.com/api/auth/request-otp", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
       setIsOtpSent(true);
+      toast({ title: "OTP Sent", description: "Check your email for the code." });
+    } catch (err: any) {
+      toast({ title: "Failed to send OTP", description: err?.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setSendingOtp(false);
     }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     const enteredOtp = otp.join("");
-    if (enteredOtp.length === 6) {
+    if (enteredOtp.length !== 6) return;
+    try {
+      setVerifying(true);
+      await apiClient<any>("https://backend.crevings.com/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp: enteredOtp }),
+      });
+      toast({ title: "Login Successful", description: "Welcome back!" });
       router.push("/dashboard");
+    } catch (err: any) {
+      toast({ title: "Invalid OTP", description: err?.message || "Please check the code and try again.", variant: "destructive" });
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -71,19 +103,16 @@ export default function LoginPage() {
             className="bg-white p-8 rounded-2xl"
         >
             <div className="space-y-6">
-            <h3 className="text-xl font-bold">Log in with your number</h3>
+            <h3 className="text-xl font-bold">Log in with your email</h3>
             <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                +91 -
-                </span>
+                {/* Email input replaces phone */}
                 <Input
-                id="phone"
-                type="tel"
-                placeholder=""
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
-                maxLength={10}
-                className="pl-14 h-14 text-lg rounded-xl pr-20"
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-14 text-lg rounded-xl pr-20"
                 disabled={isOtpSent}
                 />
                 {!isOtpSent && (
@@ -91,9 +120,9 @@ export default function LoginPage() {
                     variant="ghost"
                     className="absolute right-2 top-1/2 -translate-y-1/2 h-10 text-primary font-bold"
                     onClick={handleSendOtp}
-                    disabled={phone.length !== 10}
+                    disabled={!isValidEmail(email) || sendingOtp}
                 >
-                    OTP
+                    {sendingOtp ? "Sending..." : "OTP"}
                 </Button>
                 )}
             </div>
@@ -126,16 +155,16 @@ export default function LoginPage() {
 
             {!isOtpSent && (
                 <p className="text-sm text-muted-foreground">
-                We'll send a verification code here
+                We'll send a verification code to your email
                 </p>
             )}
 
             <Button
                 onClick={handleVerifyOtp}
                 className="w-full h-14 text-lg"
-                disabled={!isOtpSent || otp.join("").length !== 6}
+                disabled={!isOtpSent || otp.join("").length !== 6 || verifying}
             >
-                Verify & Proceed
+                {verifying ? "Verifying..." : "Verify & Proceed"}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
                 By clicking "Continue" Privacy policy & Terms of Conditions apply
