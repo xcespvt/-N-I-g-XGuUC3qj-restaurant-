@@ -135,6 +135,7 @@ import { DialogContent, DialogDescription, DialogFooter } from "@/components/ui/
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { useGet, usePost, usePut, useQueryHelpers } from "@/hooks/useApi"
 import { PaginationControls } from "@/components/pagination/PaginationControls"
+import { apiClient } from "@/lib/apiClient"
 
 
 const dashboardPerformanceData = [
@@ -171,7 +172,7 @@ const promotionTips = [
     { icon: <Lightbulb className="h-5 w-5 text-yellow-500" />, title: "Limited-time offers", description: "Creating a sense of urgency can increase conversion rates by up to 25%.", color: "bg-yellow-100 dark:bg-yellow-900/50" },
 ]
 
-type PromotionStatus = 'Active' | 'Scheduled' | 'Ended';
+type PromotionStatus = 'Active' | 'Scheduled' | 'Paused' | 'Ended';
 type PromotionType = "Percentage" | "Flat" | "BOGO" | "Free Item" | "Happy Hour" | "Special";
 
 const promotionsData = [
@@ -252,6 +253,7 @@ const promotionsData = [
 const statusBadgeStyles: Record<PromotionStatus, string> = {
     Active: "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-green-200",
     Scheduled: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-blue-200",
+    Paused: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 border-yellow-200",
     Ended: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300",
 }
 
@@ -541,6 +543,8 @@ export default function PromotionsPage() {
       switch (status) {
         case "Active": return "Active";
         case "Scheduled": return "Scheduled";
+        case "Paused":
+        case "Pause": return "Paused";
         default: return "Ended";
       }
     }
@@ -913,8 +917,23 @@ export default function PromotionsPage() {
         setIsPromotionDialogOpen(true);
     };
     
-    const handleTogglePromotionStatus = (promoId: string) => {
-        setPromotions(currentPromos => currentPromos.map(p => p.id === promoId ? { ...p, isActive: !p.isActive } : p));
+    const handleTogglePromotionStatus = async (promoId: string) => {
+        const current = promotions.find(p => p.id === promoId);
+        const nextAction = current?.isActive ? "Pause" : "Activate";
+        // Optimistic update
+        setPromotions(curr => curr.map(p => p.id === promoId ? { ...p, isActive: !p.isActive } : p));
+        try {
+            await apiClient<any>(`https://backend.crevings.com/api/promotions/promotions/toggle/${restaurantId}/${promoId}`, {
+                method: "PUT",
+                body: JSON.stringify({ status: nextAction }),
+            });
+            toast({ title: `Promotion ${nextAction === 'Activate' ? 'activated' : 'paused'}`, description: `Status updated successfully.` });
+            invalidate(["promotions", restaurantId, { page: currentPage, limit: 10 }]);
+        } catch (e) {
+            // Revert on error
+            setPromotions(curr => curr.map(p => p.id === promoId ? { ...p, isActive: current?.isActive ?? false } : p));
+            toast({ variant: "destructive", title: "Failed to update status", description: "Please try again." });
+        }
     };
 
     const handlePermissionChange = (email: string, permission: keyof (typeof staffPermissionsData)[0]['permissions'], value: boolean) => {
