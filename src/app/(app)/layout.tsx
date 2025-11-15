@@ -205,7 +205,7 @@ function AppLayoutClient({
         badge: newOrdersCount > 0 ? newOrdersCount.toString() : undefined
       },
       { href: "/order-history", label: "Order History", icon: History },
-      { href: "/order-tracking", label: "Track Order", icon: PackageSearch },
+      // { href: "/order-tracking", label: "Track Order", icon: PackageSearch },
       { href: "/refunds", label: "Refunds", icon: RefreshCw }
     ],
 
