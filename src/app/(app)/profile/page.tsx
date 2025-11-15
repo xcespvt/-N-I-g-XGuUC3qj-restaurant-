@@ -21,6 +21,9 @@ import {
   Mail,
   Phone,
   Share2,
+  Camera,
+  PlusCircle,
+  Upload,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -39,13 +42,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, ChangeEvent } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { Input } from "@/components/ui/input"
 
 const ListItem = ({
   icon,
@@ -122,6 +128,21 @@ const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isMediaUploadOpen, setIsMediaUploadOpen] = useState(false);
+  const [bannerMedia, setBannerMedia] = useState([
+    { type: 'image', src: 'https://picsum.photos/seed/restaurant-banner/800/300' }
+  ]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  useEffect(() => {
+    if (bannerMedia.length > 1) {
+        const timer = setInterval(() => {
+            setCurrentBannerIndex(prev => (prev + 1) % bannerMedia.length);
+        }, 5000); // Change slide every 5 seconds
+        return () => clearInterval(timer);
+    }
+  }, [bannerMedia]);
 
   const handleLogout = () => {
     toast({
@@ -129,6 +150,30 @@ export default function ProfilePage() {
       description: "You have been successfully logged out.",
     });
     router.push("/");
+  };
+  
+  const handleBannerUpload = () => {
+    setIsMediaUploadOpen(true);
+  }
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const newMedia = Array.from(files).map(file => ({
+        type: file.type.startsWith('video') ? 'video' : 'image',
+        src: URL.createObjectURL(file)
+      }));
+      setBannerMedia(prev => [...prev, ...newMedia]);
+      toast({
+        title: "Media Added",
+        description: `${files.length} file(s) have been added to your banner.`,
+      });
+      setIsMediaUploadOpen(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -140,9 +185,38 @@ export default function ProfilePage() {
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="pt-6 flex flex-col items-center text-center">
-          <Avatar className="h-24 w-24 mb-4">
+      <Card className="overflow-hidden">
+        <CardHeader className="p-0 relative h-48 bg-muted">
+            {bannerMedia.map((media, index) => (
+                <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentBannerIndex ? 'opacity-100' : 'opacity-0'}`}>
+                    {media.type === 'image' ? (
+                         <Image 
+                            src={media.src}
+                            alt="Restaurant banner"
+                            fill
+                            className="object-cover"
+                            data-ai-hint="restaurant interior"
+                        />
+                    ) : (
+                        <video
+                            src={media.src}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            className="w-full h-full object-cover"
+                        />
+                    )}
+                </div>
+            ))}
+             <div className="absolute inset-0 bg-black/20"/>
+            <Button variant="secondary" size="sm" className="absolute bottom-3 right-3 z-10" onClick={handleBannerUpload}>
+                <PlusCircle className="h-4 w-4 mr-2"/>
+                Add Media
+            </Button>
+        </CardHeader>
+        <CardContent className="pt-6 flex flex-col items-center text-center relative -mt-12">
+          <Avatar className="h-24 w-24 mb-4 border-4 border-background shadow-md">
             <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="logo abstract" />
             <AvatarFallback>GK</AvatarFallback>
           </Avatar>
@@ -269,6 +343,27 @@ export default function ProfilePage() {
         </Button>
         <p className="text-xs text-muted-foreground mt-1">Version 1.0.0</p>
       </div>
+      <Dialog open={isMediaUploadOpen} onOpenChange={setIsMediaUploadOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Add Banner Media</DialogTitle>
+                <DialogDescription>Upload images or videos to display in your profile banner slideshow.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Button onClick={handleUploadClick} className="w-full">
+                    <Upload className="mr-2 h-4 w-4" /> Choose Files
+                </Button>
+                <Input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleFileChange}
+                />
+            </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

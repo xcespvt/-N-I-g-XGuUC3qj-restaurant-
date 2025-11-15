@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   IndianRupee,
@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { PrepTimeDialog } from "@/components/prep-time-dialog";
+// Use API-served audio to avoid bundler asset import issues
 
 const NewIncomingOrderCard = ({
   order,
@@ -342,10 +343,46 @@ export default function Dashboard() {
 
   const [newOrder, setNewOrder] = useState<Order | null>(null);
   const [orderToAccept, setOrderToAccept] = useState<Order | null>(null);
+  const [isAlertPlaying, setIsAlertPlaying] = useState<boolean>(false);
   const { toast } = useToast();
+  const [alertAudio, setAlertAudio] = useState<HTMLAudioElement | null>(null);
+
+  // Initialize audio object once
+  useEffect(() => {
+    const sound = new Audio("/audio/NEW_ORDER_ALERT_SOUND.mp3");
+    sound.loop = true;
+    sound.volume = 1.0;
+    sound.preload = "auto";
+    setAlertAudio(sound);
+  }, []);
+
+  // Reactively play/stop when new orders appear/disappear
+  useEffect(() => {
+    if (!alertAudio) return;
+    if (newOrder) {
+      console.log(alertAudio)
+      alertAudio.currentTime = 0;
+      alertAudio
+        .play()
+        .then(() => setIsAlertPlaying(true))
+        .catch((err) => {
+          console.warn("New-order alert play failed:", err);
+          setIsAlertPlaying(false);
+        });
+    } else {
+      alertAudio.pause();
+      alertAudio.currentTime = 0;
+      setIsAlertPlaying(false);
+    }
+  }, [newOrder, alertAudio]);
 
   const handleDecline = () => {
     setNewOrder(null);
+    if (alertAudio) {
+      alertAudio.pause();
+      alertAudio.currentTime = 0;
+      setIsAlertPlaying(false);
+    }
   };
 
   const handleAccept = (order: Order) => {
@@ -364,6 +401,11 @@ export default function Dashboard() {
       title: "Order Accepted!",
       description: `${orderToAccept.id} has been accepted with a prep time of ${time}.`,
     });
+    if (alertAudio) {
+      alertAudio.pause();
+      alertAudio.currentTime = 0;
+      setIsAlertPlaying(false);
+    }
   };
 
   const handleToggleOnline = (isOnline: boolean) => {
@@ -420,7 +462,6 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-6 pb-20">
       <h1 className="text-2xl font-semibold md:text-3xl">Dashboard</h1>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/50">
           <CardHeader className="flex flex-row items-center justify-between">
@@ -429,6 +470,9 @@ export default function Dashboard() {
               <CardDescription className="text-xs">
                 Accepting new orders
               </CardDescription>
+              {isAlertPlaying && (
+                <p className="text-xs text-primary mt-1">Playing new-order alert…</p>
+              )}
             </div>
             <Switch
               checked={isRestaurantOnline}
