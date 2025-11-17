@@ -268,7 +268,7 @@ function AppLayoutClient({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
+            {/* <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
               <UtensilsCrossed className="h-5 w-5" />
             </div>
             <span className="truncate text-lg font-semibold">Crevings</span>
@@ -277,7 +277,8 @@ function AppLayoutClient({
                 <Flame className="h-3 w-3" />
                 <span>Pro</span>
               </div>
-            )}
+            )} */}
+            <img src="/Image/CREVINGS FULL LOGO.Svg" alt="Crevings" className="" />
           </div>
         </SidebarHeader>
         <SidebarContent>
