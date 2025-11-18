@@ -13,10 +13,12 @@ import { apiClient } from "@/lib/apiClient";
 
 const CrevingsLogo = () => (
   <div className="flex items-center gap-2 text-2xl font-semibold">
-    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    {/* <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
       <UtensilsCrossed className="h-5 w-5" />
     </div>
-    <span>Crevings</span>
+    <span>Crevings</span> */}
+    <img src="/Image/CREVINGS FULL LOGO.svg" alt="Crevings" className="h-10" />
+
   </div>
 );
 
@@ -97,16 +99,16 @@ export default function LoginPage() {
           <CrevingsLogo />
         </div>
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white p-8 rounded-2xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white p-8 rounded-2xl"
         >
-            <div className="space-y-6">
+          <div className="space-y-6">
             <h3 className="text-xl font-bold">Log in with your email</h3>
             <div className="relative">
-                {/* Email input replaces phone */}
-                <Input
+              {/* Email input replaces phone */}
+              <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
@@ -114,71 +116,71 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-14 text-lg rounded-xl pr-20"
                 disabled={isOtpSent}
-                />
-                {!isOtpSent && (
+              />
+              {!isOtpSent && (
                 <Button
-                    variant="ghost"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 text-primary font-bold"
-                    onClick={handleSendOtp}
-                    disabled={!isValidEmail(email) || sendingOtp}
+                  variant="ghost"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 text-primary font-bold"
+                  onClick={handleSendOtp}
+                  disabled={!isValidEmail(email) || sendingOtp}
                 >
-                    {sendingOtp ? "Sending..." : "OTP"}
+                  {sendingOtp ? "Sending..." : "OTP"}
                 </Button>
-                )}
+              )}
             </div>
 
             {isOtpSent && (
-                <div className="space-y-4 animate-in fade-in-50">
+              <div className="space-y-4 animate-in fade-in-50">
                 <Label>Enter 6-digit OTP</Label>
                 <div className="flex justify-center gap-2">
-                    {otp.map((digit, index) => (
+                  {otp.map((digit, index) => (
                     <Input
-                        key={index}
-                        ref={(el: HTMLInputElement | null) => {
-                          inputRefs.current[index] = el;
-                        }}
-                        type="tel"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      key={index}
+                      ref={(el: HTMLInputElement | null) => {
+                        inputRefs.current[index] = el;
+                      }}
+                      type="tel"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         handleOtpChange(index, e.target.value)
-                        }
-                        onKeyDown={(e: KeyboardEvent<HTMLInputElement>) =>
+                      }
+                      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) =>
                         handleKeyDown(index, e)
-                        }
-                        className="h-12 w-10 text-xl text-center rounded-lg"
+                      }
+                      className="h-12 w-10 text-xl text-center rounded-lg"
                     />
-                    ))}
+                  ))}
                 </div>
-                </div>
+              </div>
             )}
 
             {!isOtpSent && (
-                <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 We'll send a verification code to your email
-                </p>
+              </p>
             )}
 
             <Button
-                onClick={handleVerifyOtp}
-                className="w-full h-14 text-lg"
-                disabled={!isOtpSent || otp.join("").length !== 6 || verifying}
+              onClick={handleVerifyOtp}
+              className="w-full h-14 text-lg"
+              disabled={!isOtpSent || otp.join("").length !== 6 || verifying}
             >
-                {verifying ? "Verifying..." : "Verify & Proceed"}
+              {verifying ? "Verifying..." : "Verify & Proceed"}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-                By clicking "Continue" Privacy policy & Terms of Conditions apply
+              By clicking "Continue" Privacy policy & Terms of Conditions apply
             </p>
             <p className="text-center text-sm text-muted-foreground">
-                Don't have an account?{" "}
-                <Link
+              Don't have an account?{" "}
+              <Link
                 href="/register"
                 className="underline text-primary font-semibold"
-                >
+              >
                 Sign up
-                </Link>
+              </Link>
             </p>
-            </div>
+          </div>
         </motion.div>
       </div>
     </div>

@@ -8,10 +8,11 @@
 
     const CrevingsLogo = () => (
       <div className="flex items-center gap-2 text-2xl font-semibold text-white">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+        {/* <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
             <UtensilsCrossed className="h-5 w-5" />
         </div>
-        <span>Crevings</span>
+        <span>Crevings</span> */}
+        <img src="/Image/CREVINGS FULL LOGO.svg" alt="Crevings" className="h-10" />
       </div>
     );
 
