@@ -39,12 +39,13 @@ export default function EmployeeLoginPage() {
     <div className="w-full min-h-screen flex flex-col items-center justify-center bg-muted/30 p-4">
       <div className="w-full max-w-sm mx-auto">
         <div className="flex justify-center mb-6">
-          <div className="flex items-center gap-2 text-2xl font-semibold">
+          {/* <div className="flex items-center gap-2 text-2xl font-semibold">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <UtensilsCrossed className="h-5 w-5" />
             </div>
             <span>Crevings</span>
-          </div>
+          </div> */}
+          <img src="/Image/CREVINGS FULL LOGO.svg" alt="Crevings" className="h-10" />
         </div>
         
         <p className="text-center font-semibold text-xl mb-2">
