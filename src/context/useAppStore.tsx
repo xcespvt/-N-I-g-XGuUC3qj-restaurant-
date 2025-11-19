@@ -212,7 +212,7 @@ interface AppStore {
 
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   updateOrderPrepTime: (orderId: string, extraMinutes: number) => void;
-  addOrder: (cart: TakeawayCartItem[], customerName: string, customerPhone: string) => void;
+addOrder: (cart: TakeawayCartItem[], customerName: string, customerPhone: string, orderType: 'takeaway' | 'dine-in', table: string | undefined, prepTime: string, paymentStatus: 'Paid' | 'On Hold', paymentMethod: string) => void;
   acceptNewOrder: (order: Order, prepTime: string) => void;
   
   addMenuItem: (item: NewMenuItem) => void;

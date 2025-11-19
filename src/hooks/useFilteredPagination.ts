@@ -15,8 +15,7 @@ export function useFilteredPagination(
   searchTerm: string,
   currentPage: number,
   setCurrentPage: (n: number) => void,
-  itemsPerPage: number,
-  apiTotalItems?: number
+  itemsPerPage: number
 ): PaginationResult<MenuItem> {
   const filteredMenu = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -28,7 +27,7 @@ export function useFilteredPagination(
   }, [items, activeCategory, searchTerm]);
 
   const isFiltered = searchTerm.trim() !== "" || activeCategory !== "All";
-  const totalItems = isFiltered ? filteredMenu.length : (apiTotalItems ?? items.length);
+  const totalItems = isFiltered ? filteredMenu.length : items.length;
   const totalPages = Math.max(1, Math.ceil((totalItems || 0) / itemsPerPage));
   const startIndex = Math.min(
     (currentPage - 1) * itemsPerPage,
