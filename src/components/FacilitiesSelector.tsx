@@ -63,15 +63,15 @@ export default function FacilitiesSelector({
     <div className="flex flex-col gap-3 w-full">
       {/* Header */}
       {/* Facilities List */}
-      <div className="flex flex-col gap-3 p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 sm:p-4">
         {allFacilities.map((facility) => (
           <div
             key={facility.id}
-            className="flex items-center justify-between p-4 rounded-lg border bg-card shadow-sm"
+            className="flex items-center justify-between p-3 sm:p-4 rounded-lg border bg-card shadow-sm"
           >
             <div className="flex items-center gap-3">
               <facility.icon className="h-5 w-5 text-primary" />
-              <span className="font-medium">{facility.label}</span>
+              <span className="font-medium text-sm sm:text-base">{facility.label}</span>
             </div>
             <Switch
               id={`facility-${facility.id}`}

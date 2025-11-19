@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -24,7 +23,6 @@ import { CardDescription, CardFooter, CardHeader, CardTitle } from "@/components
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import FacilitiesSelector from './FacilitiesSelector';
-
 
 
 const steps = [
@@ -306,7 +304,7 @@ export default function SignUpForm() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contact-number">Mobile Number</Label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Input
                     id="contact-number"
                     type="tel"
@@ -325,6 +323,7 @@ export default function SignUpForm() {
                     type="button"
                     variant="outline"
                     onClick={handleSendMobileOtp}
+                    className="w-full sm:w-auto"
                   >
                     Verify OTP
                   </Button>
@@ -372,7 +371,7 @@ export default function SignUpForm() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="aadhar-card">Aadhar Card Number</Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                       id="aadhar-card"
                       type="text"
@@ -387,6 +386,7 @@ export default function SignUpForm() {
                       type="button"
                       variant="outline"
                       onClick={handleSendAadharOtp}
+                      className="w-full sm:w-auto"
                     >
                       Verify
                     </Button>
@@ -624,7 +624,7 @@ export default function SignUpForm() {
                 <Label className="text-base font-semibold">
                   What do you offer? (Select at least one)
                 </Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3 mt-3">
                   {["Dine-in", "Takeaway", "Delivery"].map((offer) => (
                     <div key={offer} className="flex items-center space-x-2">
                       <Checkbox
@@ -671,7 +671,7 @@ export default function SignUpForm() {
                   {formData.openingHours.map((item, index) => (
                     <div
                       key={item.day}
-                      className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 p-2 rounded-lg hover:bg-muted"
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] items-center gap-x-4 gap-y-2 p-2 rounded-lg hover:bg-muted"
                     >
                       <Label
                         htmlFor={`open-${item.day}`}
@@ -683,7 +683,7 @@ export default function SignUpForm() {
                       <Input
                         id={`open-${item.day}`}
                         type="time"
-                        className="w-32"
+                        className="w-full sm:w-32"
                         value={item.opening}
                         onChange={(e) =>
                           handleOpeningHoursChange(
@@ -695,7 +695,7 @@ export default function SignUpForm() {
                       />
                       <Input
                         type="time"
-                        className="w-32"
+                        className="w-full sm:w-32"
                         value={item.closing}
                         onChange={(e) =>
                           handleOpeningHoursChange(
@@ -917,13 +917,13 @@ export default function SignUpForm() {
 
 
   return (
-    <Card className="w-full max-w-md shadow-none border-0 bg-transparent">
-      <CardContent className="p-6 flex flex-col min-h-[60vh]">
-        <header className="flex items-center justify-between mb-6">
-          <Button variant="ghost" size="icon" onClick={prevStep}>
+    <Card className="w-full shadow-none border-0 bg-transparent">
+      <CardContent className="p-4 sm:p-6 flex flex-col min-h-[60vh]">
+        <header className="flex items-center justify-between mb-4 sm:mb-6">
+          <Button variant="ghost" size="icon" onClick={prevStep} disabled={currentStep === 1}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="w-full mx-8">
+          <div className="w-full mx-4 sm:mx-8">
             {/* <Progress value={progressPercentage} /> */}
             <Progress
               value={(currentStep / totalSteps) * 100}
@@ -938,7 +938,7 @@ export default function SignUpForm() {
         <main className="flex-1 flex flex-col justify-center">
           <div className="text-center space-y-4">
             <CardHeader className="relative">
-              {/* {currentStep > 1 && (npm
+              {/* {currentStep > 1 && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -958,7 +958,7 @@ export default function SignUpForm() {
                   {/* <CardDescription>
                     Step {currentStep} of {totalSteps}
                   </CardDescription> */}
-                  <CardTitle className="text-2xl">{title}</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl">{title}</CardTitle>
                 </div>
               </div>
             </CardHeader>
@@ -972,15 +972,16 @@ export default function SignUpForm() {
           <div className="space-y-4">
             <form onSubmit={handleSubmit}>
               <Card className="flex flex-col">
-                <CardContent className="py-6 flex-grow min-h-[450px]">
+                <CardContent className="py-4 sm:py-6 flex-grow min-h-[400px] sm:min-h-[450px]">
                   {renderStepContent()}
                 </CardContent>
-                <CardFooter className="border-t p-6 flex justify-center">
+                <CardFooter className="border-t p-4 sm:p-6 flex justify-center">
                   {currentStep < totalSteps - 1 ? (
                     <Button
                       type="button"
                       onClick={nextStep}
                       disabled={!isStepValid}
+                      className="w-full sm:w-auto"
                     >
                       Next <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -989,11 +990,12 @@ export default function SignUpForm() {
                       type="button"
                       onClick={nextStep}
                       disabled={!isStepValid}
+                      className="w-full sm:w-auto"
                     >
                       Agree & Continue <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : (
-                    <Button type="submit">Go to Homepage</Button>
+                    <Button type="submit" className="w-full sm:w-auto">Go to Homepage</Button>
                   )}
                 </CardFooter>
               </Card>
@@ -1004,25 +1006,3 @@ export default function SignUpForm() {
     </Card>
   );
 }
-
-
-
-// export default function RegisterPage() {
-   
-
-//     return (
-//         <div className="w-full min-h-screen flex items-center justify-center bg-muted/40 p-4 sm:p-6">
-//             <div className="w-full max-w-3xl">
-//               // header is gone
-
-//             </div>
-//         </div>
-//     )
-// }
-
-
-    
-
-    
-
-    

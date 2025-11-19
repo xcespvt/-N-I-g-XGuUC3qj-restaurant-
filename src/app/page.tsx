@@ -169,7 +169,7 @@ export default function LoginPage() {
               {verifying ? "Verifying..." : "Verify & Proceed"}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              By clicking "Continue" Privacy policy & Terms of Conditions apply
+              By logging in you authorise to send notifications via SMS, Email, RCS and others as per Terms of Services and Privacy Policy add this text after 
             </p>
             <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
