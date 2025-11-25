@@ -225,6 +225,7 @@ addOrder: (cart: TakeawayCartItem[], customerName: string, customerPhone: string
   addTable: (name: string, capacity: number, type: string) => void;
   updateTable: (table: Table) => void;
   deleteTable: (tableId: string) => void;
+  setTables: (tables: Table[]) => void;
   
   addTableType: (name: string) => void;
   deleteTableType: (name: string) => void;
@@ -597,6 +598,10 @@ export const useAppStore = create<AppStore>()(
       },
       setSelectedBranch: (branchId: string) => {
         set({ selectedBranch: branchId });
+      },
+
+      setTables: (newTables: Table[]) => {
+        set({ tables: newTables });
       },
 
       addBranch: (branchData: Omit<Branch, 'id' | 'ordersToday' | 'isOnline'>) => {

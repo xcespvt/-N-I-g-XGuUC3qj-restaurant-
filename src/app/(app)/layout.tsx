@@ -32,6 +32,7 @@ import {
   Percent,
   Receipt,
   Settings,
+  LogOut,
   ShoppingCart,
   Star,
   Truck,
@@ -60,6 +61,8 @@ import { NotificationBell } from "@/components/notification-bell";
 import { BottomNav } from "@/components/bottom-nav";
 import dynamic from 'next/dynamic';
 import { useGet } from "@/hooks/useApi";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -105,6 +108,8 @@ function AppLayoutClient({
 }) {
   const pathname = usePathname();
   const { subscriptionPlan, orders, setBranches } = useAppStore();
+  const { toast } = useToast();
+  const router = useRouter();
 
   type ApiBranch = {
     _id: string;
@@ -263,6 +268,11 @@ function AppLayoutClient({
     </SidebarMenuItem>
   ));
 
+  const handleLogout = React.useCallback(() => {
+    toast({ title: "Logged Out", description: "You have been successfully logged out." });
+    router.push("/");
+  }, [router, toast]);
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -295,6 +305,12 @@ function AppLayoutClient({
           <SidebarSeparator />
           <SidebarMenu>
             {renderNavItems(bottomNav)}
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
+                <LogOut />
+                <span>Logout</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
