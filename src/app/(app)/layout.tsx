@@ -15,7 +15,6 @@ import {
   HelpCircle,
   History,
   LayoutGrid,
-  LogOut,
   Lock,
   MapPin,
   MessageSquare,
@@ -33,6 +32,7 @@ import {
   Percent,
   Receipt,
   Settings,
+  LogOut,
   ShoppingCart,
   Star,
   Truck,
@@ -274,6 +274,7 @@ function AppLayoutClient({
       </SidebarMenuButton>
     </SidebarMenuItem>
   ));
+
 
   return (
     <SidebarProvider>

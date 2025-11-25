@@ -6,7 +6,6 @@ import {
   ChevronRight,
   FileText,
   HelpCircle,
-  LogOut,
   MessageSquare,
   Banknote,
   Building2,
@@ -49,7 +48,6 @@ import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
 import { useState, useEffect, useRef, ChangeEvent } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 
@@ -126,7 +124,6 @@ const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function ProfilePage() {
-  const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMediaUploadOpen, setIsMediaUploadOpen] = useState(false);
@@ -144,14 +141,6 @@ export default function ProfilePage() {
     }
   }, [bannerMedia]);
 
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
-    router.push("/");
-  };
-  
   const handleBannerUpload = () => {
     setIsMediaUploadOpen(true);
   }
@@ -337,10 +326,6 @@ export default function ProfilePage() {
       </div>
 
       <div className="text-center">
-        <Button variant="ghost" className="text-destructive" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
-        </Button>
         <p className="text-xs text-muted-foreground mt-1">Version 1.0.0</p>
       </div>
       <Dialog open={isMediaUploadOpen} onOpenChange={setIsMediaUploadOpen}>

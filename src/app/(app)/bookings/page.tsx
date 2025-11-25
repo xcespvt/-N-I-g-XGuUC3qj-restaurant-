@@ -63,6 +63,7 @@ import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useGet, usePost, useQueryHelpers } from "@/hooks/useApi";
 
 const initialFormState = {
   name: "",
@@ -79,8 +80,92 @@ const initialSeriesFormState = {
 };
 
 export default function TableManagementPage() {
-  const { tables, addTable, updateTable, deleteTable, tableTypes, addTableType, deleteTableType, orders, bookings } = useAppStore();
+  const { tables, addTable, updateTable, deleteTable, tableTypes, addTableType, deleteTableType, orders, bookings, branches, selectedBranch, setTables } = useAppStore();
   const { toast } = useToast();
+  const { invalidate } = useQueryHelpers();
+
+  // Determine active restaurantId from selected branch (fallback to example id)
+  const activeBranch = useMemo(() => branches.find(b => b.id === selectedBranch), [branches, selectedBranch]);
+  const restaurantId = activeBranch?.restaurantId || "b1a2c3d4-e5f6-7890-1234-56789abcdef9";
+
+  // Fetch tables from backend bookings endpoint and sync into store
+  const { data: bookingsData, isLoading: isTablesLoading, error: tablesError } = useGet<any>(
+    ["bookings", restaurantId],
+    `https://backend.crevings.com/api/bookings/${restaurantId}`
+  );
+
+  // Heuristic to extract tables from various possible response shapes
+  const extractTablesFromResponse = (raw: any): Table[] => {
+    if (!raw) return [];
+
+    // Support APIs that wrap in { data: ... }
+    const root = raw?.data ?? raw;
+
+    const normalizeStatus = (s: any): Table["status"] => {
+      const lower = (s ?? "available").toString().toLowerCase();
+      if (["available", "free"].includes(lower)) return "Available";
+      if (["occupied", "booked", "reserved", "in_use"].includes(lower)) return "Occupied";
+      return "Available";
+    };
+
+    const mapOne = (t: any): Table => ({
+      id: (t?.id ?? t?._id ?? t?.tableId ?? t?.name ?? "").toString(),
+      name: t?.name ?? t?.tableName ?? t?.tableId ?? t?.id ?? "",
+      capacity: Number(t?.capacity ?? 4),
+      status: normalizeStatus(t?.status),
+      type: t?.type ?? "Normal",
+    });
+
+    // Direct array response
+    if (Array.isArray(root)) return root.map(mapOne).filter((t: Table) => t.id && t.name);
+    // Common shape: { tables: [...] }
+    if (Array.isArray(root?.tables)) return root.tables.map(mapOne).filter((t: Table) => t.id && t.name);
+
+    // Grouped shape: { Available: { count, bookings: [...] }, Occupied: { count, bookings: [...] }, ... }
+    const arrays: any[] = [];
+    const seen = new Set<any>();
+    if (root && typeof root === "object") {
+      for (const val of Object.values(root)) {
+        if (Array.isArray(val)) {
+          if (!seen.has(val)) { arrays.push(val); seen.add(val); }
+        } else if (val && typeof val === "object") {
+          const v: any = val;
+          // Prefer explicit known keys; avoid double-adding via fallback
+          if (Array.isArray(v.bookings) && !seen.has(v.bookings)) { arrays.push(v.bookings); seen.add(v.bookings); }
+          else if (Array.isArray(v.tables) && !seen.has(v.tables)) { arrays.push(v.tables); seen.add(v.tables); }
+          else {
+            for (const nested of Object.values(v)) {
+              if (Array.isArray(nested) && !seen.has(nested)) { arrays.push(nested); seen.add(nested); }
+            }
+          }
+        }
+      }
+    }
+
+    const flat = arrays.flat();
+    // Map to Table and dedupe by id
+    const mapped = flat.map(mapOne).filter((t: Table) => t.id && t.name);
+    const byId = new Map<string, Table>();
+    for (const t of mapped) {
+      if (!byId.has(t.id)) byId.set(t.id, t);
+    }
+    return Array.from(byId.values());
+  };
+
+  useEffect(() => {
+    try {
+      const remoteTables = extractTablesFromResponse(bookingsData);
+      // Always prefer server response to keep UI consistent with backend
+      setTables(remoteTables);
+    } catch (e) {
+      // ignore parsing issues, keep local tables
+    }
+  }, [bookingsData, setTables]);
+
+  // Mutation: Add table series on server
+  const addSeries = usePost<any, { prefix: string; startNumber: number; endNumber: number; capacity: number; type: string }>(
+    `https://backend.crevings.com/api/bookings/${restaurantId}/tables/series`
+  );
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSeriesFormOpen, setIsSeriesFormOpen] = useState(false);
@@ -237,16 +322,27 @@ export default function TableManagementPage() {
        return;
     }
 
-    let addedCount = 0;
-    for (let i = startNum; i <= endNum; i++) {
-        const tableName = `${prefix}${i}`;
-        addTable(tableName, capacity, type);
-        addedCount++;
-    }
-
-    toast({ title: "Tables Added", description: `${addedCount} tables have been added to your restaurant.` });
-    setIsSeriesFormOpen(false);
-    setSeriesFormData(initialSeriesFormState);
+    // Call backend add series API
+    addSeries.mutate(
+      {
+        prefix: prefix || "",
+        startNumber: startNum,
+        endNumber: endNum,
+        capacity,
+        type,
+      },
+      {
+        onSuccess: async () => {
+          toast({ title: "Tables Added", description: `Requested ${endNum - startNum + 1} tables to be added on server.` });
+          await invalidate(["bookings", restaurantId]);
+          setIsSeriesFormOpen(false);
+          setSeriesFormData(initialSeriesFormState);
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to add series", description: err?.message || "Server error", variant: "destructive" });
+        },
+      }
+    );
   }
 
   const handleSaveBookingSettings = () => {
@@ -268,6 +364,12 @@ export default function TableManagementPage() {
   
   return (
     <div className="flex flex-col gap-6">
+        {isTablesLoading && (
+          <div className="text-sm text-muted-foreground">Loading tables from server…</div>
+        )}
+        {tablesError && (
+          <div className="text-sm text-destructive">Failed to load tables. Showing local data.</div>
+        )}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <h1 className="text-2xl font-semibold md:text-3xl flex items-center gap-2">
                 <Users className="h-6 w-6" /> Table Management

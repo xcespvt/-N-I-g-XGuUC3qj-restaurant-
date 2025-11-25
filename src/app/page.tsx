@@ -16,18 +16,20 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
-
-  const [showOtp, setShowOtp] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+
+  // New UI state for OTP/Password flows
+  const [showOtp, setShowOtp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   // ---------------------------------------------------------
   // 🔹 SEND OTP API
@@ -149,22 +151,17 @@ export default function LoginPage() {
     }
   };
 
-  // ---------------------------------------------------------
-  // 🔹 MAIN LOGIN ACTION (OTP or Password)
-  // ---------------------------------------------------------
-  const handleLogin = () => {
-    if (showOtp) return handleVerifyOtp();
-    if (showPassword) return handlePasswordLogin();
-  };
+  const handleOtpChange = (index: number, value: string) => {
+    const str = typeof value === "string" ? value : String(value ?? "");
+    if (isNaN(Number(str))) return; // Only allow numbers
 
-  const handleOtpChange = (e: ChangeEvent<HTMLInputElement>, index: number) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    if (value.length <= 1) {
-      const newOtp = [...otp];
-      newOtp[index] = value;
-      setOtp(newOtp);
+    const newOtp = [...otp];
+    newOtp[index] = str.slice(-1); // Only take the last character
+    setOtp(newOtp);
 
-      if (value && index < 5) inputRefs.current[index + 1]?.focus();
+    // Move to next input if a digit is entered
+    if (str && index < 5) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -179,20 +176,62 @@ export default function LoginPage() {
     setShowPassword(false);
     setPassword("");
     setOtp(Array(6).fill(""));
+    // setIsOtpSent(false); // removed – variable not declared
+  };
+
+  // const handleOtpRequest = async () => {
+  //   // Keep backend OTP integration intact
+  //   await handleSendOtp();
+  //   setShowOtp(true);
+  // };
+  const handlePasswordRequest = () => {
+    setShowPassword(true);
+    setShowOtp(false);
+  }
+
+  const PASSWORD_LOGIN_URL = process.env.NEXT_PUBLIC_PASSWORD_LOGIN_URL;
+  const handleLoginWithPassword = async () => {
+    if (!email || !email.includes("@")) {
+      toast({ title: "Invalid email", description: "Please enter a valid email.", variant: "destructive" });
+      return;
+    }
+    if (!password) {
+      toast({ title: "Missing password", description: "Please enter your password.", variant: "destructive" });
+      return;
+    }
+    if (!PASSWORD_LOGIN_URL) {
+      toast({
+        variant: "destructive",
+        title: "Password login not configured",
+        description: "Set NEXT_PUBLIC_PASSWORD_LOGIN_URL to enable password login.",
+      });
+      return;
+    }
+    try {
+      setVerifyingOtp(true);
+      await apiClient<any>(PASSWORD_LOGIN_URL, {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      toast({ title: "Login Successful", description: "Welcome back!" });
+      router.push("/dashboard");
+    } catch (err: any) {
+      toast({ title: "Login Failed", description: err?.message || "Please check your credentials.", variant: "destructive" });
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   const getAction = () => {
-    if (showOtp) return { text: verifyingOtp ? "Verifying..." : "Verify OTP & Login", handler: handleLogin };
-    if (showPassword) return { text: loggingIn ? "Logging in..." : "Login", handler: handleLogin };
-    return { text: sendingOtp ? "Sending OTP..." : "Login with OTP", handler: handleOtpRequest };
+    if (showOtp) return { text: "Verify OTP & Login", handler: handleVerifyOtp };
+    if (showPassword) return { text: "Login", handler: handleLoginWithPassword };
+    return { text: "Login with OTP", handler: handleOtpRequest };
   };
-
   const { text: buttonText, handler: buttonHandler } = getAction();
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center bg-white">
       <div className="p-6 pt-8 w-full max-w-sm mx-auto">
-
         <div className="flex items-center mb-6">
           {(showOtp || showPassword) && (
             <Button variant="ghost" size="icon" className="mr-2" onClick={handleBack}>
@@ -201,9 +240,7 @@ export default function LoginPage() {
           )}
           <h2 className="text-2xl font-bold text-left">Log in or sign up</h2>
         </div>
-
         <div className="space-y-4">
-          {/* EMAIL */}
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <Input
@@ -213,31 +250,28 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="h-12 text-base"
-              disabled={showOtp || showPassword}
+              disabled={showOtp}
             />
           </div>
 
-          {/* OTP INPUT */}
           {showOtp && (
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <Label>Enter 6-digit OTP</Label>
-                <Button variant="link" size="sm" className="p-0 h-auto text-xs" onClick={handleOtpRequest}>
-                  Resend OTP
-                </Button>
+                <Label htmlFor="otp-1">Enter 6-digit OTP</Label>
+                <Button variant="link" size="sm" className="p-0 h-auto text-xs" onClick={handleOtpRequest}>Resend OTP</Button>
               </div>
-
               <div className="flex justify-between gap-2">
                 {otp.map((digit, index) => (
                   <Input
                     key={index}
+                    id={`otp-${index}`}
                     type="text"
                     maxLength={1}
                     inputMode="numeric"
                     value={digit}
-                    onChange={(e) => handleOtpChange(e, index)}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(e, index)}
-                    ref={el => { if (el) inputRefs.current[index] = el; return undefined; }}
+                    ref={el => { if (el) inputRefs.current[index] = el; }}
                     className="w-10 h-12 text-center text-lg font-semibold"
                   />
                 ))}
@@ -245,12 +279,12 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* PASSWORD INPUT */}
           {showPassword && (
             <div className="space-y-2">
-              <Label>Password</Label>
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
+                  id="password"
                   type={isPasswordVisible ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={password}
@@ -270,7 +304,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* MAIN BUTTON */}
           <Button
             onClick={buttonHandler}
             className="w-full h-12 text-base"
@@ -278,7 +311,6 @@ export default function LoginPage() {
           >
             {buttonText}
           </Button>
-
         </div>
 
         {!showOtp && !showPassword && (
@@ -288,25 +320,30 @@ export default function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">OR</span>
+                <span className="bg-white px-2 text-muted-foreground">
+                  OR
+                </span>
               </div>
             </div>
 
-            <Button variant="outline" className="w-full h-12 text-base text-green-600" onClick={() => {
-              setShowPassword(true);
-              setShowOtp(false);
-            }}>
+            <Button variant="outline" className="w-full h-12 text-base text-green-600" onClick={handlePasswordRequest}>
               Login with password
             </Button>
           </>
         )}
 
-        <p className="text-center text-xs text-muted-foreground mt-8 px-4">
-          By login you authorise us to send notifications via SMS, Email, RCS and others as per{" "}
-          <Link href="#" className="underline hover:text-primary">Terms of Service</Link> &nbsp;&amp;&nbsp;
-          <Link href="#" className="underline hover:text-primary">Privacy Policy</Link>.
-        </p>
 
+        <p className="text-center text-xs text-muted-foreground mt-8 px-4">
+          By login you authorise us to send notifications via SMS, Email, RCS and others as per&nbsp;
+          <Link href="#" className="underline hover:text-primary">
+            Terms of Service
+          </Link>{" "}
+          &amp;{" "}
+          <Link href="#" className="underline hover:text-primary">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );

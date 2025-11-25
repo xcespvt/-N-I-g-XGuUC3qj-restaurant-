@@ -28,6 +28,8 @@ export interface Branch {
   ordersToday: number;
   status: "Active" | "Inactive";
   isOnline: boolean;
+  // Optional backend identifier for API integrations
+  restaurantId?: string;
 }
 
 export interface OrderItem {
