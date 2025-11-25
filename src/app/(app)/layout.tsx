@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChart3,
   BookOpen,
@@ -15,6 +15,7 @@ import {
   HelpCircle,
   History,
   LayoutGrid,
+  LogOut,
   Lock,
   MapPin,
   MessageSquare,
@@ -60,6 +61,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import { BottomNav } from "@/components/bottom-nav";
 import dynamic from 'next/dynamic';
 import { useGet } from "@/hooks/useApi";
+import { useToast } from "@/hooks/use-toast";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -104,6 +106,8 @@ function AppLayoutClient({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
+  const { toast } = useToast();
+  const router = useRouter();
   const { subscriptionPlan, orders, setBranches } = useAppStore();
 
   type ApiBranch = {
@@ -160,6 +164,14 @@ function AppLayoutClient({
   }, [apiBranchesData, setBranches]);
 
   const newOrdersCount = orders.filter(o => o.status === "New").length;
+
+  const handleLogout = React.useCallback(() => {
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    router.push("/");
+  }, [router, toast]);
 
   // const navGroups = [
   //   [
@@ -295,6 +307,12 @@ function AppLayoutClient({
           <SidebarSeparator />
           <SidebarMenu>
             {renderNavItems(bottomNav)}
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleLogout} tooltip={"Logout"}>
+                <LogOut />
+                <span>Logout</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
