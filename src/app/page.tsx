@@ -1,36 +1,29 @@
-
 "use client";
-import { useState, useRef, ChangeEvent, KeyboardEvent } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+
+import { useState, useRef, ChangeEvent, KeyboardEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
-import { ArrowLeft, Eye, EyeOff, UtensilsCrossed } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { apiClient } from "@/lib/apiClient";
-
-const CrevingsLogo = () => (
-  <div className="flex items-center gap-2 text-2xl font-semibold">
-    {/* <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-      <UtensilsCrossed className="h-5 w-5" />
-    </div>
-    <span>Crevings</span> */}
-    <img src="/Image/CREVINGS FULL LOGO.svg" alt="Crevings" className="h-10" />
-
-  </div>
-);
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+
   const [email, setEmail] = useState("");
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+
   const [sendingOtp, setSendingOtp] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
 
   // New UI state for OTP/Password flows
   const [showOtp, setShowOtp] = useState(false);
@@ -38,43 +31,123 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const isValidEmail = (val: string) => /.+@.+\..+/.test(val);
-
-  const handleSendOtp = async () => {
-    if (!isValidEmail(email)) {
-      toast({ title: "Invalid email", description: "Please enter a valid email.", variant: "destructive" });
+  // ---------------------------------------------------------
+  // 🔹 SEND OTP API
+  // ---------------------------------------------------------
+  const handleOtpRequest = async () => {
+    if (!email || !email.includes("@")) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
       return;
     }
+
     try {
       setSendingOtp(true);
+
       await apiClient<any>("https://backend.crevings.com/api/auth/request-otp", {
         method: "POST",
         body: JSON.stringify({ email }),
       });
-      setIsOtpSent(true);
-      toast({ title: "OTP Sent", description: "Check your email for the code." });
+
+      setShowOtp(true);
+      setShowPassword(false);
+
+      toast({
+        title: "OTP Sent",
+        description: "An OTP has been sent to your email address.",
+      });
+
     } catch (err: any) {
-      toast({ title: "Failed to send OTP", description: err?.message || "Please try again.", variant: "destructive" });
+      toast({
+        title: "Failed to send OTP",
+        description: err?.message || "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSendingOtp(false);
     }
   };
 
+  // ---------------------------------------------------------
+  // 🔹 VERIFY OTP API
+  // ---------------------------------------------------------
   const handleVerifyOtp = async () => {
     const enteredOtp = otp.join("");
-    if (enteredOtp.length !== 6) return;
+
+    if (enteredOtp.length !== 6) {
+      toast({
+        title: "Invalid OTP",
+        description: "Please enter a valid 6-digit OTP.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      setVerifying(true);
+      setVerifyingOtp(true);
+
       await apiClient<any>("https://backend.crevings.com/api/auth/verify-otp", {
         method: "POST",
         body: JSON.stringify({ email, otp: enteredOtp }),
       });
-      toast({ title: "Login Successful", description: "Welcome back!" });
+
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+
       router.push("/dashboard");
+
     } catch (err: any) {
-      toast({ title: "Invalid OTP", description: err?.message || "Please check the code and try again.", variant: "destructive" });
+      toast({
+        title: "Invalid OTP",
+        description: err?.message || "OTP verification failed.",
+        variant: "destructive",
+      });
     } finally {
-      setVerifying(false);
+      setVerifyingOtp(false);
+    }
+  };
+
+  // ---------------------------------------------------------
+  // 🔹 PASSWORD LOGIN API
+  // ---------------------------------------------------------
+  const handlePasswordLogin = async () => {
+    if (!password) {
+      toast({
+        title: "Password Required",
+        description: "Please enter your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoggingIn(true);
+
+      await apiClient<any>("https://backend.crevings.com/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+
+      router.push("/dashboard");
+
+    } catch (err: any) {
+      toast({
+        title: "Login Failed",
+        description: err?.message || "Incorrect email or password.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoggingIn(false);
     }
   };
 
@@ -92,9 +165,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
-    // Move to previous input on backspace if current input is empty
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
@@ -104,14 +176,14 @@ export default function LoginPage() {
     setShowPassword(false);
     setPassword("");
     setOtp(Array(6).fill(""));
-    setIsOtpSent(false);
+    // setIsOtpSent(false); // removed – variable not declared
   };
 
-  const handleOtpRequest = async () => {
-    // Keep backend OTP integration intact
-    await handleSendOtp();
-    setShowOtp(true);
-  };
+  // const handleOtpRequest = async () => {
+  //   // Keep backend OTP integration intact
+  //   await handleSendOtp();
+  //   setShowOtp(true);
+  // };
   const handlePasswordRequest = () => {
     setShowPassword(true);
     setShowOtp(false);
@@ -119,7 +191,7 @@ export default function LoginPage() {
 
   const PASSWORD_LOGIN_URL = process.env.NEXT_PUBLIC_PASSWORD_LOGIN_URL;
   const handleLoginWithPassword = async () => {
-    if (!isValidEmail(email)) {
+    if (!email || !email.includes("@")) {
       toast({ title: "Invalid email", description: "Please enter a valid email.", variant: "destructive" });
       return;
     }
@@ -136,7 +208,7 @@ export default function LoginPage() {
       return;
     }
     try {
-      setVerifying(true);
+      setVerifyingOtp(true);
       await apiClient<any>(PASSWORD_LOGIN_URL, {
         method: "POST",
         body: JSON.stringify({ email, password }),
@@ -146,7 +218,7 @@ export default function LoginPage() {
     } catch (err: any) {
       toast({ title: "Login Failed", description: err?.message || "Please check your credentials.", variant: "destructive" });
     } finally {
-      setVerifying(false);
+      setVerifyingOtp(false);
     }
   };
 
@@ -198,7 +270,7 @@ export default function LoginPage() {
                     inputMode="numeric"
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
                     ref={el => { if (el) inputRefs.current[index] = el; }}
                     className="w-10 h-12 text-center text-lg font-semibold"
                   />

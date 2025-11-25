@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, ChangeEvent, KeyboardEvent } from 'react';
@@ -84,6 +83,9 @@ export default function EmployeeLoginPage() {
                         <Input id="joining-code" placeholder="Enter code provided by manager" value={joiningCode} onChange={(e) => setJoiningCode(e.target.value)} />
                     </div>
                     <Button className="w-full" onClick={handleLogin}>Login</Button>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      By logging in you authorise to send notifications via SMS, Email, RCS and others as per Terms of Services and Privacy Policy
+                    </p>
                 </div>
             </CardContent>
         </Card>
