@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { apiClient } from "@/lib/apiClient";
+import { usePost } from "@/hooks/useApi";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -31,11 +32,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
+  const requestOtpMutation = usePost<any, { email: string }>("/api/auth/request-otp", undefined, { credentials: "omit" });
+  const verifyOtpMutation = usePost<any, { email: string; otp?: string; password?: string }>("/api/auth/verify-otp");
+
   // ---------------------------------------------------------
   // 🔹 SEND OTP API
   // ---------------------------------------------------------
   const handleOtpRequest = async () => {
-    if (!email || !email.includes("@")) {
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!email.includes("@")) {
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address.",
@@ -47,10 +59,7 @@ export default function LoginPage() {
     try {
       setSendingOtp(true);
 
-      await apiClient<any>("https://backend.crevings.com/api/auth/request-otp", {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      });
+      await requestOtpMutation.mutateAsync({ email });
 
       setShowOtp(true);
       setShowPassword(false);
@@ -89,10 +98,7 @@ export default function LoginPage() {
     try {
       setVerifyingOtp(true);
 
-      await apiClient<any>("https://backend.crevings.com/api/auth/verify-otp", {
-        method: "POST",
-        body: JSON.stringify({ email, otp: enteredOtp }),
-      });
+      await verifyOtpMutation.mutateAsync({ email, otp: enteredOtp });
 
       toast({
         title: "Login Successful",
@@ -128,10 +134,7 @@ export default function LoginPage() {
     try {
       setLoggingIn(true);
 
-      await apiClient<any>("https://backend.crevings.com/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+      await verifyOtpMutation.mutateAsync({ email, password });
 
       toast({
         title: "Login Successful",
@@ -189,30 +192,23 @@ export default function LoginPage() {
     setShowOtp(false);
   }
 
-  const PASSWORD_LOGIN_URL = process.env.NEXT_PUBLIC_PASSWORD_LOGIN_URL;
+
   const handleLoginWithPassword = async () => {
-    if (!email || !email.includes("@")) {
-      toast({ title: "Invalid email", description: "Please enter a valid email.", variant: "destructive" });
+    if (!email) {
+      toast({ title: "Email Required", description: "Please enter your email.", variant: "destructive" });
       return;
     }
     if (!password) {
-      toast({ title: "Missing password", description: "Please enter your password.", variant: "destructive" });
+      toast({ title: "Password Required", description: "Please enter your password.", variant: "destructive" });
       return;
     }
-    if (!PASSWORD_LOGIN_URL) {
-      toast({
-        variant: "destructive",
-        title: "Password login not configured",
-        description: "Set NEXT_PUBLIC_PASSWORD_LOGIN_URL to enable password login.",
-      });
+    if (!email.includes("@")) {
+      toast({ title: "Invalid email", description: "Please enter a valid email.", variant: "destructive" });
       return;
     }
     try {
       setVerifyingOtp(true);
-      await apiClient<any>(PASSWORD_LOGIN_URL, {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+      await verifyOtpMutation.mutateAsync({ email, password });
       toast({ title: "Login Successful", description: "Welcome back!" });
       router.push("/dashboard");
     } catch (err: any) {
@@ -307,7 +303,6 @@ export default function LoginPage() {
           <Button
             onClick={buttonHandler}
             className="w-full h-12 text-base"
-            disabled={!email}
           >
             {buttonText}
           </Button>
@@ -346,5 +341,14 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  const [queryClient] = useState(() => new QueryClient());
+  return (
+    <QueryClientProvider client={queryClient}>
+      <LoginContent />
+    </QueryClientProvider>
   );
 }

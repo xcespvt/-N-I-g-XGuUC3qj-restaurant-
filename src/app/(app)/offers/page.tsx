@@ -70,9 +70,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useGet, usePost, usePut, useQueryHelpers } from "@/hooks/useApi";
+import { useGet, usePost, usePut, useQueryHelpers, useMutationRequestDynamic } from "@/hooks/useApi";
 import { useMutation } from "@tanstack/react-query";
-import { apiClient } from "@/lib/apiClient";
 import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/pagination/PaginationControls";
 import { Separator } from "@/components/ui/separator";
@@ -721,14 +720,11 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
   const toApiToggleStatus = (status: OfferStatus): "Activate" | "Pause" =>
     status === "Active" ? "Activate" : "Pause";
 
-  const toggleOfferMutation = useMutation<any, Error, { offerId: string; status: "Activate" | "Pause"; title?: string }>({
-    mutationFn: async (variables: { offerId: string; status: "Activate" | "Pause"; title?: string }) => {
-      const finalUrl = `https://backend.crevings.com/api/offers/offers/toggle/${restaurantId}/${variables.offerId}`;
-      return apiClient<any>(finalUrl, {
-        method: "PUT",
-        body: JSON.stringify({ status: variables.status }),
-      });
-    },
+  const toggleOfferMutation = useMutationRequestDynamic<any, { offerId: string; body: { status: "Activate" | "Pause" }; title?: string }>(
+    "PUT",
+    (variables) => `https://backend.crevings.com/api/offers/offers/toggle/${restaurantId}/${variables.offerId}`,
+    (variables) => variables.body,
+    {
     onMutate: async (variables) => {
       if (!restaurantId) return;
       const keyExact = [
@@ -738,7 +734,7 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
         `${pageSize}`,
         { page: currentPage, limit: pageSize },
       ];
-      const nextStatus = variables.status === "Activate" ? "Active" : "Paused";
+      const nextStatus = variables.body.status === "Activate" ? "Active" : "Paused";
       const prevData = apiOffersData as { data?: any[] } | undefined;
       const prevList = (prevData as any)?.data as any[] | undefined;
       const updatedList = (prevList ?? []).map((item) =>
@@ -788,18 +784,14 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
       });
       return;
     }
-    toggleOfferMutation.mutate({ offerId: offerToToggle.id, status: toApiToggleStatus(newStatus), title: offerToToggle.title });
+    toggleOfferMutation.mutate({ offerId: offerToToggle.id, body: { status: toApiToggleStatus(newStatus) }, title: offerToToggle.title });
   };
 
-  const updateOfferMutation = useMutation<any, Error, { offerId: string; payload: AddOfferPayload; title?: string }>({
-    mutationFn: async ({ offerId, payload }) => {
-      const finalUrl = `https://backend.crevings.com/api/offers/offers/update/${restaurantId}/${offerId}`;
-      const pruned = pruneUpdatePayload(payload);
-      return apiClient<any>(finalUrl, {
-        method: "PUT",
-        body: JSON.stringify(pruned),
-      });
-    },
+  const updateOfferMutation = useMutationRequestDynamic<any, { offerId: string; body: AddOfferPayload; title?: string }>(
+    "PUT",
+    (variables) => `https://backend.crevings.com/api/offers/offers/update/${restaurantId}/${variables.offerId}`,
+    (variables) => pruneUpdatePayload(variables.body),
+    {
     onMutate: async (variables) => {
       if (!restaurantId) return;
       const keyExact = [
@@ -815,29 +807,29 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
         item.offerId === variables.offerId
           ? {
               ...item,
-              offerTitle: variables.payload.offerTitle,
-              description: variables.payload.description,
-              offerType: variables.payload.offerType,
-              discountPercentage: variables.payload.discountPercentage,
-              discountAmount: variables.payload.discountAmount,
-              freeItem: variables.payload.freeItem,
-              bogoItems: variables.payload.bogoItems,
-              minimumOrder: variables.payload.minimumOrder,
+              offerTitle: variables.body.offerTitle,
+              description: variables.body.description,
+              offerType: variables.body.offerType,
+              discountPercentage: variables.body.discountPercentage,
+              discountAmount: variables.body.discountAmount,
+              freeItem: variables.body.freeItem,
+              bogoItems: variables.body.bogoItems,
+              minimumOrder: variables.body.minimumOrder,
               validUntil:
-                typeof variables.payload.validUntil === "number"
-                  ? new Date(variables.payload.validUntil).toISOString()
-                  : (variables.payload.validUntil as any),
+                typeof variables.body.validUntil === "number"
+                  ? new Date(variables.body.validUntil).toISOString()
+                  : (variables.body.validUntil as any),
               isActive:
-                variables.payload.isActive !== undefined
-                  ? variables.payload.isActive
+                variables.body.isActive !== undefined
+                  ? variables.body.isActive
                   : item.isActive,
-              couponCode: variables.payload.couponCode,
+              couponCode: variables.body.couponCode,
             }
           : item
       );
       const updated = { ...(prevData || {}), data: updatedList } as any;
       set(keyExact as unknown as any[], updated);
-      toast({ title: "Offer updated", description: `"${variables?.payload?.offerTitle}" updated.` });
+      toast({ title: "Offer updated", description: `"${variables?.title}" updated.` });
       return { previous: prevData, keyExact } as any;
     },
     onSuccess: (_data, _variables) => {
@@ -872,7 +864,7 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
         return;
       }
       const apiPayload = buildOfferPayload(restaurantId, formState);
-      updateOfferMutation.mutate({ offerId: editingOffer.id, payload: apiPayload, title: formState.title });
+      updateOfferMutation.mutate({ offerId: editingOffer.id, body: apiPayload, title: formState.title });
     } else {
       if (!restaurantId) {
         toast({

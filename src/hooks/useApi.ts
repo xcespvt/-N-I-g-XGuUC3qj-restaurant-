@@ -32,13 +32,15 @@ export function useGet<T>(
 // ✅ Generic POST
 export function usePost<TData, TVariables>(
   url: string,
-  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
+  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">,
+  fetchOptions?: RequestInit
 ) {
   return useMutation<TData, Error, TVariables>({
     mutationFn: async (variables: TVariables) =>
-      apiClient<TData>(url, {
+      apiClient<TData>(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
         method: "POST",
         body: JSON.stringify(variables),
+        ...(fetchOptions || {}),
       }),
     ...options,
   });
@@ -50,14 +52,37 @@ type HttpMethod = "POST" | "PUT" | "PATCH" | "DELETE";
 export function useMutationRequest<TData, TVariables>(
   method: HttpMethod,
   url: string,
-  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
+  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">,
+  fetchOptions?: RequestInit
 ) {
   return useMutation<TData, Error, TVariables>({
     mutationFn: async (variables: TVariables) =>
-      apiClient<TData>(url, {
+      apiClient<TData>(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
         method,
         body:
           method === "DELETE" ? undefined : JSON.stringify(variables),
+        ...(fetchOptions || {}),
+      }),
+    ...options,
+  });
+}
+
+export function useMutationRequestDynamic<TData, TVariables>(
+  method: HttpMethod,
+  urlBuilder: (variables: TVariables) => string,
+  bodySelector?: (variables: TVariables) => any,
+  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">,
+  fetchOptions?: RequestInit
+) {
+  return useMutation<TData, Error, TVariables>({
+    mutationFn: async (variables: TVariables) =>
+      apiClient<TData>((() => { const u = urlBuilder(variables); return u.startsWith('http') ? u : `${API_BASE_URL}${u}`; })(), {
+        method,
+        body:
+          method === "DELETE"
+            ? undefined
+            : JSON.stringify(bodySelector ? bodySelector(variables) : variables),
+        ...(fetchOptions || {}),
       }),
     ...options,
   });
