@@ -133,3 +133,39 @@ export function useQueryHelpers() {
       queryClient.removeQueries({ queryKey: key }),
   };
 }
+
+// ✅ POST with FormData body (for file uploads)
+export function usePostForm<TData>(
+  url: string,
+  options?: Omit<UseMutationOptions<TData, Error, FormData>, "mutationFn">,
+  fetchOptions?: RequestInit
+) {
+  return useMutation<TData, Error, FormData>({
+    mutationFn: async (formData: FormData) =>
+      apiClient<TData>(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
+        method: "POST",
+        body: formData,
+        // Override default JSON header so the browser sets multipart boundary
+        headers: (fetchOptions?.headers as any) ?? {},
+        ...(fetchOptions || {}),
+      }),
+    ...options,
+  });
+}
+
+// ✅ DELETE that sends JSON body (some APIs require payload in DELETE)
+export function useDeleteJson<TData, TVariables = any>(
+  url: string,
+  options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">,
+  fetchOptions?: RequestInit
+) {
+  return useMutation<TData, Error, TVariables>({
+    mutationFn: async (variables: TVariables) =>
+      apiClient<TData>(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
+        method: "DELETE",
+        body: JSON.stringify(variables),
+        ...(fetchOptions || {}),
+      }),
+    ...options,
+  });
+}

@@ -363,8 +363,8 @@ export default function OffersPage() {
   } = useGet<{ data?: OfferApi[]; [k: string]: any }>(
     ["offers", restaurantId ?? "no-rid", `${currentPage}`, `${pageSize}`],
     restaurantId
-      ? `https://backend.crevings.com/api/offers/offers/${restaurantId}`
-      : `https://backend.crevings.com/api/offers/offers/__restaurant__`,
+      ? `/api/offers/offers/${restaurantId}`
+      : `/api/offers/offers/__restaurant__`,
     { page: currentPage, limit: pageSize },
     { enabled: !!restaurantId }
   );
@@ -568,7 +568,7 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
 
   // Create offer mutation
   const addOfferMutation = usePost<any, AddOfferPayload>(
-    "https://backend.crevings.com/api/offers/offers/add",
+    "/api/offers/offers/add",
     {
       onMutate: async (variables) => {
         if (!restaurantId) return;
@@ -722,7 +722,7 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
 
   const toggleOfferMutation = useMutationRequestDynamic<any, { offerId: string; body: { status: "Activate" | "Pause" }; title?: string }>(
     "PUT",
-    (variables) => `https://backend.crevings.com/api/offers/offers/toggle/${restaurantId}/${variables.offerId}`,
+    (variables) => `/api/offers/offers/toggle/${restaurantId}/${variables.offerId}`,
     (variables) => variables.body,
     {
     onMutate: async (variables) => {
@@ -789,7 +789,7 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
 
   const updateOfferMutation = useMutationRequestDynamic<any, { offerId: string; body: AddOfferPayload; title?: string }>(
     "PUT",
-    (variables) => `https://backend.crevings.com/api/offers/offers/update/${restaurantId}/${variables.offerId}`,
+    (variables) => `/api/offers/offers/update/${restaurantId}/${variables.offerId}`,
     (variables) => pruneUpdatePayload(variables.body),
     {
     onMutate: async (variables) => {

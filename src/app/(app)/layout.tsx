@@ -138,7 +138,7 @@ function AppLayoutClient({
     data: ApiBranch[];
   }>(
     ["branches", "main"],
-    "https://backend.crevings.com/api/branches/mainbranch",
+    "/api/branches/mainbranch",
     undefined,
     { enabled: true }
   );

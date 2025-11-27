@@ -22,6 +22,7 @@ import {
 import { Upload, CheckCircle, XCircle } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { useToast } from "@/hooks/use-toast";
+import { usePostForm, useDeleteJson } from "@/hooks/useApi";
 
 type AddSheetType = "Item" | "Beverage" | "Combo" | "Sauce" | null;
 
@@ -55,6 +56,10 @@ export function MenuItemForm({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Image upload (multipart/form-data) and delete (DELETE with JSON body) via API hooks
+  const uploadImageMutation = usePostForm<any>("/api/menu/upload-image", undefined, { headers: {} });
+  const deleteImageMutation = useDeleteJson<any>("/api/menu/delete-image");
+
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -71,19 +76,7 @@ export function MenuItemForm({
   const deleteImage = async (imageUrl: string): Promise<boolean> => {
     try {
       setIsDeleting(true);
-      const response = await fetch("https://backend.crevings.com/api/menu/delete-image", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ imageUrl }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || "Failed to delete image");
-      }
-
+      await deleteImageMutation.mutateAsync({ imageUrl });
       return true;
     } catch (error: any) {
       console.error("Delete image error:", error);
@@ -131,15 +124,7 @@ export function MenuItemForm({
       const fd = new FormData();
       const fileName = file.name.replace(/\s+/g, "_");
       fd.append("image", compressed, fileName);
-      const res = await fetch("https://backend.crevings.com/api/menu/upload-image", {
-        method: "POST",
-        body: fd,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Upload failed");
-      }
-      const json = await res.json();
+      const json = await uploadImageMutation.mutateAsync(fd);
       const url: string | undefined = Array.isArray(json?.variants) ? json.variants[0] : undefined;
       if (!url) throw new Error("No image URL returned");
       setUploadedImageUrl(url);

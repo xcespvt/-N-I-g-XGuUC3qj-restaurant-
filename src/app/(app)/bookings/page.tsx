@@ -91,7 +91,7 @@ export default function TableManagementPage() {
   // Fetch tables from backend bookings endpoint and sync into store
   const { data: bookingsData, isLoading: isTablesLoading, error: tablesError } = useGet<any>(
     ["bookings", restaurantId],
-    `https://backend.crevings.com/api/bookings/${restaurantId}`
+    `/api/bookings/${restaurantId}`
   );
 
   // Heuristic to extract tables from various possible response shapes
@@ -164,7 +164,7 @@ export default function TableManagementPage() {
 
   // Mutation: Add table series on server
   const addSeries = usePost<any, { prefix: string; startNumber: number; endNumber: number; capacity: number; type: string }>(
-    `https://backend.crevings.com/api/bookings/${restaurantId}/tables/series`
+    `/api/bookings/${restaurantId}/tables/series`
   );
 
   const [isFormOpen, setIsFormOpen] = useState(false);
