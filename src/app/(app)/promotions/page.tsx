@@ -133,9 +133,9 @@ import { useToast } from "@/hooks/use-toast"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DialogContent, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { useGet, usePost, usePut, useQueryHelpers } from "@/hooks/useApi"
+import { useGet, usePost, usePut, useQueryHelpers, useMutationRequestDynamic } from "@/hooks/useApi"
 import { PaginationControls } from "@/components/pagination/PaginationControls"
-import { apiClient } from "@/lib/apiClient"
+
 
 
 const dashboardPerformanceData = [
@@ -534,7 +534,7 @@ export default function PromotionsPage() {
     // Fetch promotions from backend
     const { data: promotionsApi, error: promotionsError, isLoading: promotionsLoading } = useGet<PromotionApiResponse>(
       ["promotions", restaurantId],
-      `https://backend.crevings.com/api/promotions/promotions/${restaurantId}`,
+      `/api/promotions/promotions/${restaurantId}`,
       { page: currentPage, limit: 10 },
       { enabled: !!restaurantId }
     );
@@ -673,7 +673,7 @@ export default function PromotionsPage() {
     }
 
     const addPromotionMutation = usePost<any, AddPromotionPayload>(
-      "https://backend.crevings.com/api/promotions/promotions/add",
+      "/api/promotions/promotions/add",
       {
         onSuccess: (_data, variables) => {
           invalidate(["promotions", restaurantId, { page: currentPage, limit: 10 }]);
@@ -788,7 +788,7 @@ export default function PromotionsPage() {
     }, [editingPromotion]);
 
     const updatePromotionMutation = usePut<any, EditPromotionPayload>(
-      `https://backend.crevings.com/api/promotions/promotions/update/${restaurantId}/${editingPromotion?.id}`,
+      `/api/promotions/promotions/update/${restaurantId}/${editingPromotion?.id}`,
       {
         onSuccess: () => {
           invalidate(["promotions", restaurantId, { page: currentPage, limit: 10 }]);
@@ -917,22 +917,32 @@ export default function PromotionsPage() {
         setIsPromotionDialogOpen(true);
     };
     
+    // Integrate PUT for toggling promotion status with dynamic URL per call
+    const togglePromotionMutation = useMutationRequestDynamic<any, { promoId: string; body: { status: "Activate" | "Pause" } }>(
+        "PUT",
+        (variables) => `/api/promotions/promotions/toggle/${restaurantId}/${variables.promoId}`,
+        (variables) => variables.body,
+        {
+            onSuccess: () => {
+                invalidate(["promotions", restaurantId, { page: currentPage, limit: 10 }]);
+            },
+            onError: () => {
+                toast({ variant: "destructive", title: "Failed to update status", description: "Please try again." });
+            },
+        }
+    );
+
     const handleTogglePromotionStatus = async (promoId: string) => {
         const current = promotions.find(p => p.id === promoId);
         const nextAction = current?.isActive ? "Pause" : "Activate";
         // Optimistic update
         setPromotions(curr => curr.map(p => p.id === promoId ? { ...p, isActive: !p.isActive } : p));
         try {
-            await apiClient<any>(`https://backend.crevings.com/api/promotions/promotions/toggle/${restaurantId}/${promoId}`, {
-                method: "PUT",
-                body: JSON.stringify({ status: nextAction }),
-            });
+            await togglePromotionMutation.mutateAsync({ promoId, body: { status: nextAction } });
             toast({ title: `Promotion ${nextAction === 'Activate' ? 'activated' : 'paused'}`, description: `Status updated successfully.` });
-            invalidate(["promotions", restaurantId, { page: currentPage, limit: 10 }]);
         } catch (e) {
             // Revert on error
             setPromotions(curr => curr.map(p => p.id === promoId ? { ...p, isActive: current?.isActive ?? false } : p));
-            toast({ variant: "destructive", title: "Failed to update status", description: "Please try again." });
         }
     };
 

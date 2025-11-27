@@ -33,7 +33,8 @@ function LoginContent() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const requestOtpMutation = usePost<any, { email: string }>("/api/auth/request-otp", undefined, { credentials: "omit" });
-  const verifyOtpMutation = usePost<any, { email: string; otp?: string; password?: string }>("/api/auth/verify-otp");
+  // Include credentials so the browser accepts Set-Cookie from backend
+  const verifyOtpMutation = usePost<any, { email: string; otp?: string; password?: string }>("/api/auth/verify-otp", undefined, { credentials: "include" });
 
   // ---------------------------------------------------------
   // 🔹 SEND OTP API

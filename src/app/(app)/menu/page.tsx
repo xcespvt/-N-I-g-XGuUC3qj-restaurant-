@@ -129,7 +129,7 @@ export default function MenuPage() {
     }>;
   }>(
     ['menu-search', restaurantId || '', debouncedSearchTerm, activeCategory !== 'All' ? activeCategory : ''],
-    `https://backend.crevings.com/api/menu/${restaurantId}/search`,
+    `/api/menu/${restaurantId}/search`,
     { query: debouncedSearchTerm, category: activeCategory !== 'All' ? activeCategory : '' },
     {
       enabled: !!restaurantId && (debouncedSearchTerm.length > 0 || (!!activeCategory && activeCategory !== 'All')),
@@ -268,8 +268,8 @@ export default function MenuPage() {
 
   // Build dynamic update URL based on restaurantId and edit target
   const updateUrl = restaurantId && editTarget?.itemId
-    ? `https://backend.crevings.com/api/menu/updateitems/${restaurantId}/${editTarget.itemId}`
-    : `https://backend.crevings.com/api/menu/updateitems/${restaurantId ?? ''}/`;
+    ? `/api/menu/updateitems/${restaurantId}/${editTarget.itemId}`
+    : `/api/menu/updateitems/${restaurantId ?? ''}/`;
 
   // PUT mutation for editing menu items
   const updateMenuItemMutation = usePut<any, any>(updateUrl, {
@@ -348,8 +348,8 @@ export default function MenuPage() {
   const [pendingToggleInfo, setPendingToggleInfo] = useState<{ itemId: string; nextAvailable: boolean } | null>(null);
 
   const toggleUrl = restaurantId && toggleTarget?.itemId
-    ? `https://backend.crevings.com/api/menu/updateitems/${restaurantId}/${toggleTarget.itemId}`
-    : `https://backend.crevings.com/api/menu/updateitems/${restaurantId ?? ''}/`;
+    ? `/api/menu/updateitems/${restaurantId}/${toggleTarget.itemId}`
+    : `/api/menu/updateitems/${restaurantId ?? ''}/`;
 
   const toggleAvailabilityMutation = usePut<any, any>(toggleUrl, {
     onSuccess: () => {
