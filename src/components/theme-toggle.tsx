@@ -7,12 +7,7 @@ import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function ThemeToggle() {
-  const [theme, setThemeState] = React.useState<"theme-light" | "dark" | "system">("system")
-
-  React.useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark")
-    setThemeState(isDarkMode ? "dark" : "theme-light")
-  }, [])
+  const [theme, setThemeState] = React.useState<"theme-light" | "dark" | "system">("theme-light")
 
   React.useEffect(() => {
     const isDark =
