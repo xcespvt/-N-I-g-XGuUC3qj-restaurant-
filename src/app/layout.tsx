@@ -2,6 +2,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import AuthGuard from "@/components/auth/AuthGuard"
 import { Poppins } from 'next/font/google';
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className={`${poppinsSans.variable} ${poppinsHeading.variable} font-sans`}>
+        <AuthGuard />
         {children}
         <Toaster />
       </body>
