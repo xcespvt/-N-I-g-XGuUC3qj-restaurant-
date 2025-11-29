@@ -1,9 +1,17 @@
 
 export async function apiClient<T>(url: string, options?: RequestInit): Promise<T> {
+  const hasBody = options?.body !== undefined && options?.body !== null;
+  const isFormData = typeof FormData !== 'undefined' && options?.body instanceof FormData;
+
+  const headers: HeadersInit = {
+    ...(hasBody && !isFormData ? { "Content-Type": "application/json" } : {}),
+    ...(options?.headers ?? {}),
+  };
+
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    credentials: options?.credentials ?? "include",
     ...options,
+    headers,
+    credentials: options?.credentials ?? "include",
   });
 
   if (!res.ok) {
