@@ -9,7 +9,7 @@ import {
 import { apiClient } from "@/lib/apiClient";
 import { buildUrl } from "@/lib/utils";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // ✅ Generic GET with optional params
 export function useGet<T>(

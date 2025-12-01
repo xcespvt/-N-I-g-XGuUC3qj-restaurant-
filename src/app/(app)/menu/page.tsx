@@ -516,7 +516,7 @@ export default function MenuPage() {
         ) : (
           pageItems.map((item) => (
             <MenuItemCard
-              key={item.id}
+              key={(item as any).itemId ?? (item as any)._id ?? item.id}
               item={item}
               isRestaurantOnline={isRestaurantOnline}
               onToggleAvailability={(targetItem, nextAvailable) => handleToggleAvailability(targetItem, nextAvailable)}
