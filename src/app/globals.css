@@ -126,6 +126,34 @@ body {
   .register-form-container {
     @apply bg-white rounded-t-3xl p-2 shadow-2xl w-full max-w-3xl mx-auto;
   }
+
+  /* Safe-area utilities for Android/iOS notches and gesture bars */
+  .safe-area-padding {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Provide a sensible fallback padding when env() returns 0 */
+  @supports (padding: max(0px)) {
+    .safe-area-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom), 30px);
+    }
+  }
+  .fixed-safe-bottom {
+    bottom: env(safe-area-inset-bottom);
+  }
+  @supports (bottom: max(0px)) {
+    .fixed-safe-bottom {
+      bottom: max(env(safe-area-inset-bottom), 0px);
+    }
+  }
 }
 
 @keyframes slide-up-bottom {
