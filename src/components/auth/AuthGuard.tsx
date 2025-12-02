@@ -6,16 +6,18 @@ import { apiClient } from '@/lib/apiClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
-// Public routes that do not require authentication
-const PUBLIC_PATHS = new Set<string>(['/', '/login', '/register', '/employee-login', '/favicon.ico']);
+// Public routes
+const LOGIN_PATHS = new Set<string>(['/', '/login']);
+const PUBLIC_PATHS = new Set<string>(['/register', '/employee-login']);
+const EXCLUDED_PATHS = new Set<string>(['/favicon.ico']);
 
 export default function AuthGuard() {
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    // Skip guard for public routes
-    if (PUBLIC_PATHS.has(pathname) || pathname.startsWith('/api')) {
+    // Skip assets and internal API
+    if (EXCLUDED_PATHS.has(pathname) || pathname.startsWith('/api')) {
       return;
     }
 
@@ -29,8 +31,18 @@ export default function AuthGuard() {
           { method: 'POST' }
         );
 
-        if (!cancelled && !res.success) {
-          router.replace('/'); // redirect to login page
+        if (cancelled) return;
+
+        // If user is visiting login while authenticated, redirect to dashboard
+        if (res.success && LOGIN_PATHS.has(pathname)) {
+          router.replace('/dashboard');
+          return;
+        }
+
+        // For protected routes, redirect unauthenticated users to login
+        const isPublic = PUBLIC_PATHS.has(pathname) || LOGIN_PATHS.has(pathname);
+        if (!res.success && !isPublic) {
+          router.replace('/');
         }
       } catch (err) {
         // On network or server error, treat as unauthenticated

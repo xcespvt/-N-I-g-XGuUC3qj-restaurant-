@@ -165,12 +165,23 @@ function AppLayoutClient({
 
   const newOrdersCount = orders.filter(o => o.status === "New").length;
 
-  const handleLogout = React.useCallback(() => {
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
-    router.push("/");
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+  const handleLogout = React.useCallback(async () => {
+    try {
+      // Ask backend to clear the auth cookie
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {}
+    finally {
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      router.replace("/");
+    }
   }, [router, toast]);
 
   // const navGroups = [
@@ -318,7 +329,7 @@ function AppLayoutClient({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-background/80 backdrop-blur-sm px-4 sm:px-6">
+  <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-background/80 backdrop-blur-sm px-4 sm:px-6 safe-area-top">
           <SidebarTrigger className="md:hidden" />
           <div className="hidden md:block">
             <BranchSwitcher />
