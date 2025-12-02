@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">crevings restauranthub</string>
-    <string name="title_activity_main">crevings restauranthub</string>
+    <string name="app_name">Crevings Business Suite</string>
+    <string name="title_activity_main">Crevings Business Suite</string>
     <string name="package_name">com.xces.partner.app</string>
     <string name="custom_url_scheme">com.xces.partner.app</string>
 </resources>
