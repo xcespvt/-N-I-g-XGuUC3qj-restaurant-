@@ -130,19 +130,21 @@ export default function HelpSupportPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                     <Button asChild variant="outline" className="w-full justify-start h-14 text-base">
-                        <a href="mailto:support@xces.com">
+                        <a href="mailto:legal@crevings.com">
                             <Mail className="h-5 w-5 mr-3"/>
                             Email Support
                         </a>
                     </Button>
-                     <Button asChild variant="outline" className="w-full justify-start h-14 text-base">
+               
+                     {/* <Button asChild variant="outline" className="w-full justify-start h-14 text-base">
                         <Link href="/chat">
                            <MessageSquare className="h-5 w-5 mr-3"/>
                            Chat Support
                         </Link>
-                    </Button>
+                    </Button> */}
+               
                      <Button asChild variant="outline" className="w-full justify-start h-14 text-base">
-                        <a href="tel:+911234567890">
+                        <a href="tel:+918780971385">
                            <Phone className="h-5 w-5 mr-3"/>
                            Call Us
                         </a>

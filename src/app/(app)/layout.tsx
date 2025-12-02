@@ -174,7 +174,7 @@ function AppLayoutClient({
         method: 'POST',
         credentials: 'include',
       });
-    } catch {}
+    } catch { }
     finally {
       toast({
         title: "Logged Out",
@@ -184,35 +184,6 @@ function AppLayoutClient({
     }
   }, [router, toast]);
 
-  // const navGroups = [
-  //   [
-  //     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  //     { href: "/orders", label: "Orders", icon: Package, badge: newOrdersCount > 0 ? newOrdersCount.toString() : undefined },
-  //     { href: "/order-history", label: "Order History", icon: History },
-  //     { href: "/earnings", label: "Earnings", icon: Wallet },
-  //     { href: "/refunds", label: "Refunds", icon: Receipt },
-  //     { href: "/menu", label: "Menu", icon: BookOpen },
-  //   ],
-  //   [
-  //     { href: "/profile", label: "Profile", icon: User },
-  //     { href: "/promotions", label: "Marketing", icon: Percent, pro: true },
-  //     { href: "/offers", label: "Offers", icon: Gift, pro: true },
-  //     { href: "/analytics", label: "Analytics", icon: BarChart3, pro: true },
-  //   ],
-  //   [
-  //     { href: "/bookings", label: "Table Management", icon: CalendarDays },
-  //     { href: "/staff", label: "Staff", icon: Users },
-  //     { href: "/feedback", label: "Feedback", icon: MessageSquare },
-  //   ],
-  //   [
-  //     { href: "/store", label: "Store", icon: ShoppingCart },
-  //     { href: "/order-tracking", label: "Track Order", icon: Truck },
-  //   ],
-  //   [
-  //     { href: "/subscription", label: "Subscription", icon: Star },
-  //     { href: "/branches", label: "Branches", icon: GitFork, pro: true },
-  //   ],
-  // ];
   const navGroups = [
     // 📊 Dashboard
     [
@@ -235,7 +206,7 @@ function AppLayoutClient({
     // 💰 Finance
     [
       { href: "/earnings", label: "Earnings", icon: Wallet },
-      { href: "/subscription", label: "Subscription", icon: CreditCard }
+      // { href: "/subscription", label: "Subscription", icon: CreditCard }
     ],
 
     // 🍽️ Menu Management
@@ -253,7 +224,7 @@ function AppLayoutClient({
     // 🛠️ Operations
     [
       { href: "/bookings", label: "Table Management", icon: Table },
-      { href: "/staff", label: "Staff", icon: Users },
+      // { href: "/staff", label: "Staff", icon: Users },
       { href: "/feedback", label: "Feedback", icon: MessageSquare }
     ],
 
@@ -290,19 +261,9 @@ function AppLayoutClient({
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader>
+        <SidebarHeader className="pt-[env(safe-area-inset-top)] bg-sidebar">
           <div className="flex items-center gap-2 p-2">
-            {/* <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
-              <UtensilsCrossed className="h-5 w-5" />
-            </div>
-            <span className="truncate text-lg font-semibold">Crevings</span>
-            {subscriptionPlan === 'Pro' && (
-              <div className="flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-400 to-rose-400 px-2.5 py-1 text-xs font-semibold text-white shadow-md">
-                <Flame className="h-3 w-3" />
-                <span>Pro</span>
-              </div>
-            )} */}
-            <img src="/Image/CREVINGS FULL LOGO.Svg" alt="Crevings" className="" />
+            <img src="/Image/CREVINGS FULL LOGO.Svg" alt="Crevings" className="h-32 w-auto mx-auto" />
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -315,7 +276,7 @@ function AppLayoutClient({
             ))}
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
+        <SidebarFooter className="pb-[env(safe-area-inset-bottom)] bg-sidebar">
           <SidebarSeparator />
           <SidebarMenu>
             {renderNavItems(bottomNav)}
@@ -329,17 +290,21 @@ function AppLayoutClient({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-  <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-background/80 backdrop-blur-sm px-4 sm:px-6 safe-area-top">
-          <SidebarTrigger className="md:hidden" />
-          <div className="hidden md:block">
-            <BranchSwitcher />
-          </div>
-          <div className="flex-1" />
-          <div className="flex items-center gap-1 sm:gap-2">
-            <ThemeToggle />
-            <NotificationBell />
+        {/* 3. FIXED: The Main Header fix from the previous step */}
+        <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
+          <div className="flex h-16 items-center gap-2 px-4 sm:px-6">
+            <SidebarTrigger className="md:hidden" />
+            <div className="hidden md:block">
+              <BranchSwitcher />
+            </div>
+            <div className="flex-1" />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <ThemeToggle />
+              <NotificationBell />
+            </div>
           </div>
         </header>
+
         <main className="flex-1 p-4 sm:px-6 pb-20 md:pb-6">
           <div className="md:hidden mb-4">
             <BranchSwitcher />
@@ -356,10 +321,10 @@ export default function AppLayout({
   children,
 }: {
   children: React.ReactNode
-  }) {
-  
+}) {
+
   const [queryClient] = React.useState(() => new QueryClient());
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <AppLayoutClient>{children}</AppLayoutClient>

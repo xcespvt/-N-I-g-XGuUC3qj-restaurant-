@@ -5,7 +5,7 @@ dotenv.config();
 
 const config: CapacitorConfig = {
   appId: process.env.NEXT_PUBLIC_APP_ID || 'com.xces.partner.app',
-  appName: process.env.NEXT_PUBLIC_APP_NAME || 'crevings restauranthub',
+  appName: process.env.NEXT_PUBLIC_APP_NAME || 'Crevings Business Suite',
   webDir: 'out',
   server: {
     androidScheme: 'https',
