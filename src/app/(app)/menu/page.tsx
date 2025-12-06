@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 // import { Switch } from "@/components/ui/switch"; // unused here
 import { useAppStore } from "@/context/useAppStore";
 import { cn } from "@/lib/utils";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // unused
 // import { Textarea } from "@/components/ui/textarea"; // unused
@@ -648,38 +648,29 @@ export default function MenuPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Add Category Dialog */}
-      <AlertDialog
-        open={isCategoryDialogOpen}
-        onOpenChange={setIsCategoryDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Create New Category</AlertDialogTitle>
-            <AlertDialogDescription>
-              Enter a name for your new food category.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4  flex flex-col gap-2">
-            <Label htmlFor="category-name">Category Name</Label>
-            <Input
-              id="category-name"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              placeholder="e.g. Beverages"
-            />
+      <Sheet open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <SheetContent side="bottom" className="sm:max-w-md mx-auto p-0 flex flex-col h-full max-h-[70vh]">
+          <SheetHeader className="p-6 pb-4 border-b">
+            <SheetTitle>Create New Category</SheetTitle>
+            <SheetDescription>Enter a name for your new food category.</SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="grid gap-2">
+              <Label htmlFor="category-name">Category Name</Label>
+              <Input
+                id="category-name"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g. Beverages"
+              />
+            </div>
           </div>
-          <AlertDialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsCategoryDialogOpen(false)}
-            >
-              Cancel
-            </Button>
+          <SheetFooter className="p-6 border-t flex justify-center gap-2">
+            <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddCategory}>Add Category</Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
