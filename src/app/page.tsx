@@ -36,9 +36,7 @@ function LoginContent() {
   // Include credentials so the browser accepts Set-Cookie from backend
   const verifyOtpMutation = usePost<any, { email: string; otp?: string; password?: string }>("/api/auth/verify-otp", undefined, { credentials: "include" });
 
-  // ---------------------------------------------------------
-  // 🔹 SEND OTP API
-  // ---------------------------------------------------------
+
   const handleOtpRequest = async () => {
     if (!email) {
       toast({

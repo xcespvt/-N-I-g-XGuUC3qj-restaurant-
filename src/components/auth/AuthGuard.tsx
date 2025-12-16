@@ -21,6 +21,15 @@ export default function AuthGuard() {
       return;
     }
 
+    const isLogin = LOGIN_PATHS.has(pathname);
+    const isPublic = PUBLIC_PATHS.has(pathname) || isLogin;
+
+    // Do not perform token verification on public pages like /register
+    // Still allow login pages to verify so we can redirect authenticated users
+    if (isPublic && !isLogin) {
+      return;
+    }
+
     let cancelled = false;
 
     async function verify() {
@@ -34,19 +43,18 @@ export default function AuthGuard() {
         if (cancelled) return;
 
         // If user is visiting login while authenticated, redirect to dashboard
-        if (res.success && LOGIN_PATHS.has(pathname)) {
+        if (res.success && isLogin) {
           router.replace('/dashboard');
           return;
         }
 
         // For protected routes, redirect unauthenticated users to login
-        const isPublic = PUBLIC_PATHS.has(pathname) || LOGIN_PATHS.has(pathname);
         if (!res.success && !isPublic) {
           router.replace('/');
         }
       } catch (err) {
-        // On network or server error, treat as unauthenticated
-        if (!cancelled) {
+        // On network or server error, only redirect on protected routes
+        if (!cancelled && !isPublic) {
           router.replace('/');
         }
       }
