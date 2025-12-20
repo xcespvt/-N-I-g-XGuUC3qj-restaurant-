@@ -11,7 +11,7 @@ const CrevingsLogo = () => (
         <UtensilsCrossed className="h-5 w-5" />
     </div>
     <span>Crevings</span> */}
-    <img src="/Image/CREVINGS FULL LOGO.svg" alt="Crevings" className="h-8 md:h-10" />
+    <img src="/Image/CREVINGS FULL LOGO.Svg" alt="Crevings" className="h-8 md:h-10" />
   </div>
 );
 
