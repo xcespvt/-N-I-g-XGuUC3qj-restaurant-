@@ -26,6 +26,7 @@ export interface Branch {
   ordersToday: number;
   status: "Active" | "Inactive";
   isOnline: boolean;
+  isRushHour?: boolean;
   // Optional backend identifier for API integrations
   restaurantId?: string;
 }
@@ -90,68 +91,68 @@ export interface Booking {
 export type PendingBooking = Omit<Booking, "id" | "status">;
 
 export interface Feedback {
-    id: string;
-    customer: {
-      name: string;
-      avatar: string;
-      fallback: string;
-      orderCount: number;
-    };
-    orderType: string;
-    rating: number;
-    comment: string;
-    date: string;
-    items: string[];
-    photos: { url: string; hint: string }[];
-    replied: boolean;
-    reply: string;
+  id: string;
+  customer: {
+    name: string;
+    avatar: string;
+    fallback: string;
+    orderCount: number;
+  };
+  orderType: string;
+  rating: number;
+  comment: string;
+  date: string;
+  items: string[];
+  photos: { url: string; hint: string }[];
+  replied: boolean;
+  reply: string;
 }
 
 export interface MenuItem {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    category: string;
-    image: string;
-    aiHint: string;
-    available: boolean;
-    dietaryType: 'Veg' | 'Non-Veg';
-    portionOptions?: { name: string; price: number }[];
-    // Optional server identifier for API operations
-    itemId?: string;
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image: string;
+  aiHint: string;
+  available: boolean;
+  dietaryType: 'Veg' | 'Non-Veg';
+  portionOptions?: { name: string; price: number }[];
+  // Optional server identifier for API operations
+  itemId?: string;
 }
 
-export type TakeawayCartItem = Omit<MenuItem, 'price'> & { 
-    quantity: number; 
-    cartItemId: string; 
-    portion: string;
-    price: number; 
+export type TakeawayCartItem = Omit<MenuItem, 'price'> & {
+  quantity: number;
+  cartItemId: string;
+  portion: string;
+  price: number;
 };
 
 export type NewMenuItem = Omit<MenuItem, 'id' | 'image' | 'aiHint'>;
 
 export interface NotificationSettings {
-    newOrders: boolean;
-    payouts: boolean;
-    promotions: boolean;
-    orderUpdates: boolean;
-    customerReviews: boolean;
-    systemUpdates: boolean;
+  newOrders: boolean;
+  payouts: boolean;
+  promotions: boolean;
+  orderUpdates: boolean;
+  customerReviews: boolean;
+  systemUpdates: boolean;
 }
 
 export interface OwnerInfo {
-    name: string;
-    email: string;
-    phone: string;
-    whatsapp: string;
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
 }
 
 export interface ServiceSettings {
-    delivery: boolean;
-    takeaway: boolean;
-    dineIn: boolean;
-    booking: boolean;
+  delivery: boolean;
+  takeaway: boolean;
+  dineIn: boolean;
+  booking: boolean;
 }
 
 export type RefundStatus = "Pending" | "Approved" | "Rejected";
@@ -212,21 +213,21 @@ interface AppStore {
 
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   updateOrderPrepTime: (orderId: string, extraMinutes: number) => void;
-addOrder: (cart: TakeawayCartItem[], customerName: string, customerPhone: string, orderType: 'takeaway' | 'dine-in', table: string | undefined, prepTime: string, paymentStatus: 'Paid' | 'On Hold', paymentMethod: string) => void;
+  addOrder: (cart: TakeawayCartItem[], customerName: string, customerPhone: string, orderType: 'takeaway' | 'dine-in', table: string | undefined, prepTime: string, paymentStatus: 'Paid' | 'On Hold', paymentMethod: string) => void;
   acceptNewOrder: (order: Order, prepTime: string) => void;
-  
+
   addMenuItem: (item: NewMenuItem) => void;
   updateMenuItem: (item: MenuItem) => void;
   deleteMenuItem: (itemId: number) => void;
   toggleMenuItemAvailability: (itemId: number) => void;
 
   addCategory: (name: string) => void;
-  
+
   addTable: (name: string, capacity: number, type: string) => void;
   updateTable: (table: Table) => void;
   deleteTable: (tableId: string) => void;
   setTables: (tables: Table[]) => void;
-  
+
   addTableType: (name: string) => void;
   deleteTableType: (name: string) => void;
 
@@ -243,7 +244,7 @@ addOrder: (cart: TakeawayCartItem[], customerName: string, customerPhone: string
   resetPendingBooking: () => void;
 
   addReplyToFeedback: (feedbackId: string, reply: string) => void;
-  
+
   handleRefundRequest: (refundId: string, status: "Approved" | "Rejected") => void;
 
   updateNotificationSetting: (setting: keyof NotificationSettings, value: boolean) => void;
@@ -320,160 +321,160 @@ export const useAppStore = create<AppStore>()(
       ],
       selectedBranch: "indiranagar",
       orders: [
-        { 
-            id: "ORD-001", 
-            customer: "Alice Johnson", 
-            time: "6:07 PM",
-            date: "2025-07-13",
-            status: "Delivered", 
-            type: "Delivery", 
-            items: [
-                { id: 16, name: "Spicy Ramen", quantity: 1, price: 14.99, category: "Noodles" },
-                { id: 17, name: "Gyoza", quantity: 1, price: 6.99, category: "Appetizers" },
-            ], 
-            prepTime: "15 min", 
-            total: 21.98,
-            customerDetails: { name: "Alice Johnson", address: "123 Blossom Lane, Garden City", phone: "+919876543210", email: "alice.j@example.com" },
-            payment: { method: "Credit Card", status: "Paid" },
-            offer: { code: "SUMMER20", type: "Percentage" },
-            deliveryPartner: { name: "Rohan Sharma", avatar: "https://placehold.co/100x100.png", avatarFallback: "RS", rating: 4.8 },
-            pickupOtp: "123456"
-        },
-        { 
-            id: "ORD-002", 
-            customer: "Bob Williams", 
-            time: "2:30 PM",
-            date: "2024-07-21",
-            status: "Delivered", 
-            type: "Takeaway", 
-            items: [
-                { id: 8, name: "Paneer Tikka Masala", quantity: 1, price: 25, category: "Curries" },
-            ], 
-            prepTime: "20 min", 
-            total: 25.00,
-            customerDetails: { name: "Bob Williams", address: "Takeaway Counter", phone: "+919876543211", email: "priya.patel@example.com" },
-            payment: { method: "UPI", status: "Paid" },
-            offer: { code: "NEWUSER10", type: "Discount" },
-            pickupOtp: "334455"
-        },
-        { 
-            id: "ORD-003", 
-            customer: "Charlie Brown", 
-            time: "8:00 PM",
-            date: "2024-07-21",
-            status: "Delivered", 
-            type: "Dine-in", 
-            items: [
-                { id: 10, name: "Chicken Biryani", quantity: 1, price: 14, category: "Rice" },
-            ], 
-            prepTime: "25 min", 
-            total: 14.00,
-            customerDetails: { name: "Charlie Brown", address: "Dine-in Table 5", phone: "+919876543212", email: "amit.kumar@example.com" },
-            payment: { method: "Cash on Delivery", status: "Pending" }
-        },
-        { 
-            id: "ORD-005", 
-            customer: "Eve Davis", 
-            time: "1:45 PM",
-            date: "2024-07-20",
-            status: "Incoming", 
-            type: "Delivery", 
-            items: [
-                { id: 1, name: "Margherita Pizza", quantity: 1, price: 17, category: "Pizza" },
-            ], 
-            prepTime: "10 min", 
-            total: 17.00,
-            customerDetails: { name: "Eve Davis", address: "456 Tech Park, Electronic City", phone: "+919876543213", email: "sunita.rai@example.com" },
-            payment: { method: "Debit Card", status: "Paid" },
-            deliveryPartner: { name: "Sunil Verma", avatar: "https://placehold.co/101x101.png", avatarFallback: "SV", rating: 4.7 },
-            pickupOtp: "654321"
-        },
-        { 
-            id: "ORD-006", 
-            customer: "Frank Miller", 
-            time: "1:30 PM", 
-            date: "2024-07-20",
-            status: "Preparing", 
-            type: "Delivery", 
-            items: [
-                { id: 4, name: "Beef Burger", quantity: 1, price: 7, category: "Burgers" },
-            ], 
-            prepTime: "22 min", 
-            total: 7.00,
-            customerDetails: { name: "Frank Miller", address: "789 Silk Board, HSR Layout", phone: "+919876543214", email: "vikram.singh@example.com" },
-            payment: { method: "UPI", status: "Paid" },
-            deliveryPartner: { name: "Anjali Mehta", avatar: "https://placehold.co/102x102.png", avatarFallback: "AM", rating: 4.9 },
-            pickupOtp: "987123"
-        },
-         { 
-            id: "ORD-B-BK-001",
-            customer: "Online Booking",
-            time: "7:00 PM",
-            date: "2025-07-21",
-            status: "Preparing",
-            type: "Dine-in",
-            source: "Online",
-            items: [{ id: 999, name: "Booking for 4 guests", quantity: 1, price: 100, category: "Booking" }],
-            prepTime: "N/A",
-            total: 118,
-            customerDetails: { name: "Aisha Kapoor", address: "Tables: T1, T2", phone: "+919876543215", email: "N/A" },
-            payment: { method: "Online", status: "Paid" }
-        },
-        { 
-            id: "ORD-B-BK-002",
-            customer: "Offline Booking",
-            time: "8:30 PM",
-            date: "2025-07-21",
-            status: "Ready",
-            type: "Dine-in",
-            source: "Online",
-            items: [{ id: 999, name: "Booking for 2 guests", quantity: 1, price: 100, category: "Booking" }],
-            prepTime: "N/A",
-            total: 118,
-            customerDetails: { name: "Rohan Verma", address: "Tables: P1", phone: "+919876543216", email: "N/A" },
-            payment: { method: "Online", status: "Paid" }
-        },
-        { 
-            id: "ORD-B-BK-003",
-            customer: "Online Booking",
-            time: "9:00 PM",
-            date: "2025-07-22",
-            status: "Incoming",
-            type: "Dine-in",
-            source: "Online",
-            items: [{ id: 999, name: "Booking for 6 guests", quantity: 1, price: 100, category: "Booking" }],
-            prepTime: "N/A",
-            total: 118,
-            customerDetails: { name: "Priya Sharma", address: "Tables: T5, T6", phone: "+919876543217", email: "N/A" },
-            payment: { method: "Online", status: "Paid" }
+        {
+          id: "ORD-001",
+          customer: "Alice Johnson",
+          time: "6:07 PM",
+          date: "2025-07-13",
+          status: "Delivered",
+          type: "Delivery",
+          items: [
+            { id: 16, name: "Spicy Ramen", quantity: 1, price: 14.99, category: "Noodles" },
+            { id: 17, name: "Gyoza", quantity: 1, price: 6.99, category: "Appetizers" },
+          ],
+          prepTime: "15 min",
+          total: 21.98,
+          customerDetails: { name: "Alice Johnson", address: "123 Blossom Lane, Garden City", phone: "+919876543210", email: "alice.j@example.com" },
+          payment: { method: "Credit Card", status: "Paid" },
+          offer: { code: "SUMMER20", type: "Percentage" },
+          deliveryPartner: { name: "Rohan Sharma", avatar: "https://placehold.co/100x100.png", avatarFallback: "RS", rating: 4.8 },
+          pickupOtp: "123456"
         },
         {
-            id: "ORD-B-BK-004",
-            customer: "Test",
-            time: "6:45 PM",
-            date: "2025-07-23",
-            status: "Cooking",
-            type: "Dine-in",
-            source: "Online",
-            items: [{ id: 999, name: "Booking for 8 guests", quantity: 1, price: 100, category: "Booking" }],
-            prepTime: "N/A",
-            total: 118,
-            customerDetails: { name: "Test", address: "Tables: T8", phone: "+919876543218", email: "N/A" },
-            payment: { method: "Cash", status: "Paid" }
+          id: "ORD-002",
+          customer: "Bob Williams",
+          time: "2:30 PM",
+          date: "2024-07-21",
+          status: "Delivered",
+          type: "Takeaway",
+          items: [
+            { id: 8, name: "Paneer Tikka Masala", quantity: 1, price: 25, category: "Curries" },
+          ],
+          prepTime: "20 min",
+          total: 25.00,
+          customerDetails: { name: "Bob Williams", address: "Takeaway Counter", phone: "+919876543211", email: "priya.patel@example.com" },
+          payment: { method: "UPI", status: "Paid" },
+          offer: { code: "NEWUSER10", type: "Discount" },
+          pickupOtp: "334455"
         },
         {
-            id: "ORD-B-BK-006",
-            customer: "Test",
-            time: "7:15 PM",
-            date: "2025-07-24",
-            status: "Preparing",
-            type: "Dine-in",
-            source: "Online",
-            items: [{ id: 999, name: "Booking for 2 guests", quantity: 1, price: 100, category: "Booking" }],
-            prepTime: "N/A",
-            total: 118,
-            customerDetails: { name: "Test", address: "Tables: T3", phone: "+919876543219", email: "N/A" },
-            payment: { method: "Cash", status: "Paid" }
+          id: "ORD-003",
+          customer: "Charlie Brown",
+          time: "8:00 PM",
+          date: "2024-07-21",
+          status: "Delivered",
+          type: "Dine-in",
+          items: [
+            { id: 10, name: "Chicken Biryani", quantity: 1, price: 14, category: "Rice" },
+          ],
+          prepTime: "25 min",
+          total: 14.00,
+          customerDetails: { name: "Charlie Brown", address: "Dine-in Table 5", phone: "+919876543212", email: "amit.kumar@example.com" },
+          payment: { method: "Cash on Delivery", status: "Pending" }
+        },
+        {
+          id: "ORD-005",
+          customer: "Eve Davis",
+          time: "1:45 PM",
+          date: "2024-07-20",
+          status: "Incoming",
+          type: "Delivery",
+          items: [
+            { id: 1, name: "Margherita Pizza", quantity: 1, price: 17, category: "Pizza" },
+          ],
+          prepTime: "10 min",
+          total: 17.00,
+          customerDetails: { name: "Eve Davis", address: "456 Tech Park, Electronic City", phone: "+919876543213", email: "sunita.rai@example.com" },
+          payment: { method: "Debit Card", status: "Paid" },
+          deliveryPartner: { name: "Sunil Verma", avatar: "https://placehold.co/101x101.png", avatarFallback: "SV", rating: 4.7 },
+          pickupOtp: "654321"
+        },
+        {
+          id: "ORD-006",
+          customer: "Frank Miller",
+          time: "1:30 PM",
+          date: "2024-07-20",
+          status: "Preparing",
+          type: "Delivery",
+          items: [
+            { id: 4, name: "Beef Burger", quantity: 1, price: 7, category: "Burgers" },
+          ],
+          prepTime: "22 min",
+          total: 7.00,
+          customerDetails: { name: "Frank Miller", address: "789 Silk Board, HSR Layout", phone: "+919876543214", email: "vikram.singh@example.com" },
+          payment: { method: "UPI", status: "Paid" },
+          deliveryPartner: { name: "Anjali Mehta", avatar: "https://placehold.co/102x102.png", avatarFallback: "AM", rating: 4.9 },
+          pickupOtp: "987123"
+        },
+        {
+          id: "ORD-B-BK-001",
+          customer: "Online Booking",
+          time: "7:00 PM",
+          date: "2025-07-21",
+          status: "Preparing",
+          type: "Dine-in",
+          source: "Online",
+          items: [{ id: 999, name: "Booking for 4 guests", quantity: 1, price: 100, category: "Booking" }],
+          prepTime: "N/A",
+          total: 118,
+          customerDetails: { name: "Aisha Kapoor", address: "Tables: T1, T2", phone: "+919876543215", email: "N/A" },
+          payment: { method: "Online", status: "Paid" }
+        },
+        {
+          id: "ORD-B-BK-002",
+          customer: "Offline Booking",
+          time: "8:30 PM",
+          date: "2025-07-21",
+          status: "Ready",
+          type: "Dine-in",
+          source: "Online",
+          items: [{ id: 999, name: "Booking for 2 guests", quantity: 1, price: 100, category: "Booking" }],
+          prepTime: "N/A",
+          total: 118,
+          customerDetails: { name: "Rohan Verma", address: "Tables: P1", phone: "+919876543216", email: "N/A" },
+          payment: { method: "Online", status: "Paid" }
+        },
+        {
+          id: "ORD-B-BK-003",
+          customer: "Online Booking",
+          time: "9:00 PM",
+          date: "2025-07-22",
+          status: "Incoming",
+          type: "Dine-in",
+          source: "Online",
+          items: [{ id: 999, name: "Booking for 6 guests", quantity: 1, price: 100, category: "Booking" }],
+          prepTime: "N/A",
+          total: 118,
+          customerDetails: { name: "Priya Sharma", address: "Tables: T5, T6", phone: "+919876543217", email: "N/A" },
+          payment: { method: "Online", status: "Paid" }
+        },
+        {
+          id: "ORD-B-BK-004",
+          customer: "Test",
+          time: "6:45 PM",
+          date: "2025-07-23",
+          status: "Cooking",
+          type: "Dine-in",
+          source: "Online",
+          items: [{ id: 999, name: "Booking for 8 guests", quantity: 1, price: 100, category: "Booking" }],
+          prepTime: "N/A",
+          total: 118,
+          customerDetails: { name: "Test", address: "Tables: T8", phone: "+919876543218", email: "N/A" },
+          payment: { method: "Cash", status: "Paid" }
+        },
+        {
+          id: "ORD-B-BK-006",
+          customer: "Test",
+          time: "7:15 PM",
+          date: "2025-07-24",
+          status: "Preparing",
+          type: "Dine-in",
+          source: "Online",
+          items: [{ id: 999, name: "Booking for 2 guests", quantity: 1, price: 100, category: "Booking" }],
+          prepTime: "N/A",
+          total: 118,
+          customerDetails: { name: "Test", address: "Tables: T3", phone: "+919876543219", email: "N/A" },
+          payment: { method: "Cash", status: "Paid" }
         }
       ],
       menuItems: [
@@ -518,7 +519,7 @@ export const useAppStore = create<AppStore>()(
       ],
       pendingBooking: null,
       feedback: [
-        { id: "FB-001", customer: { name: "John Doe", avatar: "https://placehold.co/100x100", fallback: "JD", orderCount: 12, }, orderType: "Delivery", rating: 5, comment: "The food was amazing! The Butter Chicken was perfectly cooked and the naan was fresh and fluffy. Will definitely order again!", date: "May 15, 2023", items: ["Butter Chicken", "Garlic Naan"], photos: [ { url: "https://placehold.co/80x80.png", hint: "butter chicken" }, { url: "https://placehold.co/80x80.png", hint: "garlic naan" } ], replied: false, reply: "" },
+        { id: "FB-001", customer: { name: "John Doe", avatar: "https://placehold.co/100x100", fallback: "JD", orderCount: 12, }, orderType: "Delivery", rating: 5, comment: "The food was amazing! The Butter Chicken was perfectly cooked and the naan was fresh and fluffy. Will definitely order again!", date: "May 15, 2023", items: ["Butter Chicken", "Garlic Naan"], photos: [{ url: "https://placehold.co/80x80.png", hint: "butter chicken" }, { url: "https://placehold.co/80x80.png", hint: "garlic naan" }], replied: false, reply: "" },
         { id: "FB-002", customer: { name: "Sarah Smith", avatar: "https://placehold.co/101x101", fallback: "SS", orderCount: 5 }, orderType: "Delivery", rating: 4, comment: "Great food but delivery was a bit late. The Paneer Tikka was excellent though!", date: "May 14, 2023", items: ["Paneer Tikka", "Veg Biryani"], photos: [], replied: true, reply: "Thank you for your feedback, Sarah! We apologize for the late delivery and will work on improving our service." },
         { id: "FB-003", customer: { name: "Mike Johnson", avatar: "https://placehold.co/102x102", fallback: "MJ", orderCount: 8 }, orderType: "Dine-in", rating: 2, comment: "The order was very late and the food was cold. Disappointed with the experience this time.", date: "May 13, 2023", items: [], photos: [], replied: false, reply: "" },
       ],
@@ -619,9 +620,9 @@ export const useAppStore = create<AppStore>()(
 
       updateBranch: (updatedBranch: Branch) => {
         set((state) => ({
-          branches: state.branches.map(b => 
-            b.id === updatedBranch.id 
-              ? { ...updatedBranch, isOnline: updatedBranch.status === 'Active' ? updatedBranch.isOnline : false } 
+          branches: state.branches.map(b =>
+            b.id === updatedBranch.id
+              ? { ...updatedBranch, isOnline: updatedBranch.status === 'Active' ? updatedBranch.isOnline : false }
               : b
           )
         }));
@@ -703,23 +704,23 @@ export const useAppStore = create<AppStore>()(
           type: 'Takeaway',
           source: 'Offline',
           items: cart.map(cartItem => ({
-              id: cartItem.id,
-              name: `${cartItem.name}${cartItem.portion !== 'Full' ? ` (${cartItem.portion})` : ''}`,
-              quantity: cartItem.quantity,
-              price: cartItem.price,
-              category: cartItem.category,
+            id: cartItem.id,
+            name: `${cartItem.name}${cartItem.portion !== 'Full' ? ` (${cartItem.portion})` : ''}`,
+            quantity: cartItem.quantity,
+            price: cartItem.price,
+            category: cartItem.category,
           })),
           prepTime: '15 min',
           total: subtotal * 1.18,
           customerDetails: {
-              name: customerName || 'Walk-in Customer',
-              address: 'Takeaway Counter',
-              phone: customerPhone || 'N/A',
-              email: 'N/A'
+            name: customerName || 'Walk-in Customer',
+            address: 'Takeaway Counter',
+            phone: customerPhone || 'N/A',
+            email: 'N/A'
           },
           payment: {
-              method: 'Offline',
-              status: 'Paid'
+            method: 'Offline',
+            status: 'Paid'
           },
           pickupOtp: Math.floor(100000 + Math.random() * 900000).toString(),
         };
@@ -731,10 +732,10 @@ export const useAppStore = create<AppStore>()(
       addMenuItem: (itemData: NewMenuItem) => {
         const currentItems = get().menuItems;
         const newItem: MenuItem = {
-            id: currentItems.length > 0 ? Math.max(...currentItems.map(i => i.id)) + 1 : 1,
-            ...itemData,
-            image: "https://placehold.co/300x200.png",
-            aiHint: itemData.name.toLowerCase().split(" ").slice(0, 2).join(" "),
+          id: currentItems.length > 0 ? Math.max(...currentItems.map(i => i.id)) + 1 : 1,
+          ...itemData,
+          image: "https://placehold.co/300x200.png",
+          aiHint: itemData.name.toLowerCase().split(" ").slice(0, 2).join(" "),
         };
         set((state) => ({
           menuItems: [newItem, ...state.menuItems]
@@ -759,7 +760,7 @@ export const useAppStore = create<AppStore>()(
 
       toggleMenuItemAvailability: (itemId: number) => {
         set((state) => ({
-          menuItems: state.menuItems.map(item => 
+          menuItems: state.menuItems.map(item =>
             item.id === itemId ? { ...item, available: !item.available } : item
           )
         }));
@@ -770,10 +771,10 @@ export const useAppStore = create<AppStore>()(
         if (name && !currentCategories.find(c => c.toLowerCase() === name.toLowerCase())) {
           const newCategories = [...currentCategories];
           const allIndex = newCategories.indexOf("All");
-          if(allIndex !== -1) {
-              newCategories.splice(allIndex, 0, name);
+          if (allIndex !== -1) {
+            newCategories.splice(allIndex, 0, name);
           } else {
-               newCategories.push(name);
+            newCategories.push(name);
           }
           set({ categories: newCategories });
           get().showToast("Category Added", `"${name}" has been added.`);
@@ -849,45 +850,45 @@ export const useAppStore = create<AppStore>()(
       addBooking: (bookingData: PendingBooking, fee: number) => {
         const currentBookings = get().bookings;
         const newBookingId = `BK-${(currentBookings.length + 1).toString().padStart(3, '0')}`;
-        
+
         // Add to bookings list
         const newBooking: Booking = {
-            id: newBookingId,
-            ...bookingData,
-            status: "Confirmed",
+          id: newBookingId,
+          ...bookingData,
+          status: "Confirmed",
         };
         set((state) => ({
           bookings: [newBooking, ...state.bookings]
         }));
-        
+
         // Add to orders list
         const newOrder: Order = {
-            id: `ORD-B-${newBookingId}`,
-            customer: bookingData.name,
-            time: bookingData.time,
-            date: bookingData.date,
-            status: 'Preparing',
-            type: 'Dine-in',
-            source: 'Online',
-            items: [{
-                id: 999,
-                name: `Booking for ${bookingData.partySize} guests`,
-                quantity: 1,
-                price: fee,
-                category: 'Booking',
-            }],
-            prepTime: 'N/A',
-            total: fee * 1.18,
-            customerDetails: {
-                name: bookingData.name,
-                address: `Tables: ${bookingData.tables.map(t => t.name).join(', ')}`,
-                phone: bookingData.phone,
-                email: 'N/A',
-            },
-            payment: {
-                method: 'Online',
-                status: 'Paid',
-            }
+          id: `ORD-B-${newBookingId}`,
+          customer: bookingData.name,
+          time: bookingData.time,
+          date: bookingData.date,
+          status: 'Preparing',
+          type: 'Dine-in',
+          source: 'Online',
+          items: [{
+            id: 999,
+            name: `Booking for ${bookingData.partySize} guests`,
+            quantity: 1,
+            price: fee,
+            category: 'Booking',
+          }],
+          prepTime: 'N/A',
+          total: fee * 1.18,
+          customerDetails: {
+            name: bookingData.name,
+            address: `Tables: ${bookingData.tables.map(t => t.name).join(', ')}`,
+            phone: bookingData.phone,
+            email: 'N/A',
+          },
+          payment: {
+            method: 'Online',
+            status: 'Paid',
+          }
         };
         set((state) => ({
           orders: [newOrder, ...state.orders]
@@ -895,10 +896,10 @@ export const useAppStore = create<AppStore>()(
 
         // Update table status
         set((state) => ({
-          tables: state.tables.map(table => 
+          tables: state.tables.map(table =>
             bookingData.tables.some(selected => selected.id === table.id)
-                ? { ...table, status: 'Occupied' }
-                : table
+              ? { ...table, status: 'Occupied' }
+              : table
           )
         }));
       },
@@ -944,10 +945,10 @@ export const useAppStore = create<AppStore>()(
           const existingItem = state.takeawayCart.find(cartItem => cartItem.cartItemId === cartItemId);
           if (existingItem) {
             return {
-              takeawayCart: state.takeawayCart.map(cartItem => 
-                cartItem.cartItemId === cartItemId 
-                    ? { ...cartItem, quantity: cartItem.quantity + quantity } 
-                    : cartItem
+              takeawayCart: state.takeawayCart.map(cartItem =>
+                cartItem.cartItemId === cartItemId
+                  ? { ...cartItem, quantity: cartItem.quantity + quantity }
+                  : cartItem
               )
             };
           }
@@ -963,10 +964,10 @@ export const useAppStore = create<AppStore>()(
           const existingItem = state.takeawayCart.find(cartItem => cartItem.cartItemId === cartItemId);
           if (existingItem && existingItem.quantity > 1) {
             return {
-              takeawayCart: state.takeawayCart.map(cartItem => 
-                cartItem.cartItemId === cartItemId 
-                    ? { ...cartItem, quantity: cartItem.quantity - 1 } 
-                    : cartItem
+              takeawayCart: state.takeawayCart.map(cartItem =>
+                cartItem.cartItemId === cartItemId
+                  ? { ...cartItem, quantity: cartItem.quantity - 1 }
+                  : cartItem
               )
             };
           }

@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { PrepTimeDialog } from "@/components/prep-time-dialog";
+import { useMutationRequestDynamic } from "@/hooks/useApi";
 // Use API-served audio to avoid bundler asset import issues
 
 const NewIncomingOrderCard = ({
@@ -339,6 +340,10 @@ export default function Dashboard() {
     tables,
     updateOrderStatus,
     acceptNewOrder,
+    selectedBranch,
+    branches,
+    setBranches,
+    toggleBranchOnlineStatus,
   } = useAppStore();
 
   const [newOrder, setNewOrder] = useState<Order | null>(null);
@@ -346,6 +351,124 @@ export default function Dashboard() {
   const [isAlertPlaying, setIsAlertPlaying] = useState<boolean>(false);
   const { toast } = useToast();
   const [alertAudio, setAlertAudio] = useState<HTMLAudioElement | null>(null);
+
+  // Get the current branch object
+  const currentBranch = branches.find(b => b.id === selectedBranch);
+
+  // API mutation for toggling branch online status
+  type ToggleOnlineVariables = { isOnline: boolean };
+  type ToggleOnlineResponse = {
+    success: boolean;
+    message: string;
+    data: {
+      id: string;
+      isOnline: boolean;
+      name: string;
+    }
+  };
+
+  const toggleOnlineMutation = useMutationRequestDynamic<
+    ToggleOnlineResponse,
+    ToggleOnlineVariables
+  >(
+    "PATCH",
+    (variables) => `/api/branches/${currentBranch?.restaurantId || selectedBranch}/toggle-online`,
+    undefined,
+    {
+      onSuccess: (response, variables) => {
+        // SET the state to the exact value from API, don't toggle
+        const newIsOnline = response.data.isOnline;
+        setRestaurantOnline(newIsOnline);
+
+        // Also update the branch's isOnline status in the store
+        if (currentBranch) {
+          const updatedBranch = { ...currentBranch, isOnline: newIsOnline };
+          // Update the branches array to reflect the new status
+          setBranches(branches.map(b =>
+            b.id === selectedBranch ? updatedBranch : b
+          ));
+        }
+
+        toast({
+          title: newIsOnline ? "Branch is now Online" : "Branch is now Offline",
+          description: response.message || `You are now ${newIsOnline ? 'accepting' : 'not accepting'} new orders.`,
+        });
+
+        // Handle mock order behavior
+        if (newIsOnline) {
+          // cycle through mock orders
+          lastMockOrderIndex = (lastMockOrderIndex + 1) % mockOrders.length;
+          const mockOrder = {
+            ...mockOrders[lastMockOrderIndex],
+            time: new Date().toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          };
+          setNewOrder(mockOrder);
+        } else {
+          setNewOrder(null);
+        }
+      },
+      onError: (error) => {
+        toast({
+          title: "Failed to update status",
+          description: error.message || "Could not toggle branch online status. Please try again.",
+          variant: "destructive",
+        });
+      },
+    }
+  );
+
+  // API mutation for toggling rush hour status
+  type ToggleRushHourVariables = { isRushHour: boolean };
+  type ToggleRushHourResponse = {
+    success: boolean;
+    message: string;
+    data: {
+      id: string;
+      isRushHour: boolean;
+      name: string;
+    }
+  };
+
+  const toggleRushHourMutation = useMutationRequestDynamic<
+    ToggleRushHourResponse,
+    ToggleRushHourVariables
+  >(
+    "PATCH",
+    (variables) => `/api/branches/${currentBranch?.restaurantId || selectedBranch}/rush-hour`,
+    undefined,
+    {
+      onSuccess: (response, variables) => {
+        // SET the state to the exact value from API, don't toggle
+        const newIsRushHour = response.data.isRushHour;
+        setBusy(newIsRushHour);
+
+        // Also update the branch's isRushHour status in the store
+        if (currentBranch) {
+          const updatedBranch = { ...currentBranch, isRushHour: newIsRushHour };
+          // Update the branches array to reflect the new status
+          setBranches(branches.map(b =>
+            b.id === selectedBranch ? updatedBranch : b
+          ));
+        }
+
+        toast({
+          title: newIsRushHour ? "Rush Hour Enabled" : "Rush Hour Disabled",
+          description: response.message || `Rush hour mode is now ${newIsRushHour ? 'enabled' : 'disabled'}.`,
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Failed to update rush hour",
+          description: error.message || "Could not toggle rush hour status. Please try again.",
+          variant: "destructive",
+        });
+      },
+    }
+  );
+
 
   // Initialize audio object once
   useEffect(() => {
@@ -409,21 +532,13 @@ export default function Dashboard() {
   };
 
   const handleToggleOnline = (isOnline: boolean) => {
-    setRestaurantOnline(isOnline);
-    if (isOnline) {
-      // cycle through mock orders
-      lastMockOrderIndex = (lastMockOrderIndex + 1) % mockOrders.length;
-      const mockOrder = {
-        ...mockOrders[lastMockOrderIndex],
-        time: new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      setNewOrder(mockOrder);
-    } else {
-      setNewOrder(null);
-    }
+    // Trigger the API mutation
+    toggleOnlineMutation.mutate({ isOnline });
+  };
+
+  const handleToggleRushHour = (isRushHour: boolean) => {
+    // Trigger the API mutation
+    toggleRushHourMutation.mutate({ isRushHour });
   };
 
   const {
@@ -443,7 +558,7 @@ export default function Dashboard() {
         o.type === "Dine-in" &&
         !o.items.some((item) => item.category === "Booking")
     );
-    
+
     const occupiedTables = tables.filter(t => t.status === 'Occupied').length;
     const availableTables = tables.length - occupiedTables;
 
@@ -468,7 +583,7 @@ export default function Dashboard() {
             <div>
               <CardTitle className="text-base">You are Online</CardTitle>
               <CardDescription className="text-xs">
-                Accepting new orders
+                {toggleOnlineMutation.isPending ? "Updating..." : "Accepting new orders"}
               </CardDescription>
               {isAlertPlaying && (
                 <p className="text-xs text-primary mt-1">Playing new-order alert…</p>
@@ -477,6 +592,7 @@ export default function Dashboard() {
             <Switch
               checked={isRestaurantOnline}
               onCheckedChange={handleToggleOnline}
+              disabled={toggleOnlineMutation.isPending}
             />
           </CardHeader>
         </Card>
@@ -484,7 +600,7 @@ export default function Dashboard() {
           className={cn(
             "transition-colors",
             isBusy &&
-              "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50"
+            "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50"
           )}
         >
           <CardHeader className="flex flex-row items-center justify-between">
@@ -503,84 +619,84 @@ export default function Dashboard() {
                   isBusy && "text-red-600/80 dark:text-red-400/80"
                 )}
               >
-                Manage high order volume
+                {toggleRushHourMutation.isPending ? "Updating..." : "Manage high order volume"}
               </CardDescription>
             </div>
             <Switch
               checked={isBusy}
-              onCheckedChange={setBusy}
-              disabled={!isRestaurantOnline}
+              onCheckedChange={handleToggleRushHour}
+              disabled={!isRestaurantOnline || toggleRushHourMutation.isPending}
             />
           </CardHeader>
         </Card>
       </div>
       <Card>
         <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-                <PenSquare className="h-5 w-5"/>
-                Manual Orders
-            </CardTitle>
-            <CardDescription className="text-xs mt-1">
-              Manually create orders for walk-in customers or offline scenarios.
-            </CardDescription>
+          <CardTitle className="text-base flex items-center gap-2">
+            <PenSquare className="h-5 w-5" />
+            Manual Orders
+          </CardTitle>
+          <CardDescription className="text-xs mt-1">
+            Manually create orders for walk-in customers or offline scenarios.
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0 flex flex-col gap-2">
-            <Button asChild variant="ghost" className="w-full justify-between p-4 h-auto">
-                <Link href="/takeaway?type=takeaway">
-                    <div className="flex items-center gap-3">
-                        <ShoppingBag className="h-6 w-6 text-primary" />
-                        <div>
-                            <p className="font-semibold text-base text-left">New Takeaway</p>
-                            <p className="text-xs text-muted-foreground text-left">For walk-in customers</p>
-                        </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </Link>
-            </Button>
-            <Separator />
-            <Button asChild variant="ghost" className="w-full justify-between p-4 h-auto">
-                <Link href="/takeaway?type=dine-in">
-                    <div className="flex items-center gap-3">
-                        <UtensilsCrossed className="h-6 w-6 text-primary" />
-                        <div>
-                            <p className="font-semibold text-base text-left">New Dine-in</p>
-                            <p className="text-xs text-muted-foreground text-left">For customers at a table</p>
-                        </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </Link>
-            </Button>
+          <Button asChild variant="ghost" className="w-full justify-between p-4 h-auto">
+            <Link href="/takeaway?type=takeaway">
+              <div className="flex items-center gap-3">
+                <ShoppingBag className="h-6 w-6 text-primary" />
+                <div>
+                  <p className="font-semibold text-base text-left">New Takeaway</p>
+                  <p className="text-xs text-muted-foreground text-left">For walk-in customers</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </Link>
+          </Button>
+          <Separator />
+          <Button asChild variant="ghost" className="w-full justify-between p-4 h-auto">
+            <Link href="/takeaway?type=dine-in">
+              <div className="flex items-center gap-3">
+                <UtensilsCrossed className="h-6 w-6 text-primary" />
+                <div>
+                  <p className="font-semibold text-base text-left">New Dine-in</p>
+                  <p className="text-xs text-muted-foreground text-left">For customers at a table</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </Link>
+          </Button>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-                <Users2 className="h-5 w-5"/>
-                Table Status
-            </CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users2 className="h-5 w-5" />
+            Table Status
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-3 gap-4 text-center">
-            <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-2xl font-bold text-red-600">{tableStats.occupied}</p>
-                <p className="text-xs text-muted-foreground">Occupied</p>
-            </div>
-            <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">{tableStats.available}</p>
-                <p className="text-xs text-muted-foreground">Available</p>
-            </div>
-             <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-2xl font-bold">{tableStats.total}</p>
-                <p className="text-xs text-muted-foreground">Total Tables</p>
-            </div>
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-2xl font-bold text-red-600">{tableStats.occupied}</p>
+            <p className="text-xs text-muted-foreground">Occupied</p>
+          </div>
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-2xl font-bold text-green-600">{tableStats.available}</p>
+            <p className="text-xs text-muted-foreground">Available</p>
+          </div>
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-2xl font-bold">{tableStats.total}</p>
+            <p className="text-xs text-muted-foreground">Total Tables</p>
+          </div>
         </CardContent>
         <CardContent className="px-4 pb-4">
-             <Button asChild variant="outline" size="sm" className="w-full">
-                <Link href="/bookings">
-                    Go to Table Management
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                </Link>
-             </Button>
+          <Button asChild variant="outline" size="sm" className="w-full">
+            <Link href="/bookings">
+              Go to Table Management
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 
