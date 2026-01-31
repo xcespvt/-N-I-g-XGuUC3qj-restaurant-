@@ -6,10 +6,8 @@ import {
   ChevronRight,
   FileText,
   HelpCircle,
-  MessageSquare,
   Banknote,
   Building2,
-  Settings,
   Star,
   Clock,
   CheckCircle,
@@ -20,9 +18,9 @@ import {
   Mail,
   Phone,
   Share2,
-  Camera,
-  PlusCircle,
+  Store,
   Upload,
+  Verified,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -67,15 +65,15 @@ const ListItem = ({
   const Icon = icon
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-   useEffect(() => {
-        setIsDarkMode(document.documentElement.classList.contains('dark'));
-    }, []);
+  useEffect(() => {
+    setIsDarkMode(document.documentElement.classList.contains('dark'));
+  }, []);
 
   const toggleTheme = () => {
     const isDark = document.documentElement.classList.toggle('dark');
     setIsDarkMode(isDark);
   };
-  
+
   const content = (
     <div className="flex items-center justify-between w-full p-4 hover:bg-accent rounded-lg transition-colors">
       <div className="flex items-center gap-4">
@@ -89,7 +87,7 @@ const ListItem = ({
       )}
     </div>
   )
-  
+
   if (triggerDialog) {
     return <DialogTrigger asChild><div className="cursor-pointer">{content}</div></DialogTrigger>;
   }
@@ -106,20 +104,20 @@ const ListItem = ({
 }
 
 const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-    </svg>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+  </svg>
 );
 
 
@@ -128,16 +126,16 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMediaUploadOpen, setIsMediaUploadOpen] = useState(false);
   const [bannerMedia, setBannerMedia] = useState([
-    { type: 'image', src: 'https://picsum.photos/seed/restaurant-banner/800/300' }
+    { type: 'video', src: 'https://cdn.pixabay.com/video/2022/11/07/137593-769730287_large.mp4' }
   ]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   useEffect(() => {
     if (bannerMedia.length > 1) {
-        const timer = setInterval(() => {
-            setCurrentBannerIndex(prev => (prev + 1) % bannerMedia.length);
-        }, 5000); // Change slide every 5 seconds
-        return () => clearInterval(timer);
+      const timer = setInterval(() => {
+        setCurrentBannerIndex(prev => (prev + 1) % bannerMedia.length);
+      }, 5000); // Change slide every 5 seconds
+      return () => clearInterval(timer);
     }
   }, [bannerMedia]);
 
@@ -174,49 +172,52 @@ export default function ProfilePage() {
         </Button>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="p-0 relative h-48 bg-muted">
-            {bannerMedia.map((media, index) => (
-                <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentBannerIndex ? 'opacity-100' : 'opacity-0'}`}>
-                    {media.type === 'image' ? (
-                         <Image 
-                            src={media.src}
-                            alt="Restaurant banner"
-                            fill
-                            className="object-cover"
-                            data-ai-hint="restaurant interior"
-                        />
-                    ) : (
-                        <video
-                            src={media.src}
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            className="w-full h-full object-cover"
-                        />
-                    )}
-                </div>
-            ))}
-             <div className="absolute inset-0 bg-black/20"/>
-            <Button variant="secondary" size="sm" className="absolute bottom-3 right-3 z-10" onClick={handleBannerUpload}>
-                <PlusCircle className="h-4 w-4 mr-2"/>
-                Add Media
-            </Button>
+      <Card className="overflow-hidden  ">
+        <CardHeader className="p-0 relative h-[400px]">
+          <video
+            src="https://www.pexels.com/download/video/5780175/"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover rounded-b-[2rem] bg-red-500"
+          />
+          <div className="absolute inset-0" />
+          <Button
+            variant="secondary"
+            size="sm"
+            className="absolute top-3 right-3 z-10 rounded-full"
+            onClick={handleBannerUpload}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
         </CardHeader>
-        <CardContent className="pt-6 flex flex-col items-center text-center relative -mt-12">
-          <Avatar className="h-24 w-24 mb-4 border-4 border-background shadow-md">
-            <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="logo abstract" />
-            <AvatarFallback>GK</AvatarFallback>
-          </Avatar>
-          <h2 className="text-xl font-bold">The Gourmet Kitchen</h2>
-          <p className="text-sm text-muted-foreground">contact@gourmetkitchen.com</p>
-          <div className="flex items-center gap-1 mt-1">
-            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span className="font-semibold">4.8</span>
+
+        <CardContent className="pt-6 flex flex-col items-center text-center relative -mt-16">
+          <div className="relative mb-3">
+            <div className="h-28 w-28 rounded-[2rem] border-4 border-background shadow-lg ring-2 ring-background overflow-hidden bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+              <Store className="h-12 w-12 text-white" />
+            </div>
+            <div
+              style={{ background: "#06bb94ff" }}
+              className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl flex items-center justify-center border-[6px] border-white text-white shadow-lg"
+            >
+              <Verified size={18} strokeWidth={3} />
+            </div>
           </div>
-          
-          <Separator className="my-4"/>
+
+          <h2 className="text-2xl font-bold mb-1">Gourmet Kitchen</h2>
+
+          <div className="flex items-center gap-1.5 mb-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Global Outlet Verified
+            </span>
+          </div>
+
+          <p className="text-sm font-medium text-muted-foreground">ID: GK-992100</p>
+
+          <Separator className="my-4" />
 
           <div className="grid grid-cols-3 gap-4 w-full">
             <div>
@@ -232,96 +233,95 @@ export default function ProfilePage() {
               <p className="text-xs text-muted-foreground">Months</p>
             </div>
           </div>
-          
-           <Button className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white">
+
+          <Button className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white">
             <Pencil className="mr-2 h-4 w-4" /> Edit Profile
           </Button>
-
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="pt-6">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-lg">Performance</h3>
-                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">Excellent</Badge>
-            </div>
-            <div className="grid grid-cols-3 gap-4 text-center">
-                <Card className="p-3 bg-muted/50">
-                    <Star className="h-6 w-6 text-yellow-400 fill-yellow-400 mx-auto mb-1"/>
-                    <p className="font-bold text-lg">4.8</p>
-                    <p className="text-xs text-muted-foreground">Rating</p>
-                </Card>
-                 <Card className="p-3 bg-muted/50">
-                    <Clock className="h-6 w-6 text-blue-500 mx-auto mb-1"/>
-                    <p className="font-bold text-lg">99%</p>
-                    <p className="text-xs text-muted-foreground">Order Accuracy</p>
-                </Card>
-                 <Card className="p-3 bg-muted/50">
-                    <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1"/>
-                    <p className="font-bold text-lg">92%</p>
-                    <p className="text-xs text-muted-foreground">Acceptance</p>
-                </Card>
-            </div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold text-lg">Performance</h3>
+            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">Excellent</Badge>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <Card className="p-3 bg-muted/50">
+              <Star className="h-6 w-6 text-yellow-400 fill-yellow-400 mx-auto mb-1" />
+              <p className="font-bold text-lg">4.8</p>
+              <p className="text-xs text-muted-foreground">Rating</p>
+            </Card>
+            <Card className="p-3 bg-muted/50">
+              <Clock className="h-6 w-6 text-blue-500 mx-auto mb-1" />
+              <p className="font-bold text-lg">99%</p>
+              <p className="text-xs text-muted-foreground">Order Accuracy</p>
+            </Card>
+            <Card className="p-3 bg-muted/50">
+              <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
+              <p className="font-bold text-lg">92%</p>
+              <p className="text-xs text-muted-foreground">Acceptance</p>
+            </Card>
+          </div>
         </CardContent>
       </Card>
-      
+
       <div className="space-y-4">
         <Dialog>
-            <Card>
-                <CardContent className="p-2 space-y-1">
-                    <p className="text-sm font-semibold px-4 pt-2 text-green-600">Account Settings</p>
-                    <ListItem icon={Building2} label="Restaurant Information" href="/profile/restaurant-information" />
-                    <ListItem icon={User} label="Owner Information" href="/profile/owner-information" />
-                    <ListItem icon={Clock} label="Operating Hours" href="/profile/operating-hours" />
-                    <ListItem icon={FileText} label="Documents" href="/profile/documents" />
-                    <ListItem icon={Banknote} label="Bank Account" href="/profile/bank-account" />
-                    <ListItem icon={Sparkles} label="Facilities" href="/profile/facilities" />
-                    <ListItem icon={Wrench} label="Services" href="/profile/services" />
-                    <ListItem icon={Share2} label="Relationship Manager" triggerDialog />
-                </CardContent>
-            </Card>
-            <DialogContent>
-                 <DialogHeader>
-                    <DialogTitle>Your Relationship Manager</DialogTitle>
-                    <DialogDescription>Get in touch for any assistance or queries.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-14 w-14">
-                            <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="portrait professional" />
-                            <AvatarFallback>AM</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="font-bold text-lg">Anjali Mehta</p>
-                            <p className="text-sm text-muted-foreground">Senior Partner Success Manager</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <a href="tel:+911234567890">
-                            <Button variant="outline" className="w-full">
-                            <Phone className="mr-2 h-4 w-4" /> Call
-                            </Button>
-                        </a>
-                        <a href="https://wa.me/911234567890" target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" className="w-full">
-                            <WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp
-                            </Button>
-                        </a>
-                        <a href="mailto:anjali.mehta@xces.com">
-                            <Button variant="outline" className="w-full">
-                            <Mail className="mr-2 h-4 w-4" /> Email
-                            </Button>
-                        </a>
-                    </div>
+          <Card>
+            <CardContent className="p-2 space-y-1">
+              <p className="text-sm font-semibold px-4 pt-2 text-green-600">Account Settings</p>
+              <ListItem icon={Building2} label="Restaurant Information" href="/profile/restaurant-information" />
+              <ListItem icon={User} label="Owner Information" href="/profile/owner-information" />
+              <ListItem icon={Clock} label="Operating Hours" href="/profile/operating-hours" />
+              <ListItem icon={FileText} label="Documents" href="/profile/documents" />
+              <ListItem icon={Banknote} label="Bank Account" href="/profile/bank-account" />
+              <ListItem icon={Sparkles} label="Facilities" href="/profile/facilities" />
+              <ListItem icon={Wrench} label="Services" href="/profile/services" />
+              <ListItem icon={Share2} label="Relationship Manager" triggerDialog />
+            </CardContent>
+          </Card>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Your Relationship Manager</DialogTitle>
+              <DialogDescription>Get in touch for any assistance or queries.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-14 w-14">
+                  <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="portrait professional" />
+                  <AvatarFallback>AM</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-bold text-lg">Anjali Mehta</p>
+                  <p className="text-sm text-muted-foreground">Senior Partner Success Manager</p>
                 </div>
-            </DialogContent>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <a href="tel:+911234567890">
+                  <Button variant="outline" className="w-full">
+                    <Phone className="mr-2 h-4 w-4" /> Call
+                  </Button>
+                </a>
+                <a href="https://wa.me/911234567890" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" className="w-full">
+                    <WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp
+                  </Button>
+                </a>
+                <a href="mailto:anjali.mehta@xces.com">
+                  <Button variant="outline" className="w-full">
+                    <Mail className="mr-2 h-4 w-4" /> Email
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </DialogContent>
         </Dialog>
 
-         <Card>
-            <CardContent className="p-2">
-                 <ListItem icon={HelpCircle} label="Help & Support" href="/help-support" />
-            </CardContent>
+        <Card>
+          <CardContent className="p-2">
+            <ListItem icon={HelpCircle} label="Help & Support" href="/help-support" />
+          </CardContent>
         </Card>
       </div>
 
@@ -330,23 +330,23 @@ export default function ProfilePage() {
       </div>
       <Dialog open={isMediaUploadOpen} onOpenChange={setIsMediaUploadOpen}>
         <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Add Banner Media</DialogTitle>
-                <DialogDescription>Upload images or videos to display in your profile banner slideshow.</DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-                <Button onClick={handleUploadClick} className="w-full">
-                    <Upload className="mr-2 h-4 w-4" /> Choose Files
-                </Button>
-                <Input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    multiple
-                    accept="image/*,video/*"
-                    onChange={handleFileChange}
-                />
-            </div>
+          <DialogHeader>
+            <DialogTitle>Add Banner Media</DialogTitle>
+            <DialogDescription>Upload images or videos to display in your profile banner slideshow.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Button onClick={handleUploadClick} className="w-full">
+              <Upload className="mr-2 h-4 w-4" /> Choose Files
+            </Button>
+            <Input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              multiple
+              accept="image/*,video/*"
+              onChange={handleFileChange}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
