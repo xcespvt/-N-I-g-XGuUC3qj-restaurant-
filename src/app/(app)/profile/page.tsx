@@ -48,6 +48,74 @@ import { useState, useEffect, useRef, ChangeEvent } from "react"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
+
+const SettingsCard = ({
+  icon,
+  label,
+  subLabel,
+  href,
+  triggerDialog,
+  className,
+  verified,
+  iconBgColor = "bg-blue-50",
+  iconTextColor = "text-blue-600",
+  showArrow
+}: {
+  icon: React.ElementType
+  label: string
+  subLabel?: string
+  href?: string
+  triggerDialog?: boolean
+  className?: string
+  verified?: boolean
+  iconBgColor?: string
+  iconTextColor?: string
+  showArrow?: boolean
+}) => {
+  const Icon = icon
+
+  const content = (
+    <div className={cn(
+      "flex flex-col gap-4 p-5 md:p-7 rounded-[2rem] md:rounded-[2.5rem] border bg-card hover:bg-accent/50 transition-all cursor-pointer h-full relative group",
+      className
+    )}>
+      <div className="flex justify-between items-start">
+        <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", iconBgColor, iconTextColor)}>
+          <Icon className="h-6 w-6" />
+        </div>
+        {verified && (
+          <div className="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-blue-100">
+            Verified
+          </div>
+        )}
+      </div>
+      <div>
+        <h4 className="font-bold text-lg leading-tight text-foreground">{label}</h4>
+        {subLabel && (
+          <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest opacity-80 leading-relaxed">
+            {subLabel}
+          </p>
+        )}
+      </div>
+      {showArrow && <ChevronRight className="absolute bottom-8 right-8 h-4 w-4 text-primary/60 rotate-[-45deg] scale-125 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
+    </div>
+  )
+
+  if (triggerDialog) {
+    return <DialogTrigger asChild>{content}</DialogTrigger>
+  }
+
+  if (href) {
+    return (
+      <Link href={href} className="h-full">
+        {content}
+      </Link>
+    )
+  }
+
+  return content
+}
 
 const ListItem = ({
   icon,
@@ -180,7 +248,7 @@ export default function ProfilePage() {
             muted
             loop
             playsInline
-            className="absolute inset-0 w-full h-full object-cover rounded-b-[2rem] bg-red-500"
+            className="absolute inset-0 w-full h-full object-cover rounded-b-[2rem] bg-card"
           />
           <div className="absolute inset-0" />
           <Button
@@ -266,21 +334,81 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <Dialog>
-          <Card>
-            <CardContent className="p-2 space-y-1">
-              <p className="text-sm font-semibold px-4 pt-2 text-green-600">Account Settings</p>
-              <ListItem icon={Building2} label="Restaurant Information" href="/profile/restaurant-information" />
-              <ListItem icon={User} label="Owner Information" href="/profile/owner-information" />
-              <ListItem icon={Clock} label="Operating Hours" href="/profile/operating-hours" />
-              <ListItem icon={FileText} label="Documents" href="/profile/documents" />
-              <ListItem icon={Banknote} label="Bank Account" href="/profile/bank-account" />
-              <ListItem icon={Sparkles} label="Facilities" href="/profile/facilities" />
-              <ListItem icon={Wrench} label="Services" href="/profile/services" />
-              <ListItem icon={Share2} label="Relationship Manager" triggerDialog />
-            </CardContent>
-          </Card>
+          <div>
+            <h3 className="text-lg font-bold px-1 mb-4 text-green-600">Account Settings</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SettingsCard
+                icon={Building2}
+                label="Restaurant Information"
+                subLabel="OUTLET META & DETAILS"
+                href="/profile/restaurant-information"
+                className="col-span-1 md:col-span-2"
+                verified
+                iconBgColor="bg-blue-50 dark:bg-blue-900/20"
+                iconTextColor="text-blue-600 dark:text-blue-400"
+              />
+              <SettingsCard
+                icon={User}
+                label="Owner Information"
+                subLabel="IDENTITY & VERIFICATION"
+                href="/profile/owner-information"
+                iconBgColor="bg-purple-50 dark:bg-purple-900/20"
+                iconTextColor="text-purple-600 dark:text-purple-400"
+              />
+              <SettingsCard
+                icon={Clock}
+                label="Operating Hours"
+                subLabel="SCHEDULE & TIMINGS"
+                href="/profile/operating-hours"
+                iconBgColor="bg-orange-50 dark:bg-orange-900/20"
+                iconTextColor="text-orange-600 dark:text-orange-400"
+              />
+              <SettingsCard
+                icon={FileText}
+                label="Documents"
+                subLabel="COMPLIANCE & LEGAL"
+                href="/profile/documents"
+                iconBgColor="bg-blue-50 dark:bg-blue-900/20"
+                iconTextColor="text-blue-600 dark:text-blue-400"
+              />
+              <SettingsCard
+                icon={Banknote}
+                label="Bank Account"
+                subLabel="PAYMENTS & SETTLEMENTS"
+                href="/profile/bank-account"
+                showArrow
+                iconBgColor="bg-green-50 dark:bg-green-900/20"
+                iconTextColor="text-green-600 dark:text-green-400"
+              />
+              <SettingsCard
+                icon={Sparkles}
+                label="Facilities"
+                subLabel="AMENITIES & INFRASTRUCTURE"
+                href="/profile/facilities"
+                className="col-span-1 md:col-span-2"
+                iconBgColor="bg-blue-50 dark:bg-blue-900/20"
+                iconTextColor="text-blue-600 dark:text-blue-400"
+              />
+              <SettingsCard
+                icon={Wrench}
+                label="Services"
+                subLabel="MAINTENANCE & SUPPORT"
+                href="/profile/services"
+                iconBgColor="bg-gray-100 dark:bg-gray-800"
+                iconTextColor="text-gray-900 dark:text-gray-100"
+              />
+              <SettingsCard
+                icon={Share2}
+                label="Relationship Manager"
+                subLabel="PARTNER SUCCESS"
+                triggerDialog
+                iconBgColor="bg-indigo-50 dark:bg-indigo-900/20"
+                iconTextColor="text-indigo-600 dark:text-indigo-400"
+              />
+            </div>
+          </div>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Your Relationship Manager</DialogTitle>
