@@ -1,6 +1,5 @@
-
 "use client"
-
+import { useEffect, useState } from "react"
 import {
   Select,
   SelectContent,
@@ -13,13 +12,18 @@ import { MapPin } from "lucide-react"
 
 export function BranchSwitcher() {
   const { branches, selectedBranch, setSelectedBranch } = useAppStore();
+  const [mounted, setMounted] = useState(false);
 
-  if (branches.length <= 1) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || branches.length <= 1) {
     return (
-        <div className="flex items-center gap-2 h-10 px-3 w-full rounded-lg border border-input bg-background text-sm">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span className="truncate font-medium">{branches[0]?.name ?? "No Branch"}</span>
-        </div>
+      <div className="flex items-center gap-2 h-10 px-3 w-full sm:w-[220px] rounded-lg border border-input bg-background text-sm">
+        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <span className="truncate font-medium">{branches.find(b => b.id === selectedBranch)?.name ?? branches[0]?.name ?? "No Branch"}</span>
+      </div>
     );
   }
 
@@ -29,7 +33,7 @@ export function BranchSwitcher() {
       <SelectTrigger className="w-full sm:w-[220px] h-10 gap-2 px-3 rounded-lg font-medium">
         <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <span className="truncate">
-            <SelectValue placeholder="Select a branch" />
+          <SelectValue placeholder="Select a branch" />
         </span>
       </SelectTrigger>
       <SelectContent>

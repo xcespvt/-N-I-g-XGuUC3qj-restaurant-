@@ -230,6 +230,7 @@ interface AppStore {
 
   addTableType: (name: string) => void;
   deleteTableType: (name: string) => void;
+  setTableTypes: (types: string[]) => void;
 
   updateFacilities: (facilities: string[]) => void;
 
@@ -262,6 +263,7 @@ interface AppStore {
   initiateWithdrawal: (amount: number) => void;
   setSubscriptionPlan: (plan: SubscriptionPlan) => void;
 
+  setBookings: (bookings: Booking[]) => void;
   // Toast function for notifications
   showToast: (title: string, description?: string, variant?: 'default' | 'destructive') => void;
 }
@@ -286,7 +288,7 @@ export const useAppStore = create<AppStore>()(
           ordersToday: 42,
           status: "Active",
           isOnline: true,
-          restaurantId: "b1a2c3d4-e5f6-7890-1234-56789abcdef9",
+          restaurantId: "b1a2c3d4-e5f6-7890-1234-56789abcdef",
         },
         {
           id: "koramangala",
@@ -497,26 +499,9 @@ export const useAppStore = create<AppStore>()(
         { id: 17, name: "Gyoza", description: "Pan-fried dumplings.", price: 6.99, category: "Appetizers", image: "https://placehold.co/300x200.png", aiHint: "gyoza dumplings", available: true, dietaryType: 'Non-Veg' },
       ],
       categories: ["All", "Pizza", "Burgers", "Salads", "Curries", "Breads", "Rice", "Beverages", "Appetizers", "Desserts", "Noodles"],
-      tables: [
-        { id: "T1", name: "T1", capacity: 4, status: "Available", type: "Normal" },
-        { id: "T2", name: "T2", capacity: 4, status: "Occupied", type: "Normal" },
-        { id: "T3", name: "T3", capacity: 2, status: "Available", type: "Couple" },
-        { id: "T4", name: "T4", capacity: 2, status: "Available", type: "Couple" },
-        { id: "T5", name: "T5", capacity: 6, status: "Available", type: "Family" },
-        { id: "T6", name: "T6", capacity: 6, status: "Occupied", type: "Family" },
-        { id: "T7", name: "T7", capacity: 4, status: "Available", type: "Normal" },
-        { id: "T8", name: "T8", capacity: 8, status: "Available", type: "Private" },
-        { id: "P1", name: "P1", capacity: 4, status: "Available", type: "Outdoor" },
-        { id: "P2", name: "P2", capacity: 4, status: "Available", type: "Outdoor" },
-      ],
+      tables: [],
       tableTypes: ["Normal", "Couple", "Family", "Private", "Outdoor"],
-      bookings: [
-        { id: "BK-001", name: "Aisha Kapoor", phone: "+91 98765 43210", date: "2025-07-20", time: "7:00 PM", partySize: 4, status: "Confirmed", tables: [] },
-        { id: "BK-002", name: "Rohan Verma", phone: "+91 87654 32109", date: "2025-07-21", time: "7:30 PM", partySize: 2, status: "Confirmed", tables: [] },
-        { id: "BK-003", name: "Sneha Reddy", phone: "+91 76543 21098", date: "2025-07-21", time: "8:00 PM", partySize: 5, status: "Pending", tables: [] },
-        { id: "BK-004", name: "Vikram Singh", phone: "+91 65432 10987", date: "2025-07-22", time: "8:15 PM", partySize: 3, status: "Completed", tables: [] },
-        { id: "BK-005", name: "Nidhi Gupta", phone: "+91 54321 09876", date: "2025-07-22", time: "9:00 PM", partySize: 2, status: "Cancelled", tables: [] },
-      ],
+      bookings: [],
       pendingBooking: null,
       feedback: [
         { id: "FB-001", customer: { name: "John Doe", avatar: "https://placehold.co/100x100", fallback: "JD", orderCount: 12, }, orderType: "Delivery", rating: 5, comment: "The food was amazing! The Butter Chicken was perfectly cooked and the naan was fresh and fluffy. Will definitely order again!", date: "May 15, 2023", items: ["Butter Chicken", "Garlic Naan"], photos: [{ url: "https://placehold.co/80x80.png", hint: "butter chicken" }, { url: "https://placehold.co/80x80.png", hint: "garlic naan" }], replied: false, reply: "" },
@@ -603,6 +588,10 @@ export const useAppStore = create<AppStore>()(
 
       setTables: (newTables: Table[]) => {
         set({ tables: newTables });
+      },
+
+      setBookings: (newBookings: Booking[]) => {
+        set({ bookings: newBookings });
       },
 
       addBranch: (branchData: Omit<Branch, 'id' | 'ordersToday' | 'isOnline'>) => {
@@ -831,6 +820,10 @@ export const useAppStore = create<AppStore>()(
           tableTypes: state.tableTypes.filter(t => t !== name)
         }));
         get().showToast("Table Type Removed", `"${name}" has been removed.`, 'destructive');
+      },
+
+      setTableTypes: (types: string[]) => {
+        set({ tableTypes: types });
       },
 
       updateFacilities: (newFacilities: string[]) => {
