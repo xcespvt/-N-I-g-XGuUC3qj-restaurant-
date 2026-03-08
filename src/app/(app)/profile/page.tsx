@@ -26,20 +26,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
@@ -49,6 +41,10 @@ import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { useAppStore } from "@/context/useAppStore"
+import { useGet } from "@/hooks/useApi"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
 const SettingsCard = ({
   icon,
@@ -190,13 +186,29 @@ const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function ProfilePage() {
+  const { selectedBranch } = useAppStore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMediaUploadOpen, setIsMediaUploadOpen] = useState(false);
-  const [bannerMedia, setBannerMedia] = useState([
-    { type: 'video', src: 'https://cdn.pixabay.com/video/2022/11/07/137593-769730287_large.mp4' }
-  ]);
+  const [bannerMedia, setBannerMedia] = useState<any[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  // Fetch existing profile data
+  const { data: profileResponse, isLoading } = useGet<any>(
+    ['profile', selectedBranch],
+    `/api/branches/${selectedBranch}/profile`,
+    undefined,
+    { enabled: !!selectedBranch }
+  );
+
+  const profile = profileResponse?.data;
+  const manager = profile?.relationshipManager;
+
+  useEffect(() => {
+    if (profile?.bannerMedia) {
+      setBannerMedia(profile.bannerMedia);
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (bannerMedia.length > 1) {
@@ -242,14 +254,18 @@ export default function ProfilePage() {
 
       <Card className="overflow-hidden  ">
         <CardHeader className="p-0 relative h-[400px]">
-          <video
-            src="https://www.pexels.com/download/video/5780175/"
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover rounded-b-[2rem] bg-card"
-          />
+          {isLoading ? (
+            <Skeleton className="absolute inset-0 w-full h-full rounded-b-[2rem]" />
+          ) : (
+            <video
+              src={profile?.restaurantInfo?.promoVideo || "https://www.pexels.com/download/video/5780175/"}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover rounded-b-[2rem] bg-card"
+            />
+          )}
           <div className="absolute inset-0" />
           <Button
             variant="secondary"
@@ -264,47 +280,69 @@ export default function ProfilePage() {
         <CardContent className="pt-6 flex flex-col items-center text-center relative -mt-16">
           <div className="relative mb-3">
             <div className="h-28 w-28 rounded-[2rem] border-4 border-background shadow-lg ring-2 ring-background overflow-hidden bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-              <Store className="h-12 w-12 text-white" />
+              {isLoading ? (
+                <Skeleton className="h-full w-full" />
+              ) : (
+                profile?.restaurantInfo?.logo ? (
+                  <Image src={profile.restaurantInfo.logo} alt="Logo" width={112} height={112} className="object-cover" />
+                ) : (
+                  <Store className="h-12 w-12 text-white" />
+                )
+              )}
             </div>
-            <div
-              style={{ background: "#06bb94ff" }}
-              className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl flex items-center justify-center border-[6px] border-white text-white shadow-lg"
-            >
-              <Verified size={18} strokeWidth={3} />
-            </div>
+            {!isLoading && (
+              <div
+                style={{ background: "#06bb94ff" }}
+                className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl flex items-center justify-center border-[6px] border-white text-white shadow-lg"
+              >
+                <Verified size={18} strokeWidth={3} />
+              </div>
+            )}
           </div>
 
-          <h2 className="text-2xl font-bold mb-1">Gourmet Kitchen</h2>
+          {isLoading ? (
+            <div className="space-y-2 flex flex-col items-center">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold mb-1">{profile?.restaurantInfo?.name || "Restaurant Name"}</h2>
 
-          <div className="flex items-center gap-1.5 mb-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Global Outlet Verified
-            </span>
-          </div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Global Outlet Verified
+                </span>
+              </div>
 
-          <p className="text-sm font-medium text-muted-foreground">ID: GK-992100</p>
+              <p className="text-sm font-medium text-muted-foreground">ID: {profile?.restaurantInfo?.id || "GK-000000"}</p>
+            </>
+          )}
 
           <Separator className="my-4" />
 
           <div className="grid grid-cols-3 gap-4 w-full">
             <div>
-              <p className="font-bold text-lg">1.2k</p>
+              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.orders || "0")}</p>
               <p className="text-xs text-muted-foreground">Orders</p>
             </div>
             <div>
-              <p className="font-bold text-lg">98%</p>
+              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.acceptance || "0%")}</p>
               <p className="text-xs text-muted-foreground">Acceptance</p>
             </div>
             <div>
-              <p className="font-bold text-lg">6</p>
+              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.tenure || "0")}</p>
               <p className="text-xs text-muted-foreground">Months</p>
             </div>
           </div>
 
-          <Button className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white">
-            <Pencil className="mr-2 h-4 w-4" /> Edit Profile
-          </Button>
+          <Link href="/profile/restaurant-information" className="w-full mt-6">
+            <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+              <Pencil className="mr-2 h-4 w-4" /> Edit Profile
+            </Button>
+          </Link>
         </CardContent>
       </Card>
 
@@ -312,22 +350,22 @@ export default function ProfilePage() {
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-lg">Performance</h3>
-            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">Excellent</Badge>
+            {isLoading ? <Skeleton className="h-6 w-20" /> : <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">{profile?.performance?.status || "Normal"}</Badge>}
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <Card className="p-3 bg-muted/50">
               <Star className="h-6 w-6 text-yellow-400 fill-yellow-400 mx-auto mb-1" />
-              <p className="font-bold text-lg">4.8</p>
+              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.rating || "0.0")}</p>
               <p className="text-xs text-muted-foreground">Rating</p>
             </Card>
             <Card className="p-3 bg-muted/50">
               <Clock className="h-6 w-6 text-blue-500 mx-auto mb-1" />
-              <p className="font-bold text-lg">99%</p>
+              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.accuracy || "0%")}</p>
               <p className="text-xs text-muted-foreground">Order Accuracy</p>
             </Card>
             <Card className="p-3 bg-muted/50">
               <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
-              <p className="font-bold text-lg">92%</p>
+              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.acceptanceRate || "0%")}</p>
               <p className="text-xs text-muted-foreground">Acceptance</p>
             </Card>
           </div>
@@ -414,35 +452,54 @@ export default function ProfilePage() {
               <DialogTitle>Your Relationship Manager</DialogTitle>
               <DialogDescription>Get in touch for any assistance or queries.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-14 w-14">
-                  <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="portrait professional" />
-                  <AvatarFallback>AM</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-bold text-lg">Anjali Mehta</p>
-                  <p className="text-sm text-muted-foreground">Senior Partner Success Manager</p>
+            {isLoading ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-14 w-14 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <a href="tel:+911234567890">
-                  <Button variant="outline" className="w-full">
-                    <Phone className="mr-2 h-4 w-4" /> Call
-                  </Button>
-                </a>
-                <a href="https://wa.me/911234567890" target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="w-full">
-                    <WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp
-                  </Button>
-                </a>
-                <a href="mailto:anjali.mehta@xces.com">
-                  <Button variant="outline" className="w-full">
-                    <Mail className="mr-2 h-4 w-4" /> Email
-                  </Button>
-                </a>
+            ) : manager ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-14 w-14">
+                    <AvatarImage src={manager.avatar || "https://placehold.co/100x100.png"} />
+                    <AvatarFallback>{manager.name?.split(' ').map((n: string) => n[0]).join('') || "RM"}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-bold text-lg">{manager.name}</p>
+                    <p className="text-sm text-muted-foreground">{manager.title}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <a href={`tel:${manager.phone}`}>
+                    <Button variant="outline" className="w-full">
+                      <Phone className="mr-2 h-4 w-4" /> Call
+                    </Button>
+                  </a>
+                  <a href={`https://wa.me/${manager.phone}`} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" className="w-full">
+                      <WhatsappIcon className="mr-2 h-4 w-4" /> WhatsApp
+                    </Button>
+                  </a>
+                  <a href={`mailto:${manager.email}`}>
+                    <Button variant="outline" className="w-full">
+                      <Mail className="mr-2 h-4 w-4" /> Email
+                    </Button>
+                  </a>
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">No relationship manager assigned yet.</p>
+            )}
           </DialogContent>
         </Dialog>
 
