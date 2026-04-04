@@ -42,6 +42,7 @@ export default function RestaurantInformationPage() {
     const { selectedBranch } = useAppStore();
     const [isEditing, setIsEditing] = useState(false);
     const { toast } = useToast();
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Fetch existing profile data
     const { data: profileResponse, isLoading } = useGet<any>(
@@ -64,10 +65,40 @@ export default function RestaurantInformationPage() {
     const { mutate: updateProfile, isPending } = usePut(`/api/branches/${selectedBranch}/profile`);
 
     const handleInputChange = (field: string, value: string) => {
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrs = { ...prev };
+                delete newErrs[field];
+                return newErrs;
+            });
+        }
         setFormData((prev: any) => ({ ...prev, [field]: value }));
     }
 
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData?.name?.trim()) newErrors.name = "Restaurant name is required";
+        if (!formData?.type) newErrors.type = "Please select a restaurant type";
+        if (!formData?.address?.trim()) newErrors.address = "Address is required";
+        if (!formData?.city?.trim()) newErrors.city = "City is required";
+        if (!formData?.pincode?.trim()) {
+            newErrors.pincode = "Pincode is required";
+        } else if (!/^\d{6}$/.test(formData.pincode)) {
+            newErrors.pincode = "Invalid pincode (6 digits)";
+        }
+        if (formData?.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+            newErrors.email = "Invalid email format";
+        }
+        if (formData?.phone && !/^\d{10}$/.test(formData.phone)) {
+            newErrors.phone = "Phone must be 10 digits";
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSaveChanges = () => {
+        if (!validate()) return;
+
         updateProfile(
             { restaurantInfo: formData },
             {
@@ -92,6 +123,7 @@ export default function RestaurantInformationPage() {
     const handleCancel = () => {
         setFormData(profileResponse?.data?.restaurantInfo || {});
         setIsEditing(false);
+        setErrors({});
     }
 
     if (isLoading && !formData) {
@@ -144,6 +176,7 @@ export default function RestaurantInformationPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="res-name">Restaurant Name</Label>
                                 <Input id="res-name" value={formData?.name || ""} onChange={e => handleInputChange('name', e.target.value)} />
+                                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="res-type">Restaurant Type</Label>
@@ -155,6 +188,7 @@ export default function RestaurantInformationPage() {
                                         <SelectItem value="Cloud Kitchen">Cloud Kitchen</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                {errors.type && <p className="text-xs text-destructive">{errors.type}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="ownership-type">Ownership Type</Label>
@@ -169,18 +203,27 @@ export default function RestaurantInformationPage() {
                             <div className="space-y-2 sm:col-span-2">
                                 <Label htmlFor="res-address">Address</Label>
                                 <Input id="res-address" value={formData?.address || ""} onChange={e => handleInputChange('address', e.target.value)} />
+                                {errors.address && <p className="text-xs text-destructive">{errors.address}</p>}
                                 <div className="grid grid-cols-2 gap-4 mt-2">
-                                    <Input value={formData?.city || ""} onChange={e => handleInputChange('city', e.target.value)} placeholder="City" />
-                                    <Input value={formData?.pincode || ""} onChange={e => handleInputChange('pincode', e.target.value)} placeholder="Pincode" />
+                                    <div className="space-y-1">
+                                        <Input value={formData?.city || ""} onChange={e => handleInputChange('city', e.target.value)} placeholder="City" />
+                                        {errors.city && <p className="text-xs text-destructive">{errors.city}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input value={formData?.pincode || ""} onChange={e => handleInputChange('pincode', e.target.value)} placeholder="Pincode" />
+                                        {errors.pincode && <p className="text-xs text-destructive">{errors.pincode}</p>}
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="res-phone">Contact Phone</Label>
                                 <Input id="res-phone" value={formData?.phone || ""} onChange={e => handleInputChange('phone', e.target.value)} />
+                                {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="res-email">Contact Email</Label>
                                 <Input id="res-email" type="email" value={formData?.email || ""} onChange={e => handleInputChange('email', e.target.value)} />
+                                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                             </div>
                             <div className="space-y-2 sm:col-span-2">
                                 <Label htmlFor="res-cuisines">Cuisines</Label>

@@ -37,6 +37,7 @@ export default function OwnerInformationPage() {
     const { ownerInfo, updateOwnerInfo, selectedBranch } = useAppStore();
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Fetch existing profile data
     const { data: profileResponse, isLoading } = useGet<any>(
@@ -59,7 +60,33 @@ export default function OwnerInformationPage() {
 
     const { mutate: updateProfile, isPending } = usePut(`/api/branches/${selectedBranch}/profile`);
 
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData?.name?.trim()) newErrors.name = "Full name is required";
+        
+        if (!formData?.email?.trim()) {
+            newErrors.email = "Email is required";
+        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+            newErrors.email = "Invalid email format";
+        }
+
+        if (!formData?.phone?.trim()) {
+            newErrors.phone = "Phone number is required";
+        } else if (!/^\d{10}$/.test(formData.phone)) {
+            newErrors.phone = "Phone must be 10 digits";
+        }
+
+        if (formData?.whatsapp && !/^\d{10}$/.test(formData.whatsapp)) {
+            newErrors.whatsapp = "WhatsApp number must be 10 digits";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleUpdate = () => {
+        if (!validate()) return;
+
         updateProfile(
             { ownerInfo: formData },
             {
@@ -85,6 +112,18 @@ export default function OwnerInformationPage() {
     const handleCancel = () => {
         setFormData(profileResponse?.data?.ownerInfo || {});
         setIsEditing(false);
+        setErrors({});
+    }
+
+    const handleInputChange = (field: string, value: string) => {
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrs = { ...prev };
+                delete newErrs[field];
+                return newErrs;
+            });
+        }
+        setFormData((prev: any) => ({ ...prev, [field]: value }));
     }
 
     if (isLoading && !formData) {
@@ -140,19 +179,23 @@ export default function OwnerInformationPage() {
                         <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="owner-name">Full Name</Label>
-                                <Input id="owner-name" value={formData?.name || ""} onChange={(e) => setFormData((p: any) => ({ ...p, name: e.target.value }))} />
+                                <Input id="owner-name" value={formData?.name || ""} onChange={(e) => handleInputChange('name', e.target.value)} />
+                                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="owner-email">Email Address</Label>
-                                <Input id="owner-email" type="email" value={formData?.email || ""} onChange={(e) => setFormData((p: any) => ({ ...p, email: e.target.value }))} />
+                                <Input id="owner-email" type="email" value={formData?.email || ""} onChange={(e) => handleInputChange('email', e.target.value)} />
+                                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="owner-phone">Phone Number</Label>
-                                <Input id="owner-phone" value={formData?.phone || ""} onChange={(e) => setFormData((p: any) => ({ ...p, phone: e.target.value }))} />
+                                <Input id="owner-phone" value={formData?.phone || ""} onChange={(e) => handleInputChange('phone', e.target.value)} />
+                                {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="owner-whatsapp">WhatsApp Number</Label>
-                                <Input id="owner-whatsapp" type="tel" value={formData?.whatsapp || ""} onChange={(e) => setFormData((p: any) => ({ ...p, whatsapp: e.target.value }))} />
+                                <Input id="owner-whatsapp" type="tel" value={formData?.whatsapp || ""} onChange={(e) => handleInputChange('whatsapp', e.target.value)} />
+                                {errors.whatsapp && <p className="text-xs text-destructive">{errors.whatsapp}</p>}
                             </div>
                         </div>
                     ) : (

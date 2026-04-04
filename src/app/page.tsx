@@ -22,6 +22,7 @@ function LoginContent() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; otp?: string; password?: string }>({});
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -38,20 +39,13 @@ function LoginContent() {
 
 
   const handleOtpRequest = async () => {
+    setErrors({});
     if (!email) {
-      toast({
-        title: "Email Required",
-        description: "Please enter your email.",
-        variant: "destructive",
-      });
+      setErrors({ email: "Email is required" });
       return;
     }
     if (!email.includes("@")) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
-        variant: "destructive",
-      });
+      setErrors({ email: "Please enter a valid email address" });
       return;
     }
 
@@ -83,14 +77,11 @@ function LoginContent() {
   // 🔹 VERIFY OTP API
   // ---------------------------------------------------------
   const handleVerifyOtp = async () => {
+    setErrors({});
     const enteredOtp = otp.join("");
 
     if (enteredOtp.length !== 6) {
-      toast({
-        title: "Invalid OTP",
-        description: "Please enter a valid 6-digit OTP.",
-        variant: "destructive",
-      });
+      setErrors({ otp: "Please enter a valid 6-digit OTP" });
       return;
     }
 
@@ -121,12 +112,9 @@ function LoginContent() {
   // 🔹 PASSWORD LOGIN API
   // ---------------------------------------------------------
   const handlePasswordLogin = async () => {
+    setErrors({});
     if (!password) {
-      toast({
-        title: "Password Required",
-        description: "Please enter your password.",
-        variant: "destructive",
-      });
+      setErrors({ password: "Password is required" });
       return;
     }
 
@@ -177,6 +165,7 @@ function LoginContent() {
     setShowOtp(false);
     setShowPassword(false);
     setPassword("");
+    setErrors({});
     setOtp(Array(6).fill(""));
     // setIsOtpSent(false); // removed – variable not declared
   };
@@ -193,16 +182,17 @@ function LoginContent() {
 
 
   const handleLoginWithPassword = async () => {
+    setErrors({});
     if (!email) {
-      toast({ title: "Email Required", description: "Please enter your email.", variant: "destructive" });
-      return;
-    }
-    if (!password) {
-      toast({ title: "Password Required", description: "Please enter your password.", variant: "destructive" });
+      setErrors({ email: "Email is required" });
       return;
     }
     if (!email.includes("@")) {
-      toast({ title: "Invalid email", description: "Please enter a valid email.", variant: "destructive" });
+      setErrors({ email: "Please enter a valid email" });
+      return;
+    }
+    if (!password) {
+      setErrors({ password: "Password is required" });
       return;
     }
     try {
@@ -243,10 +233,11 @@ function LoginContent() {
               type="email"
               placeholder="Enter your email address"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setErrors({ ...errors, email: "" }); }}
               className="h-12 text-base"
               disabled={showOtp}
             />
+            {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
           </div>
 
           {showOtp && (
@@ -271,6 +262,7 @@ function LoginContent() {
                   />
                 ))}
               </div>
+              {errors.otp && <p className="text-xs text-destructive">{errors.otp}</p>}
             </div>
           )}
 
@@ -283,7 +275,7 @@ function LoginContent() {
                   type={isPasswordVisible ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={e => { setPassword(e.target.value); setErrors({ ...errors, password: "" }); }}
                   className="h-12 text-base pr-10"
                 />
                 <Button
@@ -296,6 +288,7 @@ function LoginContent() {
                   {isPasswordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </Button>
               </div>
+              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
             </div>
           )}
 

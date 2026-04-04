@@ -436,7 +436,21 @@ export default function MenuPage() {
     setToggleTarget({ itemId: item.itemId! });
     setPendingTogglePayload(payload);
   };
-
+const validateMenuItem = (itemData: any) => {
+  if (!itemData.name || itemData.name.trim().length < 3) {
+    return "Item name must be at least 3 characters";
+  }
+  if (!itemData.category) {
+    return "Category is required";
+  }
+  if (!itemData.price || itemData.price <= 0) {
+    return "Price must be greater than 0";
+  }
+  if (!itemData.description || itemData.description.length < 5) {
+    return "Description must be at least 5 characters";
+  }
+  return null;
+};
   // Pagination and category helpers
   const itemsPerPage = apiMenuData?.pagination?.itemsPerPage ?? 10;
   const isFiltering = debouncedSearchTerm.length > 0 || (!!activeCategory && activeCategory !== 'All');
@@ -473,13 +487,44 @@ export default function MenuPage() {
     [categories]
   );
 
-  const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
-      addCategory(newCategoryName.trim());
-      setNewCategoryName("");
-      setIsCategoryDialogOpen(false);
-    }
-  };
+const handleAddCategory = () => {
+  const name = newCategoryName.trim();
+
+  // ❌ Empty check
+  if (!name) {
+    toast({
+      variant: "destructive",
+      title: "Category name required",
+      description: "Please enter a category name.",
+    });
+    return;
+  }
+
+  // ❌ Length validation
+  if (name.length < 3) {
+    toast({
+      variant: "destructive",
+      title: "Invalid category",
+      description: "Category must be at least 3 characters long.",
+    });
+    return;
+  }
+
+  // ❌ Duplicate check
+  if (categories.includes(name)) {
+    toast({
+      variant: "destructive",
+      title: "Duplicate category",
+      description: "This category already exists.",
+    });
+    return;
+  }
+
+  // ✅ Valid
+  addCategory(name);
+  setNewCategoryName("");
+  setIsCategoryDialogOpen(false);
+};
 
   // Removed legacy save handler and pricing helpers; MenuItemForm handles form interactions
 
@@ -568,6 +613,17 @@ export default function MenuPage() {
             addSheetType={activeSheet}
             categories={availableCategories}
             onSubmit={(itemData) => {
+              const error = validateMenuItem(itemData);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: error,
+      });
+      return;
+    }
+
               // If editing, update local store with full MenuItem object
               if (editingItem) {
                 updateMenuItem({ ...editingItem, ...itemData });

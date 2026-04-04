@@ -17,9 +17,28 @@ export default function EmployeeLoginPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [joiningCode, setJoiningCode] = useState("");
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; joiningCode?: string }>({});
 
   const handleLogin = () => {
-    if (name && phone.length >= 10 && joiningCode) {
+    const newErrors: { name?: string; phone?: string; joiningCode?: string } = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Name is required";
+    }
+    if (phone.length < 10) {
+      newErrors.phone = "Phone number must be 10 digits";
+    }
+    if (!joiningCode.trim()) {
+      newErrors.joiningCode = "Joining code is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    if (name && phone.length === 10 && joiningCode) {
+      setErrors({});
       toast({
         title: "Login Successful",
         description: `Welcome, ${name}!`,
@@ -59,7 +78,8 @@ export default function EmployeeLoginPage() {
                 <div className="space-y-4">
                     <div>
                         <Label htmlFor="employee-name">Name</Label>
-                        <Input id="employee-name" placeholder="Enter your full name" value={name} onChange={(e) => setName(e.target.value)} />
+                        <Input id="employee-name" placeholder="Enter your full name" value={name} onChange={(e) => {setName(e.target.value); setErrors({...errors, name: ""})}} />
+                        {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
                     </div>
                      <div>
                         <Label htmlFor="employee-phone">Phone Number</Label>
@@ -77,10 +97,12 @@ export default function EmployeeLoginPage() {
                                 className="flex-1"
                             />
                         </div>
+                        {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
                     </div>
                      <div>
                         <Label htmlFor="joining-code">Restaurant Joining Code</Label>
-                        <Input id="joining-code" placeholder="Enter code provided by manager" value={joiningCode} onChange={(e) => setJoiningCode(e.target.value)} />
+                        <Input id="joining-code" placeholder="Enter code provided by manager" value={joiningCode} onChange={(e) => {setJoiningCode(e.target.value); setErrors({...errors, joiningCode: ""})}} />
+                        {errors.joiningCode && <p className="text-xs text-destructive mt-1">{errors.joiningCode}</p>}
                     </div>
                     <Button className="w-full" onClick={handleLogin}>Login</Button>
                     <p className="text-xs text-muted-foreground text-center mt-2">

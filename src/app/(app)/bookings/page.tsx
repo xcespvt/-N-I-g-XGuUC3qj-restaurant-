@@ -316,22 +316,42 @@ export default function TableManagementPage() {
 
   const handleSaveTable = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.capacity) {
+    
+    // Production-level validation
+    const name = formData.name.trim();
+    if (!name) {
       toast({
-        title: "Missing Information",
-        description: "Please provide both a name and capacity.",
+        title: "Invalid Name",
+        description: "Table name cannot be empty.",
         variant: "destructive",
       });
       return;
     }
 
-    const capacity = parseInt(formData.capacity, 10);
-    if (isNaN(capacity) || capacity <= 0) {
+    if (name.length < 2) {
       toast({
-        title: "Invalid Capacity",
-        description: "Please enter a valid number for capacity.",
+        title: "Name too short",
+        description: "Table name should be at least 2 characters.",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (!formData.capacity) {
+      toast({ title: "Capacity Required", description: "Please specify how many guests this table can seat.", variant: "destructive" });
+      return;
+    }
+
+    const capacity = parseInt(formData.capacity, 10);
+    if (isNaN(capacity) || capacity <= 0 || capacity > 50) {
+      toast({ title: "Invalid Capacity", description: "Capacity must be a number between 1 and 50.", variant: "destructive" });
+      return;
+    }
+
+    // Check for duplicate names (excluding current editing table)
+    const isDuplicate = tables.some(t => t.name.toLowerCase() === name.toLowerCase() && t.id !== editingTable?.id);
+    if (isDuplicate) {
+      toast({ title: "Duplicate Name", description: `A table named "${name}" already exists.`, variant: "destructive" });
       return;
     }
 
@@ -343,7 +363,7 @@ export default function TableManagementPage() {
         type: formData.type,
       });
     } else {
-      addTable(formData.name, capacity, formData.type);
+      addTable(name, capacity, formData.type);
     }
 
     setIsFormOpen(false);
@@ -367,6 +387,15 @@ export default function TableManagementPage() {
 
     const startNum = parseInt(start, 10);
     const endNum = parseInt(end, 10);
+
+    if (endNum - startNum + 1 > 50) {
+      toast({
+        title: "Series too large",
+        description: "You can only add up to 50 tables at a time.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (isNaN(startNum) || isNaN(endNum) || startNum > endNum) {
       toast({ title: "Invalid Range", description: "Please enter a valid numerical range (e.g., 1 to 10).", variant: "destructive" });
@@ -910,4 +939,3 @@ export default function TableManagementPage() {
     </div>
   );
 }
-

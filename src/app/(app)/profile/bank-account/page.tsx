@@ -26,6 +26,7 @@ export default function BankAccountPage() {
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const [showAccountNo, setShowAccountNo] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Fetch existing profile data
     const { data: profileResponse, isLoading } = useGet<any>(
@@ -44,10 +45,60 @@ export default function BankAccountPage() {
         }
     }, [profileResponse]);
 
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData?.accountHolder?.trim()) newErrors.accountHolder = "Account holder name is required";
+        if (!formData?.accountNumber?.trim()) {
+            newErrors.accountNumber = "Account number is required";
+        } else if (!/^\d{9,18}$/.test(formData.accountNumber)) {
+            newErrors.accountNumber = "Invalid account number (9-18 digits)";
+        }
+        if (!formData?.ifsc?.trim()) {
+            newErrors.ifsc = "IFSC code is required";
+        } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc.toUpperCase())) {
+            newErrors.ifsc = "Invalid IFSC format (e.g. HDFC0001234)";
+        }
+        if (!formData?.bankName?.trim()) newErrors.bankName = "Bank name is required";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const fetchBankDetails = async (ifsc: string) => {
+        if (ifsc.length === 11) {
+            try {
+                const res = await fetch(`https://ifsc.razorpay.com/${ifsc}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setFormData((p: any) => ({ ...p, bankName: data.BANK }));
+                    setErrors(prev => ({ ...prev, ifsc: "", bankName: "" }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch bank details", err);
+            }
+        }
+    };
+
+    const handleInputChange = (field: string, value: string) => {
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrs = { ...prev };
+                delete newErrs[field];
+                return newErrs;
+            });
+        }
+        setFormData((prev: any) => ({ ...prev, [field]: value }));
+        
+        if (field === 'ifsc') {
+            fetchBankDetails(value.toUpperCase());
+        }
+    };
 
     const { mutate: updateProfile, isPending } = usePut(`/api/branches/${selectedBranch}/profile`);
 
     const handleUpdate = () => {
+        if (!validate()) return;
+
         updateProfile(
             { bankAccount: formData },
             {
@@ -117,16 +168,18 @@ export default function BankAccountPage() {
                         <>
                             <div className="space-y-2">
                                 <Label htmlFor="acc-holder">Account Holder Name</Label>
-                                <Input id="acc-holder" value={formData?.accountHolder || ""} onChange={e => setFormData((p: any) => ({ ...p, accountHolder: e.target.value }))} />
+                                <Input id="acc-holder" value={formData?.accountHolder || ""} onChange={e => handleInputChange('accountHolder', e.target.value)} />
+                                {errors.accountHolder && <p className="text-xs text-destructive">{errors.accountHolder}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="acc-number">Account Number</Label>
                                 <div className="relative">
                                     <Input
                                         id="acc-number"
+                                        inputMode="numeric"
                                         type={showAccountNo ? "text" : "password"}
                                         value={formData?.accountNumber || ""}
-                                        onChange={e => setFormData((p: any) => ({ ...p, accountNumber: e.target.value }))}
+                                        onChange={e => handleInputChange('accountNumber', e.target.value.replace(/\D/g, ''))}
                                         className="pr-10"
                                     />
                                     <Button
@@ -139,14 +192,17 @@ export default function BankAccountPage() {
                                         {showAccountNo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
                                 </div>
+                                {errors.accountNumber && <p className="text-xs text-destructive">{errors.accountNumber}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="ifsc">IFSC Code</Label>
-                                <Input id="ifsc" value={formData?.ifsc || ""} onChange={e => setFormData((p: any) => ({ ...p, ifsc: e.target.value }))} className="uppercase" />
+                                <Input id="ifsc" value={formData?.ifsc || ""} onChange={e => handleInputChange('ifsc', e.target.value.toUpperCase())} className="uppercase" placeholder="HDFC0001234" />
+                                {errors.ifsc && <p className="text-xs text-destructive">{errors.ifsc}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="bank-name">Bank Name</Label>
-                                <Input id="bank-name" value={formData?.bankName || ""} onChange={e => setFormData((p: any) => ({ ...p, bankName: e.target.value }))} />
+                                <Input id="bank-name" value={formData?.bankName || ""} onChange={e => handleInputChange('bankName', e.target.value)} />
+                                {errors.bankName && <p className="text-xs text-destructive">{errors.bankName}</p>}
                             </div>
                         </>
                     ) : (
@@ -179,7 +235,7 @@ export default function BankAccountPage() {
                 </CardContent>
                 {isEditing && (
                     <CardFooter className="flex justify-end gap-2">
-                        <Button variant="ghost" onClick={() => setIsEditing(false)} disabled={isPending}>Cancel</Button>
+                        <Button variant="ghost" onClick={() => { setIsEditing(false); setErrors({}); }} disabled={isPending}>Cancel</Button>
                         <Button onClick={handleUpdate} disabled={isPending}>
                             {isPending ? "Updating..." : "Update Account"}
                         </Button>

@@ -854,6 +854,40 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
   const handleSaveOffer = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Frontend Validation
+    if (!formState.title.trim() || formState.title.length < 3) {
+      toast({ variant: "destructive", title: "Invalid Title", description: "Offer title must be at least 3 characters." });
+      return;
+    }
+    if (!formState.couponCode.trim()) {
+      toast({ variant: "destructive", title: "Coupon Required", description: "Please provide a coupon code." });
+      return;
+    }
+    if (!formState.description.trim() || formState.description.length < 10) {
+      toast({ variant: "destructive", title: "Description too short", description: "Please provide more details in terms and conditions." });
+      return;
+    }
+    if ((formState.type === "Percentage" || formState.type === "Flat" || formState.type === "Happy Hour") && !formState.discount) {
+      toast({ variant: "destructive", title: "Discount Required", description: "Please enter a discount value." });
+      return;
+    }
+    if (formState.type === "Free Item" && !formState.freeItem) {
+      toast({ variant: "destructive", title: "Item Required", description: "Please select a free item." });
+      return;
+    }
+    if (formState.type === "BOGO" && !formState.bogoItem) {
+      toast({ variant: "destructive", title: "Item Required", description: "Please select a BOGO item." });
+      return;
+    }
+    if (!formState.validUntil) {
+      toast({ variant: "destructive", title: "Expiry Required", description: "Please select a validity date." });
+      return;
+    }
+    if (new Date(formState.validUntil) < new Date(new Date().setHours(0,0,0,0))) {
+      toast({ variant: "destructive", title: "Invalid Date", description: "Expiry date cannot be in the past." });
+      return;
+    }
+
     if (editingOffer) {
       if (!restaurantId) {
         toast({
