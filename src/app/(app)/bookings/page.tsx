@@ -63,7 +63,7 @@ import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { useGet, usePost, useQueryHelpers } from "@/hooks/useApi";
+import { useGet, usePost, useQueryHelpers, useMutationRequestDynamic } from "@/hooks/useApi";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const initialFormState = {
@@ -212,10 +212,10 @@ export default function TableManagementPage() {
     `/api/tables/${restaurantId}/types`
   );
 
-  // Mutation: Delete table type (assuming DELETE /api/tables/:restaurantId/types/:typeName)
-  // If the API requires a different shape, this might need adjustment
-  const { mutate: deleteTypeApi } = usePost<any, { typeName: string }>(
-    `/api/tables/${restaurantId}/types/delete` // Common pattern if true DELETE is not used or wrapped
+  // Mutation: Delete table type (DELETE /api/tables/:restaurantId/types/:tableTypeId)
+  const { mutate: deleteTypeApi } = useMutationRequestDynamic<any, { typeId: string }>(
+    "DELETE",
+    (vars) => `/api/tables/${restaurantId}/types/${encodeURIComponent(vars.typeId)}`
   );
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -424,9 +424,19 @@ export default function TableManagementPage() {
   };
 
   const handleDeleteTableType = (typeName: string) => {
-    // Optimistic or just use API and invalidate
+    // Find the actual tableTypeId from tableTypesData
+    let typeId = typeName;
+    if (tableTypesData) {
+      const typesArray = Array.isArray(tableTypesData) ? tableTypesData : (tableTypesData.data || []);
+      const typeObj = typesArray.find((t: any) => t.name === typeName);
+      if (typeObj && typeObj.tableTypeId) {
+        typeId = typeObj.tableTypeId;
+      }
+    }
+
+    // Call API using typeId and invalidate
     deleteTypeApi(
-      { typeName },
+      { typeId },
       {
         onSuccess: async () => {
           toast({ title: "Type Deleted", description: `"${typeName}" has been removed.` });
