@@ -6,9 +6,7 @@ import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
+  CardContent
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +75,7 @@ const initialSeriesFormState = {
   start: '',
   end: '',
   capacity: '',
-  type: "Normal",
+  type: "",
 };
 
 export default function TableManagementPage() {
@@ -87,18 +85,22 @@ export default function TableManagementPage() {
 
   // Determine active restaurantId from selected branch (fallback to example id)
   const activeBranch = useMemo(() => branches.find(b => b.id === selectedBranch), [branches, selectedBranch]);
-  const restaurantId = activeBranch?.restaurantId || "b1a2c3d4-e5f6-7890-1234-56789abcdef";
-
+  const restaurantId = activeBranch?.restaurantId || "";
+  
   // Fetch tables from backend bookings endpoint and sync into store
   const { data: bookingsData, isLoading: isTablesLoading, error: tablesError } = useGet<any>(
     ["bookings", restaurantId],
-    `/api/bookings/${restaurantId}`
+    `/api/bookings/${restaurantId}`,
+    undefined,
+    { enabled: !!restaurantId } // Only fetch if restaurantId is present
   );
 
   // Fetch table types from backend
   const { data: tableTypesData } = useGet<any>(
     ["tableTypes", restaurantId],
-    `/api/tables/${restaurantId}/types`
+    `/api/tables/${restaurantId}/types`,
+    undefined,
+    { enabled: !!restaurantId }
   );
 
   // Heuristic to extract tables from various possible response shapes
@@ -166,9 +168,7 @@ export default function TableManagementPage() {
 
       // Extract tables
       const remoteTables = extractTablesFromResponse(bookingsData);
-      if (remoteTables.length > 0) {
-        setTables(remoteTables);
-      }
+      setTables(remoteTables);
 
       // Extract bookings if present in the response
       let remoteBookings: Booking[] = [];

@@ -228,6 +228,26 @@ export default function FeedbackPage() {
     )
   }
 
+  const stats = useMemo(() => {
+    if (feedback.length === 0) {
+      return { avg: 0, count: 0, fiveStarPct: 0, responseRate: 0, satisfaction: 0 };
+    }
+    const total = feedback.length;
+    const avg = feedback.reduce((acc, f) => acc + f.rating, 0) / total;
+    const fiveStar = feedback.filter(f => f.rating === 5).length;
+    const replied = feedback.filter(f => f.replied).length;
+    const highRating = feedback.filter(f => f.rating >= 4).length;
+
+    return {
+      avg: avg.toFixed(1),
+      count: total,
+      fiveStarCount: fiveStar,
+      fiveStarPct: (fiveStar / total) * 100,
+      responseRate: Math.round((replied / total) * 100),
+      satisfaction: Math.round((highRating / total) * 100)
+    };
+  }, [feedback]);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -236,8 +256,8 @@ export default function FeedbackPage() {
                 <CardTitle className="text-sm font-normal text-white/80">Average Rating</CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-                <div className="text-4xl font-bold flex items-center gap-2">4.2 <Star className="h-6 w-6 text-white"/></div>
-                <p className="text-xs text-white/80 mt-1">From 128 reviews</p>
+                <div className="text-4xl font-bold flex items-center gap-2">{stats.avg} <Star className="h-6 w-6 text-white"/></div>
+                <p className="text-xs text-white/80 mt-1">From {stats.count} reviews</p>
             </CardContent>
         </Card>
          <Card className="flex flex-col">
@@ -248,8 +268,8 @@ export default function FeedbackPage() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-                <p className="text-3xl font-bold">68</p>
-                <Progress value={68/128 * 100} className="h-1.5 mt-1" />
+                <p className="text-3xl font-bold">{stats.fiveStarCount || 0}</p>
+                <Progress value={stats.fiveStarPct} className="h-1.5 mt-1" />
             </CardContent>
         </Card>
         <Card className="flex flex-col">
@@ -260,8 +280,8 @@ export default function FeedbackPage() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-                <div className="text-3xl font-bold">87%</div>
-                <p className="text-xs text-green-500">+5% from last month</p>
+                <div className="text-3xl font-bold">{stats.responseRate}%</div>
+                <p className="text-xs text-green-500">Real-time response rate</p>
             </CardContent>
         </Card>
         <Card className="flex flex-col">
@@ -272,8 +292,8 @@ export default function FeedbackPage() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-                <div className="text-3xl font-bold">92%</div>
-                <p className="text-xs text-green-500">+3% from last month</p>
+                <div className="text-3xl font-bold">{stats.satisfaction}%</div>
+                <p className="text-xs text-green-500">Based on 4+ star reviews</p>
             </CardContent>
         </Card>
       </div>

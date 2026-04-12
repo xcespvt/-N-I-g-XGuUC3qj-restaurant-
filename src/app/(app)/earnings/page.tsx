@@ -92,24 +92,25 @@ export default function EarningsPage() {
       totalOfflineOrdersCount,
       totalRefundsAmount,
   } = useMemo(() => {
-    // This is a mock calculation. In a real app, you'd filter by the selected date range.
-    const deliveryOrders = orders.filter(o => o.type === "Delivery");
-    const onlineTakeawayOrders = orders.filter(o => o.type === 'Takeaway' && o.source !== 'Offline');
-    const dineInOrders = orders.filter(o => o.type === "Dine-in" && !o.items.some(i => i.category === 'Booking'));
-    const bookingOrders = orders.filter(o => o.items.some(i => i.category === 'Booking'));
-    const walkInOrders = orders.filter(o => o.type === 'Takeaway' && o.source === 'Offline');
+    const deliveryOrders = orders.filter(o => o.type === "Delivery" && o.status !== 'Cancelled');
+    const onlineTakeawayOrders = orders.filter(o => o.type === 'Takeaway' && o.source !== 'Offline' && o.status !== 'Cancelled');
+    const dineInOrders = orders.filter(o => o.type === "Dine-in" && !o.items.some(i => i.category === 'Booking') && o.status !== 'Cancelled');
+    const bookingOrders = orders.filter(o => o.items.some(i => i.category === 'Booking') && o.status !== 'Cancelled');
+    const walkInOrders = orders.filter(o => o.type === 'Takeaway' && o.source === 'Offline' && o.status !== 'Cancelled');
 
-    const delivery = 25000;
-    const onlineTakeaway = 12000;
-    const dineIn = 35000;
-    const bookings = 8000;
-    const walkIn = 5000;
+    const calculateTotal = (orderList: typeof orders) => orderList.reduce((acc, o) => acc + (o.total || 0), 0);
+
+    const delivery = calculateTotal(deliveryOrders);
+    const onlineTakeaway = calculateTotal(onlineTakeawayOrders);
+    const dineIn = calculateTotal(dineInOrders);
+    const bookings = calculateTotal(bookingOrders);
+    const walkIn = calculateTotal(walkInOrders);
     
-    const revenue = delivery + onlineTakeaway + dineIn + bookings; // Walk-in is often handled separately
+    const revenue = delivery + onlineTakeaway + dineIn + bookings; 
     const gst = delivery * 0.05;
-    const adsSpend = 500;
+    const adsSpend = 0; // Replace with API data if available
     const gstOnAds = adsSpend * 0.18;
-    const refunds = 250; // Mock refunds
+    const refunds = orders.filter(o => o.status === 'Cancelled').reduce((acc, o) => acc + (o.total || 0), 0);
 
     const deductions = gst + adsSpend + gstOnAds + refunds + walkIn;
     const payout = revenue - deductions;
@@ -118,12 +119,12 @@ export default function EarningsPage() {
     const totalOffline = walkInOrders.length;
 
     return {
-      deliveryRevenue: 25000,
-      takeawayRevenue: 12000,
-      dineInRevenue: 35000,
-      bookingCharges: 8000,
-      walkInRevenue: 5000,
-      gstOnDelivery: 1250,
+      deliveryRevenue: delivery,
+      takeawayRevenue: onlineTakeaway,
+      dineInRevenue: dineIn,
+      bookingCharges: bookings,
+      walkInRevenue: walkIn,
+      gstOnDelivery: gst,
       totalRevenue: revenue,
       totalDeductions: deductions,
       netPayout: payout,
@@ -133,7 +134,7 @@ export default function EarningsPage() {
       bookingOrdersCount: bookingOrders.length,
       walkInOrdersCount: walkInOrders.length,
       totalOrdersCount: orders.filter(o => o.status !== 'Cancelled').length,
-      totalRefundsCount: 2, // Mock
+      totalRefundsCount: orders.filter(o => o.status === 'Cancelled').length,
       totalOnlineOrdersCount: totalOnline,
       totalOfflineOrdersCount: totalOffline,
       totalRefundsAmount: refunds,

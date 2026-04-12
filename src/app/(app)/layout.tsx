@@ -129,6 +129,8 @@ function AppLayoutClient({
       website?: string;
     };
     operatingHours?: Record<string, { open?: string; close?: string }>;
+    isOnline?: boolean;
+    isRushHour?: boolean;
     isActive?: boolean;
   };
 
@@ -156,7 +158,8 @@ function AppLayoutClient({
         hours: "See schedule",
         ordersToday: 0,
         status: b.isActive ? ("Active" as const) : ("Inactive" as const),
-        isOnline: !!b.isActive,
+        isOnline: b.isOnline ?? !!b.isActive,
+        isRushHour: b.isRushHour ?? false,
         restaurantId: b.branchId || b._id,
       }));
       setBranches(mapped);

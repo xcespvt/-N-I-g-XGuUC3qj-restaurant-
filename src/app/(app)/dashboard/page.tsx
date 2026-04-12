@@ -68,7 +68,7 @@ const NewIncomingOrderCard = ({
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-  const discount = isBooking ? 0 : 50.0; // Mock discount
+  const discount = order.discount || 0; 
   const gst = (subtotal - discount) * 0.05; // 5% GST
   const grandTotal = subtotal - discount + gst;
 
@@ -129,7 +129,7 @@ const NewIncomingOrderCard = ({
             <FileText className="h-4 w-4" /> Special Note
           </h4>
           <p className="text-sm text-muted-foreground">
-            Please make the burger extra spicy and no pickles.
+            {order.note || "No special instructions."}
           </p>
         </div>
         <div className="space-y-2 pt-2 border-t text-sm">
@@ -140,13 +140,15 @@ const NewIncomingOrderCard = ({
               {subtotal.toFixed(2)}
             </p>
           </div>
-          <div className="flex justify-between">
-            <p className="text-muted-foreground">Discount</p>
-            <p className="font-medium text-green-600 flex items-center">
-              -<IndianRupee className="h-3.5 w-3.5" />
-              {discount.toFixed(2)}
-            </p>
-          </div>
+          {discount > 0 && (
+            <div className="flex justify-between">
+                <p className="text-muted-foreground">Discount</p>
+                <p className="font-medium text-green-600 flex items-center">
+                -<IndianRupee className="h-3.5 w-3.5" />
+                {discount.toFixed(2)}
+                </p>
+            </div>
+          )}
           <div className="flex justify-between">
             <p className="text-muted-foreground">GST (5%)</p>
             <p className="font-medium flex items-center">
@@ -162,7 +164,7 @@ const NewIncomingOrderCard = ({
                 variant="secondary"
                 className="bg-green-100 text-green-700 text-xs"
               >
-                Paid
+                {order.payment?.status || "Paid"}
               </Badge>
             </div>
             <p className="flex items-center">
@@ -212,122 +214,8 @@ const OrderCategory = ({
   </div>
 );
 
-const mockOrders: Order[] = [
-  {
-    id: `ORD-SIM-DEL`,
-    customer: "Simran Kaur",
-    time: new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    date: new Date().toISOString().split("T")[0],
-    status: "New",
-    type: "Delivery",
-    items: [
-      {
-        id: 1,
-        name: "Margherita Pizza",
-        quantity: 1,
-        price: 899,
-        category: "Pizza",
-      },
-    ],
-    prepTime: "15 min",
-    total: 899,
-    customerDetails: {
-      name: "Simran Kaur",
-      address: "Apt 101, Prestige Towers",
-      phone: "9988776655",
-      email: "sim@ran.com",
-    },
-    payment: { method: "Online", status: "Paid" },
-  },
-  {
-    id: `ORD-SIM-DIN`,
-    customer: "Rajesh Kumar",
-    time: new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    date: new Date().toISOString().split("T")[0],
-    status: "New",
-    type: "Dine-in",
-    items: [
-      {
-        id: 7,
-        name: "Butter Chicken",
-        quantity: 2,
-        price: 499,
-        category: "Curries",
-      },
-    ],
-    prepTime: "20 min",
-    total: 998,
-    customerDetails: {
-      name: "Rajesh Kumar",
-      address: "Table T5",
-      phone: "9988776655",
-      email: "raj@esh.com",
-    },
-    payment: { method: "UPI", status: "Paid" },
-  },
-  {
-    id: `ORD-SIM-TAK`,
-    customer: "Walk-in",
-    time: new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    date: new Date().toISOString().split("T")[0],
-    status: "New",
-    type: "Takeaway",
-    items: [
-      {
-        id: 3,
-        name: "Chicken Burger",
-        quantity: 1,
-        price: 450,
-        category: "Burgers",
-      },
-    ],
-    prepTime: "10 min",
-    total: 450,
-    customerDetails: {
-      name: "Walk-in",
-      address: "Takeaway Counter",
-      phone: "N/A",
-      email: "N/A",
-    },
-    payment: { method: "Cash", status: "Paid" },
-  },
-  {
-    id: `ORD-SIM-BOK`,
-    customer: "Anita Desai",
-    time: "8:00 PM",
-    date: new Date(Date.now() + 86400000).toISOString().split("T")[0], // Tomorrow
-    status: "New",
-    type: "Dine-in",
-    items: [
-      {
-        id: 999,
-        name: "Booking for 2",
-        quantity: 1,
-        price: 100,
-        category: "Booking",
-      },
-    ],
-    prepTime: "N/A",
-    total: 118.0,
-    customerDetails: {
-      name: "Anita Desai",
-      address: "Table for 2",
-      phone: "9988776655",
-      email: "anita@desai.com",
-    },
-    payment: { method: "Online", status: "Paid" },
-  },
-];
-
+// No mock orders in production, rely on real API data
+const mockOrders: Order[] = [];
 let lastMockOrderIndex = -1;
 
 export default function Dashboard() {
@@ -394,18 +282,9 @@ export default function Dashboard() {
           description: response.message || `You are now ${newIsOnline ? 'accepting' : 'not accepting'} new orders.`,
         });
 
-        // Handle mock order behavior
         if (newIsOnline) {
-          // cycle through mock orders
-          lastMockOrderIndex = (lastMockOrderIndex + 1) % mockOrders.length;
-          const mockOrder = {
-            ...mockOrders[lastMockOrderIndex],
-            time: new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
-          setNewOrder(mockOrder);
+          // You are now online. Future real orders will show up here.
+          setNewOrder(null); 
         } else {
           setNewOrder(null);
         }

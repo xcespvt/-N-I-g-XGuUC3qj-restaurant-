@@ -28,6 +28,7 @@ export interface Branch {
   ordersToday: number;
   status: "Active" | "Inactive";
   isOnline: boolean;
+  isRushHour?: boolean;
   // Optional backend identifier for API integrations
   restaurantId?: string;
 }
@@ -259,313 +260,25 @@ interface AppContextType {
 
 // --- MOCK DATA ---
 
-const initialTables: Table[] = [
-  { id: "T1", name: "T1", capacity: 4, status: "Available", type: "Normal" },
-  { id: "T2", name: "T2", capacity: 4, status: "Occupied", type: "Normal" },
-  { id: "T3", name: "T3", capacity: 2, status: "Available", type: "Couple" },
-  { id: "T4", name: "T4", capacity: 2, status: "Available", type: "Couple" },
-  { id: "T5", name: "T5", capacity: 6, status: "Available", type: "Family" },
-  { id: "T6", name: "T6", capacity: 6, status: "Occupied", type: "Family" },
-  { id: "T7", name: "T7", capacity: 4, status: "Available", type: "Normal" },
-  { id: "T8", name: "T8", capacity: 8, status: "Available", type: "Private" },
-  { id: "P1", name: "P1", capacity: 4, status: "Available", type: "Outdoor" },
-  { id: "P2", name: "P2", capacity: 4, status: "Available", type: "Outdoor" },
-];
+const initialTables: Table[] = [];
 
 const initialTableTypes = ["Normal", "Couple", "Family", "Private", "Outdoor"];
 
 
-const initialBranches: Branch[] = [
-  {
-    id: "indiranagar",
-    name: "Spice Garden - Rajkot",
-    address: "123 100ft Road",
-    city: "Bangalore",
-    pincode: "560038",
-    manager: "Rahul Sharma",
-    managerPhone: "+91 98765 43210",
-    hours: "10:00 AM - 10:00 PM",
-    gst: "29ABCDE1234F1Z5",
-    fssai: "12345678901234",
-    ordersToday: 42,
-    status: "Active",
-    isOnline: true,
-    restaurantId: "b1a2c3d4-e5f6-7890-1234-56789abcdef9"
-  },
-  {
-    id: "koramangala",
-    name: "Spice Garden - Koramangala",
-    address: "456 80ft Road",
-    city: "Bangalore",
-    pincode: "560034",
-    manager: "Priya Patel",
-    managerPhone: "+91 87654 32109",
-    hours: "10:00 AM - 11:00 PM",
-    gst: "29FGHIJ5678K1Z4",
-    fssai: "56789012341234",
-    ordersToday: 38,
-    status: "Active",
-    isOnline: true,
-  },
-  {
-    id: "whitefield",
-    name: "Spice Garden - Whitefield",
-    address: "789 Main Road",
-    city: "Bangalore",
-    pincode: "560066",
-    manager: "Amit Kumar",
-    managerPhone: "+91 76543 21098",
-    hours: "11:00 AM - 10:00 PM",
-    gst: "29LMNOP1234Q1Z3",
-    fssai: "90123456781234",
-    ordersToday: 0,
-    status: "Inactive",
-    isOnline: false,
-  },
-];
+const initialBranches: Branch[] = [];
 
 
-const initialOrders: Order[] = [
-    { 
-        id: "ORD-001", 
-        customer: "Alice Johnson", 
-        time: "6:07 PM",
-        date: "2025-07-13",
-        status: "Delivered", 
-        type: "Delivery", 
-        items: [
-            { id: 16, name: "Spicy Ramen", quantity: 1, price: 14.99, category: "Noodles" },
-            { id: 17, name: "Gyoza", quantity: 1, price: 6.99, category: "Appetizers" },
-        ], 
-        prepTime: "15 min", 
-        total: 21.98,
-        customerDetails: { name: "Alice Johnson", address: "123 Blossom Lane, Garden City", phone: "+919876543210", email: "alice.j@example.com" },
-        payment: { method: "Credit Card", status: "Paid" },
-        offer: { code: "SUMMER20", type: "Percentage" },
-        deliveryPartner: { name: "Rohan Sharma", avatar: "https://placehold.co/100x100.png", avatarFallback: "RS", rating: 4.8 },
-        pickupOtp: "123456"
-    },
-    { 
-        id: "ORD-002", 
-        customer: "Bob Williams", 
-        time: "2:30 PM",
-        date: "2024-07-21",
-        status: "Delivered", 
-        type: "Takeaway", 
-        items: [
-            { id: 8, name: "Paneer Tikka Masala", quantity: 1, price: 25, category: "Curries" },
-        ], 
-        prepTime: "20 min", 
-        total: 25.00,
-        customerDetails: { name: "Bob Williams", address: "Takeaway Counter", phone: "+919876543211", email: "priya.patel@example.com" },
-        payment: { method: "UPI", status: "Paid" },
-        offer: { code: "NEWUSER10", type: "Discount" },
-        pickupOtp: "334455"
-    },
-    { 
-        id: "ORD-003", 
-        customer: "Charlie Brown", 
-        time: "8:00 PM",
-        date: "2024-07-21",
-        status: "Delivered", 
-        type: "Dine-in", 
-        items: [
-            { id: 10, name: "Chicken Biryani", quantity: 1, price: 14, category: "Rice" },
-        ], 
-        prepTime: "25 min", 
-        total: 14.00,
-        customerDetails: { name: "Charlie Brown", address: "Dine-in Table 5", phone: "+919876543212", email: "amit.kumar@example.com" },
-        payment: { method: "Cash on Delivery", status: "Pending" }
-    },
-    { 
-        id: "ORD-005", 
-        customer: "Eve Davis", 
-        time: "1:45 PM",
-        date: "2024-07-20",
-        status: "Incoming", 
-        type: "Delivery", 
-        items: [
-            { id: 1, name: "Margherita Pizza", quantity: 1, price: 17, category: "Pizza" },
-        ], 
-        prepTime: "10 min", 
-        total: 17.00,
-        customerDetails: { name: "Eve Davis", address: "456 Tech Park, Electronic City", phone: "+919876543213", email: "sunita.rai@example.com" },
-        payment: { method: "Debit Card", status: "Paid" },
-        deliveryPartner: { name: "Sunil Verma", avatar: "https://placehold.co/101x101.png", avatarFallback: "SV", rating: 4.7 },
-        pickupOtp: "654321"
-    },
-    { 
-        id: "ORD-006", 
-        customer: "Frank Miller", 
-        time: "1:30 PM", 
-        date: "2024-07-20",
-        status: "Preparing", 
-        type: "Delivery", 
-        items: [
-            { id: 4, name: "Beef Burger", quantity: 1, price: 7, category: "Burgers" },
-        ], 
-        prepTime: "22 min", 
-        total: 7.00,
-        customerDetails: { name: "Frank Miller", address: "789 Silk Board, HSR Layout", phone: "+919876543214", email: "vikram.singh@example.com" },
-        payment: { method: "UPI", status: "Paid" },
-        deliveryPartner: { name: "Anjali Mehta", avatar: "https://placehold.co/102x102.png", avatarFallback: "AM", rating: 4.9 },
-        pickupOtp: "987123"
-    },
-     { 
-        id: "ORD-B-BK-001",
-        customer: "Online Booking",
-        time: "7:00 PM",
-        date: "2025-07-21",
-        status: "Preparing",
-        type: "Dine-in",
-        source: "Online",
-        items: [{ id: 999, name: "Booking for 4 guests", quantity: 1, price: 100, category: "Booking" }],
-        prepTime: "N/A",
-        total: 118,
-        customerDetails: { name: "Aisha Kapoor", address: "Tables: T1, T2", phone: "+919876543215", email: "N/A" },
-        payment: { method: "Online", status: "Paid" }
-    },
-    { 
-        id: "ORD-B-BK-002",
-        customer: "Offline Booking",
-        time: "8:30 PM",
-        date: "2025-07-21",
-        status: "Ready",
-        type: "Dine-in",
-        source: "Online",
-        items: [{ id: 999, name: "Booking for 2 guests", quantity: 1, price: 100, category: "Booking" }],
-        prepTime: "N/A",
-        total: 118,
-        customerDetails: { name: "Rohan Verma", address: "Tables: P1", phone: "+919876543216", email: "N/A" },
-        payment: { method: "Online", status: "Paid" }
-    },
-    { 
-        id: "ORD-B-BK-003",
-        customer: "Online Booking",
-        time: "9:00 PM",
-        date: "2025-07-22",
-        status: "Incoming",
-        type: "Dine-in",
-        source: "Online",
-        items: [{ id: 999, name: "Booking for 6 guests", quantity: 1, price: 100, category: "Booking" }],
-        prepTime: "N/A",
-        total: 118,
-        customerDetails: { name: "Priya Sharma", address: "Tables: T5", phone: "+919876543217", email: "N/A" },
-        payment: { method: "Online", status: "Paid" }
-    },
-    { 
-        id: "ORD-B-BK-004",
-        customer: "Offline Booking",
-        time: "6:30 PM",
-        date: "2025-07-23",
-        status: "Preparing",
-        type: "Dine-in",
-        source: "Online",
-        items: [{ id: 999, name: "Booking for 8 guests", quantity: 1, price: 100, category: "Booking" }],
-        prepTime: "N/A",
-        total: 118,
-        customerDetails: { name: "Amit Patel", address: "Tables: T8", phone: "+919876543218", email: "N/A" },
-        payment: { method: "Online", status: "Paid" }
-    },
-    { 
-        id: "ORD-B-BK-005",
-        customer: "Walk-in Booking",
-        time: "7:15 PM",
-        date: "2025-07-24",
-        status: "Ready",
-        type: "Dine-in",
-        source: "Online",
-        items: [{ id: 999, name: "Booking for 2 guests", quantity: 1, price: 100, category: "Booking" }],
-        prepTime: "N/A",
-        total: 118,
-        customerDetails: { name: "Sunita Rai", address: "Tables: T3", phone: "+919876543219", email: "N/A" },
-        payment: { method: "Cash", status: "Paid" }
-    },
-    {
-        id: "ORD-B-BK-006",
-        customer: "Test",
-        time: "7:15 PM",
-        date: "2025-07-24",
-        status: "Preparing",
-        type: "Dine-in",
-        source: "Online",
-        items: [{ id: 999, name: "Booking for 2 guests", quantity: 1, price: 100, category: "Booking" }],
-        prepTime: "N/A",
-        total: 118,
-        customerDetails: { name: "Test", address: "Tables: T3", phone: "+919876543219", email: "N/A" },
-        payment: { method: "Cash", status: "Paid" }
-    }
-];
+const initialOrders: Order[] = [];
 
-const initialMenuItems: MenuItem[] = [
-  { id: 1, name: "Margherita Pizza", description: "Classic pizza with tomato sauce, mozzarella, and basil", price: 899, category: "Pizza", image: "https://placehold.co/300x200.png", aiHint: "margherita pizza", available: true, dietaryType: 'Veg', portionOptions: [{ name: 'Regular', price: 899 }, { name: 'Medium', price: 1099 }, { name: 'Large', price: 1299 }, { name: 'XL', price: 1499 }] },
-  { id: 2, name: "Pepperoni Pizza", description: "Pizza topped with pepperoni slices and cheese", price: 1199, category: "Pizza", image: "https://placehold.co/300x200.png", aiHint: "pepperoni pizza", available: true, dietaryType: 'Non-Veg', portionOptions: [{ name: 'Regular', price: 1199 }, { name: 'Medium', price: 1399 }, { name: 'Large', price: 1599 }, { name: 'XL', price: 1799 }] },
-  { id: 3, name: "Chicken Burger", description: "Grilled chicken breast with lettuce, tomato, and mayo", price: 450, category: "Burgers", image: "https://placehold.co/300x200.png", aiHint: "chicken burger", available: true, dietaryType: 'Non-Veg' },
-  { id: 4, name: "Beef Burger", description: "Juicy beef patty with cheese, lettuce, and special sauce", price: 999, category: "Burgers", image: "https://placehold.co/300x200.png", aiHint: "beef burger", available: true, dietaryType: 'Non-Veg' },
-  { id: 5, name: "Caesar Salad", description: "Fresh romaine lettuce with Caesar dressing and croutons", price: 500, category: "Salads", image: "https://placehold.co/300x200.png", aiHint: "caesar salad", available: true, dietaryType: 'Veg' },
-  { id: 6, name: "Greek Salad", description: "Mixed greens with feta cheese, olives, and Greek dressing", price: 699, category: "Salads", image: "https://placehold.co/300x200.png", aiHint: "greek salad", available: false, dietaryType: 'Veg' },
-  { id: 7, name: "Butter Chicken", description: "Creamy and rich tomato-based chicken curry.", price: 499, category: "Curries", image: "https://placehold.co/300x200.png", aiHint: "butter chicken", available: true, dietaryType: 'Non-Veg', portionOptions: [{ name: 'Full', price: 499 }, { name: 'Half', price: 299 }] },
-  { id: 8, name: "Paneer Tikka Masala", description: "Marinated paneer in a spicy gravy.", price: 450, category: "Curries", image: "https://placehold.co/300x200.png", aiHint: "paneer tikka masala", available: true, dietaryType: 'Veg', portionOptions: [{ name: 'Full', price: 450 }, { name: 'Half', price: 270 }] },
-  { id: 9, name: "Garlic Naan", description: "Soft flatbread with garlic.", price: 75, category: "Breads", image: "https://placehold.co/300x200.png", aiHint: "garlic naan", available: true, dietaryType: 'Veg' },
-  { id: 10, name: "Chicken Biryani", description: "Aromatic rice dish with chicken.", price: 550, category: "Rice", image: "https://placehold.co/300x200.png", aiHint: "chicken biryani", available: true, dietaryType: 'Non-Veg', portionOptions: [{ name: 'Full', price: 550 }, { name: 'Half', price: 385 }] },
-  { id: 11, name: "Jeera Rice", description: "Rice tempered with cumin seeds.", price: 200, category: "Rice", image: "https://placehold.co/300x200.png", aiHint: "jeera rice", available: true, dietaryType: 'Veg' },
-  { id: 12, name: "Lassi", description: "Yogurt based drink.", price: 150, category: "Beverages", image: "https://placehold.co/300x200.png", aiHint: "lassi drink", available: true, dietaryType: 'Veg' },
-  { id: 13, name: "Mutton Kebab", description: "Spicy minced mutton skewers.", price: 450, category: "Appetizers", image: "https://placehold.co/300x200.png", aiHint: "mutton kebab", available: true, dietaryType: 'Non-Veg' },
-  { id: 14, name: "Fries", description: "Classic french fries.", price: 150, category: "Appetizers", image: "https://placehold.co/300x200.png", aiHint: "french fries", available: true, dietaryType: 'Veg' },
-  { id: 15, name: "Coke", description: "Chilled Coca-Cola.", price: 80, category: "Beverages", image: "https://placehold.co/300x200.png", aiHint: "coke can", available: true, dietaryType: 'Veg' },
-  { id: 16, name: "Spicy Ramen", description: "Noodles in a spicy broth.", price: 14.99, category: "Noodles", image: "https://placehold.co/300x200.png", aiHint: "spicy ramen", available: true, dietaryType: 'Non-Veg' },
-  { id: 17, name: "Gyoza", description: "Pan-fried dumplings.", price: 6.99, category: "Appetizers", image: "https://placehold.co/300x200.png", aiHint: "gyoza dumplings", available: true, dietaryType: 'Non-Veg' },
-];
+const initialMenuItems: MenuItem[] = [];
 
-const initialCategories = ["All", "Pizza", "Burgers", "Salads", "Curries", "Breads", "Rice", "Beverages", "Appetizers", "Desserts", "Noodles"];
+const initialCategories = ["All"];
 
-const initialBookings: Booking[] = [
-  { id: "BK-001", name: "Aisha Kapoor", phone: "+91 98765 43210", date: "2025-07-20", time: "7:00 PM", partySize: 4, status: "Confirmed", tables: [] },
-  { id: "BK-002", name: "Rohan Verma", phone: "+91 87654 32109", date: "2025-07-21", time: "7:30 PM", partySize: 2, status: "Confirmed", tables: [] },
-  { id: "BK-003", name: "Sneha Reddy", phone: "+91 76543 21098", date: "2025-07-21", time: "8:00 PM", partySize: 5, status: "Pending", tables: [] },
-  { id: "BK-004", name: "Vikram Singh", phone: "+91 65432 10987", date: "2025-07-22", time: "8:15 PM", partySize: 3, status: "Completed", tables: [] },
-  { id: "BK-005", name: "Nidhi Gupta", phone: "+91 54321 09876", date: "2025-07-22", time: "9:00 PM", partySize: 2, status: "Cancelled", tables: [] },
-];
+const initialBookings: Booking[] = [];
 
-const initialFeedback: Feedback[] = [
-  { id: "FB-001", customer: { name: "John Doe", avatar: "https://placehold.co/100x100", fallback: "JD", orderCount: 12, }, orderType: "Delivery", rating: 5, comment: "The food was amazing! The Butter Chicken was perfectly cooked and the naan was fresh and fluffy. Will definitely order again!", date: "May 15, 2023", items: ["Butter Chicken", "Garlic Naan"], photos: [ { url: "https://placehold.co/80x80.png", hint: "butter chicken" }, { url: "https://placehold.co/80x80.png", hint: "garlic naan" } ], replied: false, reply: "" },
-  { id: "FB-002", customer: { name: "Sarah Smith", avatar: "https://placehold.co/101x101", fallback: "SS", orderCount: 5 }, orderType: "Delivery", rating: 4, comment: "Great food but delivery was a bit late. The Paneer Tikka was excellent though!", date: "May 14, 2023", items: ["Paneer Tikka", "Veg Biryani"], photos: [], replied: true, reply: "Thank you for your feedback, Sarah! We apologize for the late delivery and will work on improving our service." },
-  { id: "FB-003", customer: { name: "Mike Johnson", avatar: "https://placehold.co/102x102", fallback: "MJ", orderCount: 8 }, orderType: "Dine-in", rating: 2, comment: "The order was very late and the food was cold. Disappointed with the experience this time.", date: "May 13, 2023", items: [], photos: [], replied: false, reply: "" },
-];
+const initialFeedback: Feedback[] = [];
 
-const initialRefunds: RefundRequest[] = [
-    {
-        id: 'REF-001',
-        orderId: 'ORD-003',
-        customerName: 'Charlie Brown',
-        customerAvatar: 'https://i.pravatar.cc/150?u=charlie',
-        customerFallback: 'CB',
-        amount: 14.00,
-        reason: 'The order was very late and the food was cold. Disappointed with the experience.',
-        status: 'Pending',
-        date: '2024-07-22',
-        items: [{ name: 'Chicken Biryani', image: 'https://placehold.co/300x200.png', aiHint: 'chicken biryani', price: 14.00 }],
-        photos: [{ url: 'https://placehold.co/400x300.png', hint: 'cold food' }],
-        orderType: 'Delivery',
-        orderTime: '8:00 PM',
-        costSplit: { restaurant: 7.00, crevings: 7.00 },
-    },
-    {
-        id: 'REF-002',
-        orderId: 'ORD-001',
-        customerName: 'Alice Johnson',
-        customerAvatar: 'https://i.pravatar.cc/150?u=alice',
-        customerFallback: 'AJ',
-        amount: 6.99,
-        reason: 'Received wrong item. I ordered Gyoza but got something else.',
-        status: 'Pending',
-        date: '2024-07-21',
-        items: [{ name: 'Gyoza', image: 'https://placehold.co/300x200.png', aiHint: 'gyoza dumplings', price: 6.99 }],
-        orderType: 'Delivery',
-        orderTime: '6:07 PM',
-        costSplit: { restaurant: 3.50, crevings: 3.49 },
-    },
-];
+const initialRefunds: RefundRequest[] = [];
 
 
 const initialNotificationSettings: NotificationSettings = {
