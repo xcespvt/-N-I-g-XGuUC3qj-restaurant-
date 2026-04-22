@@ -499,7 +499,7 @@ export default function MenuPage() {
 
       {/* Removed results badge to keep pagination UI simple */}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
         {(isFiltering ? isSearchLoading : (isLoading && restaurantId)) ? (
           // Loading skeleton
           Array.from({ length: 6 }).map((_, index) => (

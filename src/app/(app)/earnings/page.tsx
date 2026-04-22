@@ -1,104 +1,50 @@
-
 "use client"
 
-import { useMemo, useState } from "react"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import {
-  Wallet,
-  Download,
-  IndianRupee,
-  UtensilsCrossed,
-  ShoppingBag,
-  CalendarCheck,
-  Percent,
-  Receipt,
-  ArrowRight,
-  TrendingUp,
-  Trophy,
-  MapPin,
-  Flame,
+import React, { useState, useMemo } from 'react';
+import { 
+  Wallet, 
+  ShoppingBag, 
+  Utensils, 
+  Bike, 
+  Calendar, 
+  Clock, 
+  CheckCircle2, 
+  ChevronDown,
+  ChevronLeft,
   ChevronRight,
-  Bike,
-  Package,
-  Calendar,
-  Zap,
-  History,
-  Globe,
-  WifiOff,
+  ChevronUp,
   Banknote,
+  Receipt,
+  Megaphone,
+  RotateCcw,
+  Filter,
   Info,
-  Calendar as CalendarIcon,
-} from "lucide-react"
-import { useAppStore } from "@/context/useAppStore"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/hooks/use-toast"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { DateRange } from "react-day-picker"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { format } from "date-fns"
-
+  HelpCircle,
+  IndianRupee,
+  ArrowDownRight
+} from 'lucide-react';
+import Link from 'next/link';
+import { useAppStore } from '@/context/useAppStore';
 
 export default function EarningsPage() {
-    
   const { orders, walletBalance } = useAppStore();
-  const { toast } = useToast();
-  const [date, setDate] = useState<DateRange | undefined>();
+  const [selectedFilter, setSelectedFilter] = useState('Last month');
+  const [currentMonthDate, setCurrentMonthDate] = useState(new Date(2026, 1, 1)); 
+  const [isAutoWithdrawalEnabled, setIsAutoWithdrawalEnabled] = useState(true);
+  const [showAutoWithdrawConfirm, setShowAutoWithdrawConfirm] = useState(false);
+  const [pendingAutoWithdrawState, setPendingAutoWithdrawState] = useState(true);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
-  const {
-      deliveryRevenue,
-      takeawayRevenue,
-      dineInRevenue,
-      bookingCharges,
-      walkInRevenue,
-      gstOnDelivery,
-      totalRevenue,
-      totalDeductions,
-      netPayout,
-      deliveryOrdersCount,
-      takeawayOrdersCount,
-      dineInOrdersCount,
-      bookingOrdersCount,
-      walkInOrdersCount,
-      totalOrdersCount,
-      totalRefundsCount,
-      totalOnlineOrdersCount,
-      totalOfflineOrdersCount,
-      totalRefundsAmount,
-  } = useMemo(() => {
-    const deliveryOrders = orders.filter(o => o.type === "Delivery" && o.status !== 'Cancelled');
-    const onlineTakeawayOrders = orders.filter(o => o.type === 'Takeaway' && o.source !== 'Offline' && o.status !== 'Cancelled');
-    const dineInOrders = orders.filter(o => o.type === "Dine-in" && !o.items.some(i => i.category === 'Booking') && o.status !== 'Cancelled');
-    const bookingOrders = orders.filter(o => o.items.some(i => i.category === 'Booking') && o.status !== 'Cancelled');
-    const walkInOrders = orders.filter(o => o.type === 'Takeaway' && o.source === 'Offline' && o.status !== 'Cancelled');
+  // Business Logic from existing page
+  const stats = useMemo(() => {
+    const activeOrders = orders.filter(o => o.status !== 'Cancelled');
+    const deliveryOrders = activeOrders.filter(o => o.type === "Delivery");
+    const onlineTakeawayOrders = activeOrders.filter(o => o.type === 'Takeaway' && o.source !== 'Offline');
+    const dineInOrders = activeOrders.filter(o => o.type === "Dine-in" && !o.items.some(i => i.category === 'Booking'));
+    const bookingOrders = activeOrders.filter(o => o.items.some(i => i.category === 'Booking'));
+    const walkInOrders = activeOrders.filter(o => o.type === 'Takeaway' && o.source === 'Offline');
 
-    const calculateTotal = (orderList: typeof orders) => orderList.reduce((acc, o) => acc + (o.total || 0), 0);
+    const calculateTotal = (list: typeof orders) => list.reduce((acc, o) => acc + (o.total || 0), 0);
 
     const delivery = calculateTotal(deliveryOrders);
     const onlineTakeaway = calculateTotal(onlineTakeawayOrders);
@@ -106,358 +52,385 @@ export default function EarningsPage() {
     const bookings = calculateTotal(bookingOrders);
     const walkIn = calculateTotal(walkInOrders);
     
-    const revenue = delivery + onlineTakeaway + dineIn + bookings; 
+    // Revenue for breakdown
+    const breakdown = [
+      { label: 'Dine-in', icon: Utensils, percent: `${((dineIn / (delivery + onlineTakeaway + dineIn + bookings || 1)) * 100).toFixed(0)}%`, amount: `₹ ${dineIn.toLocaleString('en-IN')}`, color: 'bg-blue-100 text-blue-600' },
+      { label: 'Delivery', icon: Bike, percent: `${((delivery / (delivery + onlineTakeaway + dineIn + bookings || 1)) * 100).toFixed(0)}%`, amount: `₹ ${delivery.toLocaleString('en-IN')}`, color: 'bg-emerald-100 text-emerald-600' },
+      { label: 'Online Takeaway', icon: ShoppingBag, percent: `${((onlineTakeaway / (delivery + onlineTakeaway + dineIn + bookings || 1)) * 100).toFixed(0)}%`, amount: `₹ ${onlineTakeaway.toLocaleString('en-IN')}`, color: 'bg-amber-100 text-amber-600' },
+      { label: 'Booking Charges', icon: Calendar, percent: `${((bookings / (delivery + onlineTakeaway + dineIn + bookings || 1)) * 100).toFixed(0)}%`, amount: `₹ ${bookings.toLocaleString('en-IN')}`, color: 'bg-purple-100 text-purple-600' },
+      { label: 'Walk-In Sales', icon: ShoppingBag, percent: 'N/A', amount: `₹ ${walkIn.toLocaleString('en-IN')}`, color: 'bg-indigo-100 text-indigo-600' },
+    ];
+
     const gst = delivery * 0.05;
-    const adsSpend = 0; // Replace with API data if available
-    const gstOnAds = adsSpend * 0.18;
     const refunds = orders.filter(o => o.status === 'Cancelled').reduce((acc, o) => acc + (o.total || 0), 0);
 
-    const deductions = gst + adsSpend + gstOnAds + refunds + walkIn;
-    const payout = revenue - deductions;
-
-    const totalOnline = deliveryOrders.length + onlineTakeawayOrders.length + dineInOrders.length + bookingOrders.length;
-    const totalOffline = walkInOrders.length;
+    const deductions = [
+      { label: 'Offline Cash', icon: Banknote, sub: 'Collected at counter', amount: `- ₹ ${walkIn.toLocaleString('en-IN')}` },
+      { label: 'GST (Delivery)', icon: Receipt, sub: '5% on delivery orders', amount: `- ₹ ${gst.toLocaleString('en-IN')}` },
+      { label: 'Ads Spend', icon: Megaphone, sub: 'In-app promotions', amount: '- ₹ 500' },
+      { label: 'Refunds', icon: RotateCcw, sub: `${orders.filter(o => o.status === 'Cancelled').length} Order(s)`, amount: `- ₹ ${refunds.toLocaleString('en-IN')}` },
+    ];
 
     return {
-      deliveryRevenue: delivery,
-      takeawayRevenue: onlineTakeaway,
-      dineInRevenue: dineIn,
-      bookingCharges: bookings,
-      walkInRevenue: walkIn,
-      gstOnDelivery: gst,
-      totalRevenue: revenue,
-      totalDeductions: deductions,
-      netPayout: payout,
-      deliveryOrdersCount: deliveryOrders.length,
-      takeawayOrdersCount: onlineTakeawayOrders.length,
-      dineInOrdersCount: dineInOrders.length,
-      bookingOrdersCount: bookingOrders.length,
-      walkInOrdersCount: walkInOrders.length,
-      totalOrdersCount: orders.filter(o => o.status !== 'Cancelled').length,
-      totalRefundsCount: orders.filter(o => o.status === 'Cancelled').length,
-      totalOnlineOrdersCount: totalOnline,
-      totalOfflineOrdersCount: totalOffline,
-      totalRefundsAmount: refunds,
-    }
-  }, [orders])
+        totalEarningsMonth: delivery + onlineTakeaway + dineIn + bookings,
+        totalOrdersMonth: activeOrders.length,
+        totalOrdersToday: orders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString()).length,
+        breakdown,
+        deductions,
+        totalRevenue: delivery + onlineTakeaway + dineIn + bookings,
+        totalDeductions: gst + 500 + refunds + walkIn
+    };
+  }, [orders]);
 
-  const revenueItems = [
-    { icon: TrendingUp, label: "Delivery Revenue", amount: deliveryRevenue },
-    { icon: ShoppingBag, label: "Online Takeaway Revenue", amount: takeawayRevenue },
-    { icon: UtensilsCrossed, label: "Dine-in Revenue", amount: dineInRevenue },
-    { icon: CalendarCheck, label: "Booking Charges", amount: bookingCharges },
-    { icon: Zap, label: "Offline/Walk-in Revenue", amount: walkInRevenue },
+  const handlePrevMonth = () => {
+    setCurrentMonthDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() - 1);
+      return newDate;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonthDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + 1);
+      return newDate;
+    });
+  };
+
+  const formatMonthYear = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const faqData = [
+    { question: 'How does the payout system work?', answer: 'Our payout system automatically calculates your earnings from online orders, deducts any applicable fees or refunds, and transfers the remaining balance to your registered bank account. You can choose between daily auto-withdrawals or manual requests.' },
+    { question: 'How are platform fees calculated?', answer: 'Platform fees are calculated as a fixed percentage of each online order\'s subtotal. This fee covers payment processing, platform maintenance, and customer support. Taxes and delivery charges are not subject to platform fees.' },
+    { question: 'Why did my payout fail?', answer: 'Payouts typically fail due to incorrect bank account details, issues with the receiving bank, or temporary network errors. If a payout fails, the funds will be returned to your available balance, and you can initiate a new withdrawal request.' },
+    { question: 'When will I receive my funds?', answer: 'For auto-withdrawals, funds are processed daily and typically arrive within 24 hours (T+1 settlement cycle). Manual withdrawals are processed within 1-2 business days depending on your bank.' },
   ];
 
-  const deductionItems = [
-    { icon: Percent, label: "GST on Delivery (5%)", amount: -gstOnDelivery },
-    { icon: Receipt, label: "Refunds", amount: -totalRefundsAmount },
-    { icon: TrendingUp, label: "Ads Spend", amount: -500 },
-    { icon: Percent, label: "GST on Ads (18%)", amount: -90 },
-    { icon: Banknote, label: "Offline Cash Payment", amount: -walkInRevenue },
+  const recentPayouts = [
+    { amount: '₹ 1,200', date: 'Today, 10:00 AM', status: 'Processing' },
+    { amount: '₹ 15,450', date: 'May 1, 2025', status: 'Paid' },
   ];
-  
-  const todayStats = [
-    { icon: IndianRupee, label: "Total Revenue", value: totalRevenue, format: 'currency', color: "text-green-600" },
-    { icon: Package, label: "Total Orders", value: totalOrdersCount, color: "text-blue-600" },
-    { icon: Receipt, label: "Total Refunds", value: totalRefundsAmount, format: 'currency', color: "text-red-600" },
-    { icon: Globe, label: "Online Orders", value: totalOnlineOrdersCount, color: "text-indigo-600" },
-    { icon: WifiOff, label: "Offline Orders", value: totalOfflineOrdersCount, color: "text-slate-600" },
-  ];
-
-  const categoryStats = [
-    { icon: Bike, label: "Delivery", value: deliveryOrdersCount, revenue: deliveryRevenue, color: "text-purple-600" },
-    { icon: ShoppingBag, label: "Online Takeaway", value: takeawayOrdersCount, revenue: takeawayRevenue, color: "text-orange-600" },
-    { icon: UtensilsCrossed, label: "Dine-in", value: dineInOrdersCount, revenue: dineInRevenue, color: "text-cyan-600" },
-    { icon: Calendar, label: "Bookings", value: bookingOrdersCount, revenue: bookingCharges, color: "text-pink-600" },
-    { icon: Zap, label: "Offline Takeaway", value: walkInOrdersCount, revenue: walkInRevenue, color: "text-slate-600" },
-  ]
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card className="bg-primary text-primary-foreground shadow-lg">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <CardDescription className="text-primary-foreground/80 flex items-center gap-2"><Wallet className="h-4 w-4"/> Wallet Balance</CardDescription>
-              <CardTitle className="text-4xl font-bold flex items-center"><IndianRupee className="h-7 w-7"/>{netPayout.toLocaleString('en-IN')}</CardTitle>
-              <p className="text-sm text-primary-foreground/80 !mt-2">Last payout: ₹1,200 on May 1, 2025</p>
+    <div className="pb-32 px-4 pt-6 animate-in fade-in duration-500 bg-slate-50 min-h-screen space-y-6 lg:bg-transparent lg:px-0 lg:pt-0 lg:pb-10 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
+      
+      {/* Wallet Section */}
+      <div className="space-y-4 lg:col-span-1">
+        <div className="flex items-center justify-between">
+          <p className="text-[12px] font-bold text-[#6B7280] uppercase tracking-wider">PERIOD - 1 TO {new Date(2026, currentMonthDate.getMonth() + 1, 0).getDate()} {formatMonthYear(currentMonthDate).toUpperCase()}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-[12px]">
+          {/* Card 1 */}
+          <div className="relative overflow-hidden bg-[#FFFFFF] rounded-[16px] p-[16px] border border-[#E5E7EB] h-[110px] flex flex-col justify-between">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div className="relative z-10">
+              <h3 className="text-[14px] font-bold text-[#111827] leading-tight">Total Orders</h3>
+              <p className="text-[13px] text-[#9CA3AF] mt-0.5">complete This Month</p>
             </div>
-            <div className="flex items-center">
-              <Link href="/earnings/history">
-                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20">
-                  <History className="h-5 w-5"/>
-                </Button>
-              </Link>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20">
-                <Download className="h-5 w-5"/>
-              </Button>
+            <p className="relative z-10 text-[26px] font-bold text-[#111827] leading-none">{stats.totalOrdersMonth > 1000 ? `${(stats.totalOrdersMonth/1000).toFixed(1)}k` : stats.totalOrdersMonth}</p>
+          </div>
+          
+          {/* Card 2 */}
+          <div className="relative overflow-hidden bg-[#FFFFFF] rounded-[16px] p-[16px] border border-[#E5E7EB] h-[110px] flex flex-col justify-between">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div className="relative z-10">
+              <h3 className="text-[14px] font-bold text-[#111827] leading-tight">Total Orders</h3>
+              <p className="text-[13px] text-[#9CA3AF] mt-0.5">complete today</p>
+            </div>
+            <p className="relative z-10 text-[26px] font-bold text-[#111827] leading-none">{stats.totalOrdersToday}</p>
+          </div>
+          
+          {/* Card 3 */}
+          <div className="relative overflow-hidden bg-[#FFFFFF] rounded-[16px] p-[16px] border border-[#E5E7EB] h-[110px] flex flex-col justify-between">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div className="relative z-10">
+              <h3 className="text-[14px] font-bold text-[#111827] leading-tight">Total Earnings</h3>
+              <p className="text-[13px] text-[#9CA3AF] mt-0.5">This Month</p>
+            </div>
+            <p className="relative z-10 text-[26px] font-bold text-[#111827] leading-none">₹{stats.totalEarningsMonth.toLocaleString('en-IN')}</p>
+          </div>
+          
+          {/* Card 4 */}
+          <div className="relative overflow-hidden bg-[#FFFFFF] rounded-[16px] p-[16px] border border-[#E5E7EB] h-[110px] flex flex-col justify-between">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div className="relative z-10">
+              <h3 className="text-[14px] font-bold text-[#111827] leading-tight">Available Funds</h3>
+              <p className="text-[13px] text-[#9CA3AF] mt-0.5">For Withdrawal</p>
+            </div>
+            <p className="relative z-10 text-[26px] font-bold text-[#111827] leading-none">₹{walletBalance.toLocaleString('en-IN')}</p>
+          </div>
+        </div>
+
+        <Link href="/earnings/withdraw" className="block">
+          <button 
+            className="w-full h-[52px] bg-[#2563EB] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
+          >
+            Withdraw Funds
+          </button>
+        </Link>
+
+        {/* Upcoming Payout Section */}
+        <div className="relative overflow-hidden bg-white rounded-[16px] p-5 border border-slate-200 shadow-sm">
+          <div className="absolute -right-4 -top-4 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="relative z-10 flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-500">Next Payout</p>
+              <h3 className="text-2xl font-bold text-slate-900 mt-1">₹18,420</h3>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-emerald-600">Arrives Tomorrow</p>
+              <p className="text-xs text-slate-500 mt-1">Settlement cycle: T+1</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="px-6 pb-6 pt-0">
-            <Button asChild className="w-full bg-primary-foreground text-primary font-bold hover:bg-primary-foreground/90">
-                <Link href="/earnings/withdraw">Request Payout</Link>
-            </Button>
-        </CardContent>
-      </Card>
-      
-      <Tabs defaultValue="earnings" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-muted p-1 rounded-lg">
-          <TabsTrigger value="earnings">Earnings</TabsTrigger>
-          <TabsTrigger value="analysis">Analysis</TabsTrigger>
-        </TabsList>
-        <TabsContent value="earnings" className="mt-6 space-y-6">
-            <Card>
-                <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-                    <p className="font-medium">Select Period</p>
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                        <Select defaultValue="may">
-                            <SelectTrigger className="w-full sm:w-[120px]">
-                                <SelectValue placeholder="Select Period" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="may">May</SelectItem>
-                                <SelectItem value="april">April</SelectItem>
-                                <SelectItem value="march">March</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <Button
-                                id="date"
-                                variant={"outline"}
-                                className={cn(
-                                "w-full sm:w-[260px] justify-start text-left font-normal",
-                                !date && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date?.from ? (
-                                date.to ? (
-                                    <>
-                                    {format(date.from, "LLL dd, y")} -{" "}
-                                    {format(date.to, "LLL dd, y")}
-                                    </>
-                                ) : (
-                                    format(date.from, "LLL dd, y")
-                                )
-                                ) : (
-                                <span>Pick a date or date range</span>
-                                )}
-                            </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="end">
-                            <Calendar
-                                mode="range"
-                                defaultMonth={date?.from}
-                                selected={date}
-                                onSelect={setDate}
-                                numberOfMonths={1}
-                            />
-                            </PopoverContent>
-                        </Popover>
-                     </div>
-                </CardContent>
-            </Card>
-
-            <div className="grid md:grid-cols-2 gap-6">
-                <Card className="flex flex-col">
-                    <CardHeader className="flex-row items-center justify-between bg-green-50 dark:bg-green-900/50 rounded-t-lg p-4">
-                        <CardTitle className="text-lg text-green-800 dark:text-green-300">Revenue</CardTitle>
-                        <p className="font-bold text-lg text-green-600 flex items-center"><IndianRupee className="h-5 w-5 mr-0.5"/>{revenueItems.reduce((acc, item) => acc + item.amount, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-3 flex-grow">
-                        {revenueItems.map(item => (
-                            <div key={item.label} className="flex items-center justify-between text-sm">
-                                <p className="flex items-center gap-3 text-muted-foreground"><item.icon className="h-4 w-4"/> {item.label}</p>
-                                <p className="font-medium flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-0.5"/>{item.amount.toLocaleString('en-IN')}</p>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-                <Card className="flex flex-col">
-                    <CardHeader className="flex-row items-center justify-between bg-red-50 dark:bg-red-900/50 rounded-t-lg p-4">
-                        <CardTitle className="text-lg text-red-800 dark:text-red-300">Deductions</CardTitle>
-                        <p className="font-bold text-lg text-red-600 flex items-center"><IndianRupee className="h-5 w-5 mr-0.5"/>{deductionItems.reduce((acc, item) => acc + item.amount, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-3 flex-grow">
-                         {deductionItems.map(item => (
-                            <div key={item.label} className="flex items-center justify-between text-sm">
-                                <p className="flex items-center gap-3 text-muted-foreground"><item.icon className="h-4 w-4" /> {item.label}</p>
-                                <p className="font-medium flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-0.5"/>{item.amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
+          
+          <div className="relative z-10 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Auto Withdrawal</p>
+              <p className="text-xs text-slate-500 mt-0.5 max-w-[200px]">
+                Daily automatic transfers to your bank account
+              </p>
             </div>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg">Net Payout</CardTitle>
-                    <CardDescription>This is the final amount that will be transferred to your account for this period.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="p-4 flex flex-col items-center justify-center text-center rounded-lg bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800">
-                        <p className="font-semibold text-sm text-green-800 dark:text-green-300">Net Payout (Revenue - Deductions)</p>
-                        <p className="font-extrabold text-4xl text-green-600 flex items-center"><IndianRupee className="h-8 w-8 mr-1"/>{netPayout.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button variant="outline" className="w-full">View Full Statement</Button>
-                </CardFooter>
-            </Card>
+            <button 
+              onClick={() => {
+                setPendingAutoWithdrawState(!isAutoWithdrawalEnabled);
+                setShowAutoWithdrawConfirm(true);
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isAutoWithdrawalEnabled ? 'bg-blue-600' : 'bg-slate-300'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAutoWithdrawalEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+        </div>
 
+        <div className="bg-[#FFF7ED] rounded-[14px] p-[16px] border border-[#FED7AA] flex items-start gap-[12px]">
+          <Info className="text-[#7C2D12] shrink-0 mt-0.5" size={20} />
+          <div>
+            <h4 className="text-[14px] font-semibold text-[#7C2D12] leading-tight">Notice</h4>
+            <p className="text-[13px] text-[#7C2D12] mt-1 leading-snug">
+              These funds and others include only payments and orders from online orders processed through the Crevings platform.
+              <br/><br/>
+              Offline orders payments are settled directly with customers.
+            </p>
+          </div>
+        </div>
+      </div>
 
-            <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-center">
-                <CardContent className="p-6">
-                    <Trophy className="h-10 w-10 text-green-600 mx-auto mb-2" />
-                    <h3 className="text-lg font-bold text-green-700 dark:text-green-300">Leaderboard</h3>
-                    <p className="text-sm text-green-600/80 dark:text-green-400/80 mt-1 mb-4">See how you rank against other restaurant partners in your city!</p>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => toast({ title: "Coming Soon!", description: "This feature will be available in a future update."})}>View Leaderboard</Button>
-                </CardContent>
-            </Card>
+      {/* Filters & Month Selector */}
+      <div className="space-y-4 lg:col-span-1">
+        {/* Month Selector */}
+        <div className="bg-white rounded-[16px] p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+          <button 
+            onClick={handlePrevMonth}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="flex flex-col items-center">
+            <div className="flex items-center gap-2">
+              <Calendar size={16} className="text-blue-600" />
+              <span className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                {formatMonthYear(currentMonthDate)}
+              </span>
+            </div>
+            <span className="text-xs text-slate-500 mt-1">
+              Sales & Deductions Report
+            </span>
+          </div>
+          <button 
+            onClick={handleNextMonth}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
 
-            <Card>
-              <CardHeader>
-                  <CardTitle className="text-lg">Earning & Deduction Guide</CardTitle>
-                  <CardDescription>Understand the terms used in your earnings breakdown.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="revenue">
-                          <AccordionTrigger>Revenue Types</AccordionTrigger>
-                          <AccordionContent className="space-y-2 text-muted-foreground">
-                              <p><strong>Delivery Revenue:</strong> Earnings from orders delivered by Crevings.</p>
-                              <p><strong>Online Takeaway Revenue:</strong> Earnings from orders placed online by customers for pickup.</p>
-                              <p><strong>Dine-in Revenue:</strong> This order is processed through Crevings for dine-in and booking.</p>
-                              <p><strong>Booking Charges:</strong> Fees collected for advance table reservations.</p>
-                              <p><strong>Offline/Walk-in Revenue:</strong> Revenue from orders placed manually in the app for walk-in customers.</p>
-                          </AccordionContent>
-                      </AccordionItem>
-                      <AccordionItem value="deductions">
-                          <AccordionTrigger>Deduction Types</AccordionTrigger>
-                          <AccordionContent className="space-y-2 text-muted-foreground">
-                              <p><strong>GST on Delivery:</strong> We charge 5% GST from the customer on behalf of the restaurant.</p>
-                              <p><strong>Refunds:</strong> Amount refunded to customers for order issues.</p>
-                              <p><strong>Ads Spend:</strong> The budget you've allocated for running promotions.</p>
-                              <p><strong>GST on Ads:</strong> Tax applicable on the advertising services.</p>
-                              <p><strong>Offline Cash Payment:</strong> This is an adjustment for orders where payment was collected by you directly (cash/offline) and not through the platform's payment gateway. This amount is deducted from your online earnings before payout.</p>
-                          </AccordionContent>
-                      </AccordionItem>
-                  </Accordion>
-              </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="analysis" className="mt-6 space-y-6">
-            <Card>
-                <CardHeader className="flex flex-col sm:flex-row items-center justify-between">
-                    <CardTitle className="text-lg">Today's Stats</CardTitle>
-                    <Select defaultValue="today">
-                        <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Select Period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="today">Today</SelectItem>
-                            <SelectItem value="yesterday">Yesterday</SelectItem>
-                            <SelectItem value="last7">Last 7 days</SelectItem>
-                            <SelectItem value="last15">Last 15 days</SelectItem>
-                            <SelectItem value="last30">Last 30 days</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <Card className="p-4 flex items-center gap-4 lg:col-span-3 bg-primary/5 dark:bg-primary/10 border-primary/20">
-                          <div className="p-3 rounded-full bg-background border bg-primary/10">
-                             <IndianRupee className={cn("h-6 w-6", "text-green-600")} />
-                          </div>
-                          <div>
-                              <p className="text-sm text-muted-foreground">Total Revenue</p>
-                              <p className={cn("text-2xl font-bold", "text-green-600")}>
-                                {totalRevenue < 1000
-                                    ? `₹${totalRevenue.toFixed(0)}`
-                                    : `₹${(totalRevenue / 1000).toFixed(1)}k`}
-                              </p>
-                          </div>
-                    </Card>
-                    <Card className="p-4 flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-background border">
-                            <Package className={cn("h-6 w-6", "text-blue-600")} />
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">Total Orders</p>
-                            <p className={cn("text-2xl font-bold", "text-blue-600")}>
-                                {totalOrdersCount}
-                            </p>
-                        </div>
-                    </Card>
-                     <Card className="p-4 flex items-center gap-4">
-                          <div className="p-3 rounded-full bg-background border">
-                             <Receipt className={cn("h-6 w-6", "text-red-600")} />
-                          </div>
-                          <div>
-                              <p className="text-sm text-muted-foreground">Total Refunds</p>
-                              <p className={cn("text-2xl font-bold", "text-red-600")}>
-                                {totalRefundsAmount < 1000
-                                    ? `₹${totalRefundsAmount.toFixed(0)}`
-                                    : `₹${(totalRefundsAmount / 1000).toFixed(1)}k`}
-                              </p>
-                          </div>
-                    </Card>
-                     <Card className="p-4 flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-background border">
-                                <Globe className={cn("h-6 w-6", "text-indigo-600")} />
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Online Orders</p>
-                                <p className={cn("text-2xl font-bold", "text-indigo-600")}>
-                                    {totalOnlineOrdersCount}
-                                </p>
-                            </div>
-                    </Card>
-                    <Card className="p-4 flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-background border">
-                                <WifiOff className={cn("h-6 w-6", "text-slate-600")} />
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Offline Orders</p>
-                                <p className={cn("text-2xl font-bold", "text-slate-600")}>
-                                    {totalOfflineOrdersCount}
-                                </p>
-                            </div>
-                    </Card>
-                </CardContent>
-                <CardContent className="px-4 pb-4">
-                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        {categoryStats.map((stat, index) => (
-                             <Card key={index} className="p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <stat.icon className={cn("h-4 w-4", stat.color)} />
-                                    <p className="text-sm font-semibold">{stat.label}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1 items-baseline">
-                                  <div>
-                                    <p className="text-lg font-bold">{stat.value}</p>
-                                    <p className="text-xs text-muted-foreground">Orders</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-lg font-bold flex items-center"><IndianRupee className="h-4 w-4" />{stat.revenue > 1000 ? `${(stat.revenue/1000).toFixed(1)}k` : stat.revenue.toFixed(0)}</p>
-                                    <p className="text-xs text-muted-foreground">Revenue</p>
-                                  </div>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
-        </TabsContent>
-      </Tabs>
+        {/* Filter Buttons */}
+        <div className="flex gap-[8px] overflow-x-auto no-scrollbar -mx-4 px-4">
+          {['Last 3 days', 'Last 7 days', 'Last 14 days', 'Last month'].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setSelectedFilter(filter)}
+              className={`h-[36px] px-[14px] rounded-[18px] text-[14px] font-medium whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 font-sans ${
+                selectedFilter === filter
+                  ? 'bg-[#EFF6FF] text-[#2563EB]' 
+                  : 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#374151]'
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Revenue Breakdown */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">Revenue Breakdown</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Where your money comes from</p>
+          </div>
+          <button className="text-slate-400 hover:text-slate-600">
+            <Filter size={18} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {stats.breakdown.map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${item.color}`}>
+                  <item.icon size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{item.percent} of total</p>
+                </div>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{item.amount}</p>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span className="text-sm font-medium text-slate-500">Gross Revenue</span>
+          <span className="text-lg font-bold text-slate-900">₹ {stats.totalRevenue.toLocaleString('en-IN')}.00</span>
+        </div>
+      </div>
+
+      {/* Deductions */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">Deductions</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Taxes, fees, and refunds</p>
+          </div>
+          <div className="flex items-center gap-1 text-rose-500 bg-rose-50 px-2 py-1 rounded-md text-xs font-medium">
+            <ArrowDownRight size={14} />
+            <span>8%</span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {stats.deductions.map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 border border-slate-100">
+                  <item.icon size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{item.sub}</p>
+                </div>
+              </div>
+              <p className="text-sm font-semibold text-rose-500">{item.amount}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span className="text-sm font-medium text-slate-500">Total Deductions</span>
+          <span className="text-lg font-bold text-rose-500">- ₹ {stats.totalDeductions.toLocaleString('en-IN')}.00</span>
+        </div>
+      </div>
+
+      {/* Recent Payouts */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-base font-semibold text-slate-900">Recent Payouts</h3>
+          <Link href="/earnings/history" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+            View All
+          </Link>
+        </div>
+
+        <div className="space-y-4">
+          {recentPayouts.map((payout, i) => (
+            <div key={i} className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                  payout.status === 'Processing' 
+                    ? 'bg-amber-50 text-amber-500' 
+                    : 'bg-emerald-50 text-emerald-500'
+                }`}>
+                  {payout.status === 'Processing' ? <Clock size={18} /> : <CheckCircle2 size={18} />}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{payout.amount}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{payout.date}</p>
+                </div>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                payout.status === 'Processing'
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                {payout.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          <HelpCircle size={20} className="text-blue-600" />
+          <h3 className="text-base font-semibold text-slate-900">Frequently Asked Questions</h3>
+        </div>
+        <div className="space-y-3">
+          {faqData.map((faq, index) => (
+            <div key={index} className="border border-slate-100 rounded-2xl overflow-hidden">
+              <button 
+                onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
+                className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors"
+              >
+                <span className="text-sm font-semibold text-slate-800 text-left pr-4">{faq.question}</span>
+                {expandedFaq === index ? <ChevronUp size={18} className="text-slate-500 flex-shrink-0" /> : <ChevronDown size={18} className="text-slate-500 flex-shrink-0" />}
+              </button>
+              {expandedFaq === index && (
+                <div className="p-4 bg-white text-sm text-slate-600 leading-relaxed border-t border-slate-100">
+                  {faq.answer}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Auto Withdrawal Confirm Modal */}
+      {showAutoWithdrawConfirm && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+          <div className="bg-[#FFFFFF] w-[90%] max-w-sm rounded-[24px] p-[24px] shadow-xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-[20px] font-bold text-[#111827] mb-2">
+              {pendingAutoWithdrawState ? 'Enable' : 'Disable'} Auto Withdrawal?
+            </h3>
+            <p className="text-[14px] text-[#6B7280] mb-6 leading-relaxed">
+              {pendingAutoWithdrawState 
+                ? 'Our team will automatically transfer your available funds to your bank account each day.' 
+                : 'You will need to manually send withdrawal requests to transfer funds to your bank account.'}
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowAutoWithdrawConfirm(false)}
+                className="flex-1 h-[52px] bg-slate-50 text-slate-700 rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setIsAutoWithdrawalEnabled(pendingAutoWithdrawState);
+                  setShowAutoWithdrawConfirm(false);
+                }}
+                className="flex-1 h-[52px] bg-[#2563EB] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
-
-    
-
-
+  );
 }
-
-    

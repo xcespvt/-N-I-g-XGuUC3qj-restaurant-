@@ -39,6 +39,11 @@ import {
   User,
   UtensilsCrossed,
   Wallet,
+  Home,
+  ShoppingBag,
+  RotateCcw,
+  UserCircle,
+  PieChart,
 } from 'lucide-react';
 
 import {
@@ -187,61 +192,41 @@ function AppLayoutClient({
     }
   }, [router, toast]);
 
-  const navGroups = [
-    // 📊 Dashboard
-    [
-      { href: "/dashboard", label: "Overview", icon: LayoutGrid }
-    ],
-
-    // 📦 Orders
-    [
-      {
-        href: "/orders",
-        label: "Active Orders",
-        icon: Package,
-        badge: newOrdersCount > 0 ? newOrdersCount.toString() : undefined
-      },
-      { href: "/order-history", label: "Order History", icon: History },
-      // { href: "/order-tracking", label: "Track Order", icon: PackageSearch },
-      { href: "/refunds", label: "Refunds", icon: RefreshCw }
-    ],
-
-    // 💰 Finance
-    [
-      { href: "/earnings", label: "Earnings", icon: Wallet },
-      // { href: "/subscription", label: "Subscription", icon: CreditCard }
-    ],
-
-    // 🍽️ Menu Management
-    [
-      { href: "/menu", label: "Menu", icon: Utensils },
-      { href: "/offers", label: "Offers", icon: Tag },
-      { href: "/promotions", label: "Marketing", icon: Megaphone }
-    ],
-
-    // 📈 Analytics
-    [
-      { href: "/analytics", label: "Analytics", icon: BarChart3, pro: true },
-    ],
-
-    // 🛠️ Operations
-    [
-      { href: "/bookings", label: "Table Management", icon: Table },
-      // { href: "/staff", label: "Staff", icon: Users },
-      { href: "/feedback", label: "Feedback", icon: MessageSquare }
-    ],
-
-    // 🏪 Store
-    [
-      { href: "/branches", label: "Branches", icon: Store }
-    ],
-
-    // 👤 Profile
-    [
-      { href: "/profile", label: "My Profile", icon: User },
-      // { href: "/settings", label: "Settings", icon: Settings }
-    ]
+  const navSections = [
+    {
+      title: "",
+      items: [
+        { href: "/dashboard", label: "Home", icon: Home },
+        { 
+          href: "/orders", 
+          label: "Orders", 
+          icon: ShoppingBag, 
+          badge: newOrdersCount > 0 ? newOrdersCount.toString() : undefined 
+        },
+        { href: "/refunds", label: "Refunds", icon: RotateCcw },
+        { href: "/bookings", label: "Tables", icon: LayoutGrid },
+        { href: "/menu", label: "Menu", icon: UtensilsCrossed },
+      ]
+    },
+    {
+      title: "Business & Growth",
+      items: [
+        { href: "/earnings", label: "Payout", icon: Wallet },
+        // { href: "/offers", label: "Create Offer", icon: Tag },
+        // { href: "/subscription", label: "Subscription", icon: CreditCard },
+        // { href: "/promotions", label: "Ads", icon: Megaphone },
+      ]
+    },
+    {
+      title: "Management",
+      items: [
+        { href: "/staff", label: "Staff Management", icon: Users },
+        { href: "/profile", label: "Customer Info", icon: UserCircle },
+        { href: "/analytics", label: "Analytics", icon: PieChart },
+      ]
+    }
   ];
+
   const bottomNav = [
     { href: "/settings", label: "Settings", icon: Settings },
     { href: "/help-support", label: "Help & Support", icon: HelpCircle },
@@ -251,8 +236,8 @@ function AppLayoutClient({
     <SidebarMenuItem key={item.href}>
       <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
         <Link href={item.href}>
-          <item.icon />
-          <span>{item.label}</span>
+          <item.icon className={pathname.startsWith(item.href) ? "text-primary" : "text-muted-foreground"} />
+          <span className={pathname.startsWith(item.href) ? "font-semibold text-primary" : ""}>{item.label}</span>
           {subscriptionPlan === 'Free' && (item as any).pro && <Lock className="ml-auto h-3.5 w-3.5 text-muted-foreground" />}
           {(item as any).badge && <span className="ml-auto bg-primary text-white text-xs font-semibold rounded-full px-2 py-0.5">{(item as any).badge}</span>}
         </Link>
@@ -264,32 +249,53 @@ function AppLayoutClient({
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader className="pt-[env(safe-area-inset-top)] bg-sidebar">
-          <div className="flex items-center gap-2 p-2">
-            <img src="/Image/CREVINGS FULL LOGO.Svg" alt="Crevings" className="h-32 w-auto mx-auto" />
+        <SidebarHeader className="pt-[env(safe-area-inset-top)] bg-sidebar border-b border-sidebar-border/50">
+          <div className="flex items-center gap-3 px-4 py-6">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+              <Store size={22} className="text-white" />
+            </div>
+            <span className="text-[20px] font-black text-slate-900 tracking-tight">Crevings</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {navGroups.map((group, index) => (
-              <React.Fragment key={index}>
-                {renderNavItems(group)}
-                {index < navGroups.length - 1 && <SidebarSeparator />}
-              </React.Fragment>
+          <div className="flex-1 overflow-y-auto no-scrollbar px-2 py-4">
+            {navSections.map((section, index) => (
+              <div key={index} className="mb-6">
+                {section.title && (
+                  <h3 className="px-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    {section.title}
+                  </h3>
+                )}
+                <SidebarMenu>
+                  {renderNavItems(section.items)}
+                </SidebarMenu>
+              </div>
             ))}
-          </SidebarMenu>
+          </div>
         </SidebarContent>
-        <SidebarFooter className="pb-[env(safe-area-inset-bottom)] bg-sidebar">
-          <SidebarSeparator />
-          <SidebarMenu>
+        <SidebarFooter className="pb-[env(safe-area-inset-bottom)] bg-sidebar p-4 border-t border-sidebar-border/50">
+          <SidebarMenu className="mb-2">
             {renderNavItems(bottomNav)}
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout} tooltip={"Logout"}>
-                <LogOut />
+              <SidebarMenuButton onClick={handleLogout} tooltip={"Logout"} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50/50">
+                <LogOut className="text-rose-500" />
                 <span>Logout</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
+          
+          <button 
+            onClick={() => router.push("/profile")}
+            className="w-full flex items-center gap-3 px-3 py-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all active:scale-[0.98] group mt-2"
+          >
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold group-hover:bg-primary/20 transition-colors text-sm">
+              GK
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-bold text-slate-900 truncate">Gourmet Kitchen</p>
+              <p className="text-[11px] text-slate-500 font-medium truncate">View Profile</p>
+            </div>
+          </button>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>

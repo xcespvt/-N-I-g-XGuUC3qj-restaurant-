@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast"
+import { v7 as uuidv7 } from 'uuid';
 
 // --- TYPE DEFINITIONS ---
 
@@ -209,9 +210,10 @@ interface AppContextType {
   updateTable: (table: Table) => void;
   deleteTable: (tableId: string) => void;
   
-  tableTypes: string[];
+  tableTypes: { name: string; id: string }[];
   addTableType: (name: string) => void;
-  deleteTableType: (name: string) => void;
+  deleteTableType: (id: string) => void;
+  setTableTypes: (types: { name: string; id: string }[]) => void;
 
   facilities: string[];
   updateFacilities: (facilities: string[]) => void;
@@ -262,7 +264,7 @@ interface AppContextType {
 
 const initialTables: Table[] = [];
 
-const initialTableTypes = ["Normal", "Couple", "Family", "Private", "Outdoor"];
+const initialTableTypes: { name: string; id: string }[] = [];
 
 
 const initialBranches: Branch[] = [];
@@ -320,7 +322,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const [tables, setTables] = useState<Table[]>(initialTables);
-  const [tableTypes, setTableTypes] = useState<string[]>(initialTableTypes);
+  const [tableTypes, setTableTypes] = useState<{ name: string; id: string }[]>(initialTableTypes);
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(null);
   const [feedback, setFeedback] = useState<Feedback[]>(initialFeedback);
@@ -542,9 +544,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
   const addTableType = useCallback((name: string) => {
     setTableTypes(prev => {
-        if (name && !prev.find(t => t.toLowerCase() === name.toLowerCase())) {
+        if (name && !prev.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+            const newType = { name, id: uuidv7() };
             toast({ title: "Table Type Added", description: `"${name}" has been added.` });
-            return [...prev, name];
+            return [...prev, newType];
         } else {
             toast({ variant: "destructive", title: "Type Exists", description: "This table type already exists." });
             return prev;
@@ -552,10 +555,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [toast]);
 
-  const deleteTableType = useCallback((name: string) => {
+  const deleteTableType = useCallback((id: string) => {
     setTableTypes(prev => {
-        toast({ title: "Table Type Removed", description: `"${name}" has been removed.`, variant: "destructive" });
-        return prev.filter(t => t !== name);
+        const typeToDelete = prev.find(t => t.id === id);
+        if (typeToDelete) {
+          toast({ title: "Table Type Removed", description: `"${typeToDelete.name}" has been removed.`, variant: "destructive" });
+        }
+        return prev.filter(t => t.id !== id);
     });
   }, [toast]);
 
@@ -750,6 +756,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     tableTypes,
     addTableType,
     deleteTableType,
+    setTableTypes,
     facilities,
     updateFacilities,
     serviceSettings,

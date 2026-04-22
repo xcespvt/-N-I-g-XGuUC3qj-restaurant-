@@ -612,16 +612,62 @@ const pruneUpdatePayload = (p: AddOfferPayload): AddOfferPayload => {
     setIsDeleteAlertOpen(true);
   };
 
+  // Delete offer mutation
+  const deleteOfferMutation = useMutationRequestDynamic<any, { offerId: string; title: string }>(
+    "DELETE",
+    (variables) => `/api/offers/offers/delete/${restaurantId}/${variables.offerId}`,
+    undefined,
+    {
+      onMutate: async (variables) => {
+        if (!restaurantId) return;
+        const keyExact = [
+          "offers",
+          restaurantId,
+          `${currentPage}`,
+          `${pageSize}`,
+          { page: currentPage, limit: pageSize },
+        ];
+        const prevData = apiOffersData as { data?: any[] } | undefined;
+        const prevList = (prevData as any)?.data as any[] | undefined;
+        const updatedList = (prevList ?? []).filter((item) => item.offerId !== variables.offerId);
+        const updated = { ...(prevData || {}), data: updatedList } as any;
+        set(keyExact as unknown as any[], updated);
+        return { previous: prevData, keyExact } as any;
+      },
+      onSuccess: (_data, variables) => {
+        if (restaurantId) invalidate(["offers", restaurantId, currentPage, pageSize]);
+        toast({
+          title: "Offer Deleted",
+          description: `"${variables.title}" has been removed.`,
+          variant: "destructive",
+        });
+        setIsDeleteAlertOpen(false);
+        setOfferToDelete(null);
+      },
+      onError: (_error, _variables, context: any) => {
+        try {
+          if (context?.keyExact && context?.previous) {
+            set(context.keyExact as unknown as any[], context.previous);
+          }
+        } catch {}
+        toast({
+          variant: "destructive",
+          title: "Couldn’t delete offer",
+          description: "Please try again.",
+        });
+      },
+    }
+  );
+
   const confirmDelete = () => {
-    if (offerToDelete) {
-      setOffers(offers.filter((o) => o.id !== offerToDelete.id));
+    if (offerToDelete && restaurantId) {
+      deleteOfferMutation.mutate({ offerId: offerToDelete.id, title: offerToDelete.title });
+    } else if (!restaurantId) {
       toast({
-        title: "Offer Deleted",
-        description: `The offer "${offerToDelete.title}" has been deleted.`,
         variant: "destructive",
+        title: "Restaurant ID Missing",
+        description: "Please select a valid branch.",
       });
-      setIsDeleteAlertOpen(false);
-      setOfferToDelete(null);
     }
   };
 

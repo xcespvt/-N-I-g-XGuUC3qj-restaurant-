@@ -3,6 +3,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   IndianRupee,
   ShoppingBag,
@@ -21,6 +22,13 @@ import {
   Table,
   PlusCircle,
   PenSquare,
+  Store,
+  Wallet,
+  RefreshCw,
+  Globe,
+  ArrowRight,
+  Plus,
+  BellRing,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -231,7 +239,7 @@ export default function Dashboard() {
     selectedBranch,
     branches,
     setBranches,
-    toggleBranchOnlineStatus,
+    refunds,
   } = useAppStore();
 
   const [newOrder, setNewOrder] = useState<Order | null>(null);
@@ -239,138 +247,55 @@ export default function Dashboard() {
   const [isAlertPlaying, setIsAlertPlaying] = useState<boolean>(false);
   const { toast } = useToast();
   const [alertAudio, setAlertAudio] = useState<HTMLAudioElement | null>(null);
+  const [activeOrderTab, setActiveOrderTab] = useState<'Delivery' | 'Dine-in' | 'Takeaway'>('Delivery');
+  const router = useRouter();
 
-  // Get the current branch object
   const currentBranch = branches.find(b => b.id === selectedBranch);
 
-  // API mutation for toggling branch online status
-  type ToggleOnlineVariables = { isOnline: boolean };
-  type ToggleOnlineResponse = {
-    success: boolean;
-    message: string;
-    data: {
-      id: string;
-      isOnline: boolean;
-      name: string;
-    }
-  };
-
-  const toggleOnlineMutation = useMutationRequestDynamic<
-    ToggleOnlineResponse,
-    ToggleOnlineVariables
-  >(
+  // API mutations (restored from previous implementation)
+  const toggleOnlineMutation = useMutationRequestDynamic<any, any>(
     "PATCH",
-    (variables) => `/api/branches/${currentBranch?.restaurantId || selectedBranch}/toggle-online`,
+    () => `/api/branches/${currentBranch?.restaurantId || selectedBranch}/toggle-online`,
     undefined,
     {
-      onSuccess: (response, variables) => {
-        // SET the state to the exact value from API, don't toggle
+      onSuccess: (response) => {
         const newIsOnline = response.data.isOnline;
         setRestaurantOnline(newIsOnline);
-
-        // Also update the branch's isOnline status in the store
         if (currentBranch) {
-          const updatedBranch = { ...currentBranch, isOnline: newIsOnline };
-          // Update the branches array to reflect the new status
-          setBranches(branches.map(b =>
-            b.id === selectedBranch ? updatedBranch : b
-          ));
+          setBranches(branches.map(b => b.id === selectedBranch ? { ...b, isOnline: newIsOnline } : b));
         }
-
-        toast({
-          title: newIsOnline ? "Branch is now Online" : "Branch is now Offline",
-          description: response.message || `You are now ${newIsOnline ? 'accepting' : 'not accepting'} new orders.`,
-        });
-
-        if (newIsOnline) {
-          // You are now online. Future real orders will show up here.
-          setNewOrder(null); 
-        } else {
-          setNewOrder(null);
-        }
-      },
-      onError: (error) => {
-        toast({
-          title: "Failed to update status",
-          description: error.message || "Could not toggle branch online status. Please try again.",
-          variant: "destructive",
-        });
-      },
+        toast({ title: newIsOnline ? "Branch is now Online" : "Branch is now Offline" });
+      }
     }
   );
 
-  // API mutation for toggling rush hour status
-  type ToggleRushHourVariables = { isRushHour: boolean };
-  type ToggleRushHourResponse = {
-    success: boolean;
-    message: string;
-    data: {
-      id: string;
-      isRushHour: boolean;
-      name: string;
-    }
-  };
-
-  const toggleRushHourMutation = useMutationRequestDynamic<
-    ToggleRushHourResponse,
-    ToggleRushHourVariables
-  >(
+  const toggleRushHourMutation = useMutationRequestDynamic<any, any>(
     "PATCH",
-    (variables) => `/api/branches/${currentBranch?.restaurantId || selectedBranch}/rush-hour`,
+    () => `/api/branches/${currentBranch?.restaurantId || selectedBranch}/rush-hour`,
     undefined,
     {
-      onSuccess: (response, variables) => {
-        // SET the state to the exact value from API, don't toggle
+      onSuccess: (response) => {
         const newIsRushHour = response.data.isRushHour;
         setBusy(newIsRushHour);
-
-        // Also update the branch's isRushHour status in the store
         if (currentBranch) {
-          const updatedBranch = { ...currentBranch, isRushHour: newIsRushHour };
-          // Update the branches array to reflect the new status
-          setBranches(branches.map(b =>
-            b.id === selectedBranch ? updatedBranch : b
-          ));
+          setBranches(branches.map(b => b.id === selectedBranch ? { ...b, isRushHour: newIsRushHour } : b));
         }
-
-        toast({
-          title: newIsRushHour ? "Rush Hour Enabled" : "Rush Hour Disabled",
-          description: response.message || `Rush hour mode is now ${newIsRushHour ? 'enabled' : 'disabled'}.`,
-        });
-      },
-      onError: (error) => {
-        toast({
-          title: "Failed to update rush hour",
-          description: error.message || "Could not toggle rush hour status. Please try again.",
-          variant: "destructive",
-        });
-      },
+        toast({ title: newIsRushHour ? "Rush Hour Enabled" : "Rush Hour Disabled" });
+      }
     }
   );
 
-
-  // Initialize audio object once
   useEffect(() => {
     const sound = new Audio("/audio/NEW_ORDER_ALERT_SOUND.mp3");
     sound.loop = true;
     sound.volume = 1.0;
-    sound.preload = "auto";
     setAlertAudio(sound);
   }, []);
 
-  // Reactively play/stop when new orders appear/disappear
   useEffect(() => {
     if (!alertAudio) return;
     if (newOrder) {
-      console.log(alertAudio)
-      alertAudio.currentTime = 0;
-      alertAudio
-        .play()
-        .then(() => setIsAlertPlaying(true))
-        .catch((err) => {
-          console.warn("New-order alert play failed:", err);
-          setIsAlertPlaying(false);
-        });
+      alertAudio.play().then(() => setIsAlertPlaying(true)).catch(() => setIsAlertPlaying(false));
     } else {
       alertAudio.pause();
       alertAudio.currentTime = 0;
@@ -378,18 +303,30 @@ export default function Dashboard() {
     }
   }, [newOrder, alertAudio]);
 
-  const handleDecline = () => {
-    setNewOrder(null);
-    if (alertAudio) {
-      alertAudio.pause();
-      alertAudio.currentTime = 0;
-      setIsAlertPlaying(false);
-    }
-  };
+  const activeOrders = useMemo(() => {
+    return orders.filter(o => 
+      !["Delivered", "Cancelled", "Rejected"].includes(o.status) && 
+      (activeOrderTab === 'Dine-in' ? (o.type === 'Dine-in') : o.type === activeOrderTab)
+    );
+  }, [orders, activeOrderTab]);
 
-  const handleAccept = (order: Order) => {
-    setOrderToAccept(order);
-  };
+  const stats = useMemo(() => {
+    const revenue = orders.reduce((acc, o) => acc + o.total, 0);
+    const online = orders.filter(o => o.source === 'Online').length;
+    const offline = orders.filter(o => o.source === 'Offline').length;
+    return [
+      { label: 'REVENUE', val: `₹${revenue.toLocaleString()}`, color: 'text-blue-500', bg: 'bg-rose-50', icon: Wallet },
+      { label: 'REFUNDS', val: `₹${refunds.reduce((acc, r) => acc + r.amount, 0)}`, color: 'text-red-500', bg: 'bg-red-50', icon: RefreshCw },
+      { label: 'TOTAL ORDERS', val: orders.length.toString(), color: 'text-indigo-500', bg: 'bg-emerald-50', icon: ShoppingBag },
+      { label: 'ONLINE ORDERS', val: online.toString(), color: 'text-blue-500', bg: 'bg-blue-50', icon: Globe },
+      { label: 'OFFLINE ORDERS', val: offline.toString(), color: 'text-amber-500', bg: 'bg-amber-50', icon: Store }
+    ];
+  }, [orders, refunds]);
+
+  const tableStats = useMemo(() => {
+    const occupied = tables.filter(t => t.status === 'Occupied').length;
+    return { occupied, available: tables.length - occupied };
+  }, [tables]);
 
   const handleConfirmPrepTime = (time: string) => {
     if (!orderToAccept) return;
@@ -403,187 +340,182 @@ export default function Dashboard() {
       title: "Order Accepted!",
       description: `${orderToAccept.id} has been accepted with a prep time of ${time}.`,
     });
-    if (alertAudio) {
-      alertAudio.pause();
-      alertAudio.currentTime = 0;
-      setIsAlertPlaying(false);
-    }
   };
-
-  const handleToggleOnline = (isOnline: boolean) => {
-    // Trigger the API mutation
-    toggleOnlineMutation.mutate({ isOnline });
-  };
-
-  const handleToggleRushHour = (isRushHour: boolean) => {
-    // Trigger the API mutation
-    toggleRushHourMutation.mutate({ isRushHour });
-  };
-
-  const {
-    deliveryOrders,
-    takeawayOrders,
-    dineInOrders,
-    tableStats,
-  } = useMemo(() => {
-    const active = orders.filter(
-      (o) => !["Delivered", "Cancelled", "Rejected"].includes(o.status)
-    );
-
-    const delivery = active.filter((o) => o.type === "Delivery");
-    const takeaway = active.filter(o => o.type === 'Takeaway');
-    const dineIn = active.filter(
-      (o) =>
-        o.type === "Dine-in" &&
-        !o.items.some((item) => item.category === "Booking")
-    );
-
-    const occupiedTables = tables.filter(t => t.status === 'Occupied').length;
-    const availableTables = tables.length - occupiedTables;
-
-    return {
-      deliveryOrders: delivery,
-      takeawayOrders: takeaway,
-      dineInOrders: dineIn,
-      tableStats: {
-        occupied: occupiedTables,
-        available: availableTables,
-        total: tables.length,
-      }
-    };
-  }, [orders, tables]);
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
-      <h1 className="text-2xl font-semibold md:text-3xl">Dashboard</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/50">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base">You are Online</CardTitle>
-              <CardDescription className="text-xs">
-                {toggleOnlineMutation.isPending ? "Updating..." : "Accepting new orders"}
-              </CardDescription>
-              {isAlertPlaying && (
-                <p className="text-xs text-primary mt-1">Playing new-order alert…</p>
-              )}
-            </div>
-            <Switch
-              checked={isRestaurantOnline}
-              onCheckedChange={handleToggleOnline}
-              disabled={toggleOnlineMutation.isPending}
-            />
-          </CardHeader>
-        </Card>
-        <Card
-          className={cn(
-            "transition-colors",
-            isBusy &&
-            "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50"
-          )}
-        >
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle
-                className={cn(
-                  "text-base",
-                  isBusy && "text-red-700 dark:text-red-300"
-                )}
-              >
-                Rush Hour
-              </CardTitle>
-              <CardDescription
-                className={cn(
-                  "text-xs",
-                  isBusy && "text-red-600/80 dark:text-red-400/80"
-                )}
-              >
-                {toggleRushHourMutation.isPending ? "Updating..." : "Manage high order volume"}
-              </CardDescription>
-            </div>
-            <Switch
-              checked={isBusy}
-              onCheckedChange={handleToggleRushHour}
-              disabled={!isRestaurantOnline || toggleRushHourMutation.isPending}
-            />
-          </CardHeader>
-        </Card>
+    <div className="pb-44 space-y-10 animate-in fade-in duration-700 bg-white md:bg-transparent lg:pb-10">
+      
+      {/* Restaurant Info Card (Mobile) */}
+      <div className="h-[80px] rounded-[18px] p-[16px] bg-[#FFFFFF] border border-[#E5E7EB] flex items-center gap-4 shadow-sm md:hidden">
+        <div className="w-[48px] h-[48px] rounded-[12px] bg-[#F3F4F6] flex items-center justify-center shrink-0">
+          <Store size={24} className="text-slate-600" />
+        </div>
+        <div className="flex flex-col justify-center">
+          <h2 className="text-[17px] font-bold text-slate-900 leading-tight">{currentBranch?.name || "Crevings"}</h2>
+          <p className="text-[13px] text-[#6B7280] leading-tight mt-0.5">{currentBranch?.address || "HSR Layout"}</p>
+        </div>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <PenSquare className="h-5 w-5" />
-            Manual Orders
-          </CardTitle>
-          <CardDescription className="text-xs mt-1">
-            Manually create orders for walk-in customers or offline scenarios.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 flex flex-col gap-2">
-          <Button asChild variant="ghost" className="w-full justify-between p-4 h-auto">
-            <Link href="/takeaway?type=takeaway">
-              <div className="flex items-center gap-3">
-                <ShoppingBag className="h-6 w-6 text-primary" />
-                <div>
-                  <p className="font-semibold text-base text-left">New Takeaway</p>
-                  <p className="text-xs text-muted-foreground text-left">For walk-in customers</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </Link>
-          </Button>
-          <Separator />
-          <Button asChild variant="ghost" className="w-full justify-between p-4 h-auto">
-            <Link href="/takeaway?type=dine-in">
-              <div className="flex items-center gap-3">
-                <UtensilsCrossed className="h-6 w-6 text-primary" />
-                <div>
-                  <p className="font-semibold text-base text-left">New Dine-in</p>
-                  <p className="text-xs text-muted-foreground text-left">For customers at a table</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users2 className="h-5 w-5" />
-            Table Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-4 text-center">
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <p className="text-2xl font-bold text-red-600">{tableStats.occupied}</p>
-            <p className="text-xs text-muted-foreground">Occupied</p>
+      <div className="flex flex-col-reverse lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0 gap-10">
+        <div className="lg:col-span-8 space-y-10">
+          
+          {/* Active Orders Section */}
+          <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[14px] font-black text-slate-900 tracking-tighter uppercase">Active Orders</h3>
+              <Link href="/order-history" className="text-[10px] font-bold text-[#2563EB] uppercase tracking-widest hover:opacity-80 transition-opacity">View All</Link>
+            </div>
+
+            <div className="flex p-1 bg-[#F3F4F6] rounded-full mb-8">
+               {(['Delivery', 'Dine-in', 'Takeaway'] as const).map(tab => (
+                 <button 
+                  key={tab}
+                  onClick={() => setActiveOrderTab(tab)}
+                  className={`flex-1 py-3 rounded-full text-[13px] font-bold transition-all duration-300 ${
+                    activeOrderTab === tab 
+                    ? 'bg-white text-[#2563EB] shadow-sm scale-[1.02]' 
+                    : 'text-[#6B7280] hover:text-slate-900'
+                  }`}
+                 >
+                    {tab}
+                 </button>
+               ))}
+            </div>
+
+            {activeOrders.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {activeOrders.map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
+              </div>
+            ) : (
+              <div className="py-24 text-center bg-slate-50/50 rounded-[32px] border border-slate-200 border-dashed">
+                 <div className="w-14 h-14 bg-white border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
+                    <ShoppingBag size={24} />
+                 </div>
+                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">No Active {activeOrderTab} Orders</p>
+                 <p className="text-[10px] font-bold text-slate-300 mt-2 tracking-wide">New incoming orders will appear here automatically</p>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="lg:col-span-4 space-y-8">
+          
+          {/* Operational Controls (Added to Dashboard for easy access) */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className={cn("border-none shadow-sm", isRestaurantOnline ? "bg-blue-50/50" : "bg-slate-50")}>
+              <CardHeader className="p-4 space-y-0 flex flex-row items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Status</p>
+                  <p className={cn("text-xs font-bold", isRestaurantOnline ? "text-[#2563EB]" : "text-slate-500")}>
+                    {isRestaurantOnline ? "Online" : "Offline"}
+                  </p>
+                </div>
+                <Switch 
+                  checked={isRestaurantOnline} 
+                  onCheckedChange={(val) => toggleOnlineMutation.mutate({ isOnline: val })}
+                  disabled={toggleOnlineMutation.isPending}
+                />
+              </CardHeader>
+            </Card>
+            <Card className={cn("border-none shadow-sm", isBusy ? "bg-rose-50/50" : "bg-slate-50")}>
+              <CardHeader className="p-4 space-y-0 flex flex-row items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Rush Hour</p>
+                  <p className={cn("text-xs font-bold", isBusy ? "text-rose-600" : "text-slate-500")}>
+                    {isBusy ? "Active" : "Normal"}
+                  </p>
+                </div>
+                <Switch 
+                  checked={isBusy} 
+                  onCheckedChange={(val) => toggleRushHourMutation.mutate({ isRushHour: val })}
+                  disabled={toggleRushHourMutation.isPending}
+                />
+              </CardHeader>
+            </Card>
           </div>
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <p className="text-2xl font-bold text-green-600">{tableStats.available}</p>
-            <p className="text-xs text-muted-foreground">Available</p>
-          </div>
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <p className="text-2xl font-bold">{tableStats.total}</p>
-            <p className="text-xs text-muted-foreground">Total Tables</p>
-          </div>
-        </CardContent>
-        <CardContent className="px-4 pb-4">
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <Link href="/bookings">
-              Go to Table Management
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+
+          {/* Table Management Section */}
+          <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+               <h3 className="text-[14px] font-black text-slate-900 tracking-tighter uppercase">Table Status</h3>
+               <Link href="/bookings" className="text-[10px] font-bold text-[#2563EB] uppercase tracking-widest">Manage</Link>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+               <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
+                  <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest mb-1">Available</p>
+                  <p className="text-3xl font-black text-emerald-600">{tableStats.available}</p>
+               </div>
+               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+                  <p className="text-[10px] font-black text-blue-600/60 uppercase tracking-widest mb-1">Occupied</p>
+                  <p className="text-3xl font-black text-blue-600">{tableStats.occupied}</p>
+               </div>
+            </div>
+          </section>
+
+          {/* Quick Stats (Desktop) */}
+          <section className="hidden lg:block bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+             <h3 className="text-[14px] font-black text-slate-900 tracking-tighter uppercase">Market Overview</h3>
+             <div className="space-y-4">
+               {stats.map((stat, idx) => {
+                 const Icon = stat.icon;
+                 return (
+                  <div key={idx} className="flex items-center gap-4 p-3.5 rounded-2xl border border-slate-50 bg-slate-50/30 transition-all hover:bg-slate-50">
+                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm", stat.bg)}>
+                      <Icon size={20} className={stat.color} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{stat.label}</p>
+                      <p className="text-[20px] font-black text-slate-900 leading-none">{stat.val}</p>
+                    </div>
+                    <ArrowRight size={16} className="text-slate-300" />
+                  </div>
+                 );
+               })}
+             </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-24 right-6 flex flex-col gap-4 z-50">
+        <button 
+          onClick={() => {
+            const orderId = `ORD-${Math.floor(Math.random() * 1000)}`;
+            setNewOrder({
+              id: orderId,
+              customer: "Test Customer",
+              status: "New",
+              type: "Delivery",
+              total: 549,
+              items: [{ id: 1, name: "Test Pizza", quantity: 1, price: 549, category: "Pizza" }],
+              customerDetails: { name: "Test", address: "HSR Layout", phone: "123", email: "a@b.com" },
+              payment: { method: "Online", status: "Paid" },
+              date: new Date().toISOString(),
+              time: new Date().toLocaleTimeString(),
+              prepTime: "20 min"
+            });
+          }}
+          className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-slate-900/40 active:scale-95 transition-all"
+        >
+          <BellRing size={24} />
+        </button>
+        <button 
+          onClick={() => router.push("/takeaway")}
+          className="h-14 bg-[#2563EB] text-white rounded-2xl px-6 flex items-center justify-center gap-3 shadow-2xl shadow-blue-600/40 active:scale-95 transition-all"
+        >
+          <Plus size={24} />
+          <span className="text-[14px] font-black uppercase tracking-widest">Create Order</span>
+        </button>
+      </div>
 
       {newOrder && (
         <NewIncomingOrderCard
           order={newOrder}
-          onDecline={handleDecline}
-          onAccept={handleAccept}
+          onDecline={() => setNewOrder(null)}
+          onAccept={(order) => setOrderToAccept(order)}
         />
       )}
 
@@ -595,74 +527,6 @@ export default function Dashboard() {
           onConfirm={handleConfirmPrepTime}
         />
       )}
-
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold">Active Orders</h2>
-        <Tabs defaultValue="delivery" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="delivery" className="flex items-center gap-2">
-              <Truck className="h-4 w-4" />
-              Delivery
-              <Badge variant="secondary" className="ml-1">
-                {deliveryOrders.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="takeaway" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Takeaway
-              <Badge variant="secondary" className="ml-1">
-                {takeawayOrders.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="dine-in" className="flex items-center gap-2">
-              <UtensilsCrossed className="h-4 w-4" />
-              Dine-in
-              <Badge variant="secondary" className="ml-1">
-                {dineInOrders.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="delivery" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-              {deliveryOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-              {deliveryOrders.length === 0 && (
-                <div className="text-center py-16 text-muted-foreground col-span-full">
-                  <Truck className="h-12 w-12 mx-auto mb-2" />
-                  <p>No active delivery orders at the moment.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="takeaway" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-              {takeawayOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-              {takeawayOrders.length === 0 && (
-                <div className="text-center py-16 text-muted-foreground col-span-full">
-                  <Package className="h-12 w-12 mx-auto mb-2" />
-                  <p>No active takeaway orders at the moment.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="dine-in" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-              {dineInOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-              {dineInOrders.length === 0 && (
-                <div className="text-center py-16 text-muted-foreground col-span-full">
-                  <UtensilsCrossed className="h-12 w-12 mx-auto mb-2" />
-                  <p>No active dine-in orders at the moment.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
     </div>
   );
 }

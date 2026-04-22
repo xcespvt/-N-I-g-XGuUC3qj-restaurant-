@@ -10,6 +10,7 @@ export interface Table {
   capacity: number;
   status: 'Available' | 'Occupied';
   type: string;
+  tableTypeId?: string;
 }
 
 export interface Branch {
@@ -188,7 +189,7 @@ interface AppStore {
   menuItems: MenuItem[];
   categories: string[];
   tables: Table[];
-  tableTypes: string[];
+  tableTypes: { name: string; id: string }[];
   bookings: Booking[];
   pendingBooking: PendingBooking | null;
   feedback: Feedback[];
@@ -229,8 +230,8 @@ interface AppStore {
   setTables: (tables: Table[]) => void;
 
   addTableType: (name: string) => void;
-  deleteTableType: (name: string) => void;
-  setTableTypes: (types: string[]) => void;
+  deleteTableType: (id: string) => void;
+  setTableTypes: (types: { name: string; id: string }[]) => void;
 
   updateFacilities: (facilities: string[]) => void;
 
@@ -279,7 +280,7 @@ export const useAppStore = create<AppStore>()(
       menuItems: [],
       categories: ["All"],
       tables: [],
-      tableTypes: ["Normal"],
+      tableTypes: [],
       bookings: [],
       pendingBooking: null,
       feedback: [],
@@ -557,27 +558,15 @@ export const useAppStore = create<AppStore>()(
       },
 
       addTableType: (name: string) => {
-        const currentTypes = get().tableTypes;
-        if (name && !currentTypes.find(t => t.toLowerCase() === name.toLowerCase())) {
-          set((state) => ({
-            tableTypes: [...state.tableTypes, name]
-          }));
-          get().showToast("Table Type Added", `"${name}" has been added.`);
-        } else {
-          get().showToast("Type Exists", "This table type already exists.", 'destructive');
-        }
+        const { v7: uuidv7 } = require('uuid');
+        set((state) => ({ tableTypes: [...state.tableTypes, { name, id: uuidv7() }] }));
       },
 
-      deleteTableType: (name: string) => {
-        set((state) => ({
-          tableTypes: state.tableTypes.filter(t => t !== name)
-        }));
-        get().showToast("Table Type Removed", `"${name}" has been removed.`, 'destructive');
+      deleteTableType: (id: string) => {
+        set((state) => ({ tableTypes: state.tableTypes.filter(t => t.id !== id) }));
       },
 
-      setTableTypes: (types: string[]) => {
-        set({ tableTypes: types });
-      },
+      setTableTypes: (types: { name: string; id: string }[]) => set({ tableTypes: types }),
 
       updateFacilities: (newFacilities: string[]) => {
         set({ facilities: newFacilities });
