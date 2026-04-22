@@ -89,7 +89,7 @@ export function MenuItemCard({
               disabled={!isRestaurantOnline}
               className={cn(
                 "w-[34px] h-[18px] rounded-full p-[2px] transition-all duration-300 relative shrink-0",
-                item.available ? "bg-[#2563EB]" : "bg-slate-300",
+                item.available ? "bg-[#1E90FF]" : "bg-slate-300",
                 !isRestaurantOnline && "opacity-50 grayscale"
               )}
             >
@@ -103,4 +103,4 @@ export function MenuItemCard({
       </div>
     </div>
   );
-}
+}

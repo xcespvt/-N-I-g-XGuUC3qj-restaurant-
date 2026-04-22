@@ -14,6 +14,18 @@ const config: Config = {
         heading: ["var(--font-heading)", "sans-serif"],
       },
       colors: {
+        blue: {
+          50: '#E6F4FF',
+          100: '#E6F4FF', // Using same light shade for consistency
+          200: '#BAE0FF',
+          300: '#91D5FF',
+          400: '#40A9FF',
+          500: '#1E90FF',
+          600: '#1E90FF', // Map 600 to 1E90FF since it's frequently used
+          700: '#007FFF',
+          800: '#006FDF',
+          900: '#004F9F',
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
 

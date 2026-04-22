@@ -11,6 +11,8 @@ export interface Table {
   status: 'Available' | 'Occupied';
   type: string;
   tableTypeId?: string;
+  section?: string;
+  floor?: string;
 }
 
 export interface Branch {
@@ -28,8 +30,8 @@ export interface Branch {
   status: "Active" | "Inactive";
   isOnline: boolean;
   isRushHour?: boolean;
-  // Optional backend identifier for API integrations
   restaurantId?: string;
+  floors?: { floorId: string; name: string }[];
 }
 
 export interface OrderItem {
@@ -43,6 +45,7 @@ export interface OrderItem {
 export type OrderStatus = "Incoming" | "New" | "Preparing" | "Cooking" | "Ready" | "Delivered" | "Cancelled" | "Rejected";
 
 export interface Order {
+  [x: string]: number;
   id: string;
   customer: string;
   time: string;
@@ -265,6 +268,7 @@ interface AppStore {
   setSubscriptionPlan: (plan: SubscriptionPlan) => void;
 
   setBookings: (bookings: Booking[]) => void;
+  updateBranchFloors: (branchId: string, floors: { floorId: string; name: string }[]) => void;
   // Toast function for notifications
   showToast: (title: string, description?: string, variant?: 'default' | 'destructive') => void;
 }
@@ -277,8 +281,99 @@ export const useAppStore = create<AppStore>()(
       branches: [],
       selectedBranch: "",
       orders: [],
-      menuItems: [],
-      categories: ["All"],
+      menuItems: [
+        {
+          id: 1,
+          name: "Margherita Pizza",
+          description: "Classic tomato and mozzarella",
+          price: 199,
+          category: "Pizza",
+          image: "https://images.unsplash.com/photo-1574071318508-1cdbad80ad38?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Veg"
+        },
+        {
+          id: 2,
+          name: "Farmhouse Pizza",
+          description: "Mushroom, corn, tomato, onion",
+          price: 399,
+          category: "Pizza",
+          image: "https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Veg"
+        },
+        {
+          id: 3,
+          name: "Peppy Paneer Pizza",
+          description: "Paneer, capsicum, red paprika",
+          price: 459,
+          category: "Pizza",
+          image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Veg"
+        },
+        {
+          id: 4,
+          name: "Chicken Tikka Pizza",
+          description: "Spiced chicken tikka and onion",
+          price: 499,
+          category: "Pizza",
+          image: "https://images.unsplash.com/photo-1594007654729-407eedc4be65?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Non-Veg"
+        },
+        {
+          id: 5,
+          name: "French Fries",
+          description: "Crispy golden fries",
+          price: 129,
+          category: "Sides",
+          image: "https://images.unsplash.com/photo-1630384066252-19e1ed95536a?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Veg"
+        },
+        {
+          id: 6,
+          name: "Garlic Breadsticks",
+          description: "Freshly baked garlic bread",
+          price: 149,
+          category: "Sides",
+          image: "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Veg"
+        },
+        {
+          id: 7,
+          name: "Coke 500ml",
+          description: "Chilled coca cola",
+          price: 60,
+          category: "Beverages",
+          image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Veg"
+        },
+        {
+          id: 8,
+          name: "Iced Tea",
+          description: "Lemon flavoured iced tea",
+          price: 90,
+          category: "Beverages",
+          image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Veg"
+        },
+        {
+          id: 9,
+          name: "Family Combo",
+          description: "2 Medium Pizzas + 2 Sides + 1L Drink",
+          price: 999,
+          category: "Combos",
+          image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=800&auto=format&fit=crop",
+          available: true,
+          dietaryType: "Veg"
+        }
+      ],
+      categories: ["All", "Pizza", "Sides", "Beverages", "Combos"],
       tables: [],
       tableTypes: [],
       bookings: [],
@@ -436,7 +531,7 @@ export const useAppStore = create<AppStore>()(
         }));
       },
 
-      addOrder: (cart: TakeawayCartItem[], customerName: string, customerPhone: string) => {
+      addOrder: (cart: TakeawayCartItem[], customerName: string, customerPhone: string, orderType: 'takeaway' | 'dine-in', table: string | undefined, prepTime: string, paymentStatus: 'Paid' | 'On Hold', paymentMethod: string) => {
         const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
         const newOrder: Order = {
           id: `ORD-${(get().orders.length + 1).toString().padStart(3, '0')}`,
@@ -444,7 +539,7 @@ export const useAppStore = create<AppStore>()(
           time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
           date: new Date().toISOString().split('T')[0],
           status: 'Preparing',
-          type: 'Takeaway',
+          type: orderType === 'takeaway' ? 'Takeaway' : 'Dine-in',
           source: 'Offline',
           items: cart.map(cartItem => ({
             id: cartItem.id,
@@ -453,22 +548,29 @@ export const useAppStore = create<AppStore>()(
             price: cartItem.price,
             category: cartItem.category,
           })),
-          prepTime: '15 min',
+          prepTime: prepTime || '15 min',
           total: subtotal * 1.18,
           customerDetails: {
             name: customerName || 'Walk-in Customer',
-            address: 'Takeaway Counter',
+            address: orderType === 'takeaway' ? 'Takeaway Counter' : `Table: ${table || 'N/A'}`,
             phone: customerPhone || 'N/A',
             email: 'N/A'
           },
           payment: {
-            method: 'Offline',
-            status: 'Paid'
+            method: paymentMethod || 'Offline',
+            status: paymentStatus || 'Paid'
           },
-          pickupOtp: Math.floor(100000 + Math.random() * 900000).toString(),
+          pickupOtp: orderType === 'takeaway' ? Math.floor(100000 + Math.random() * 900000).toString() : undefined,
         };
         set((state) => ({
-          orders: [newOrder, ...state.orders]
+          orders: [newOrder, ...state.orders],
+          takeawayCart: [] // Clear cart after order
+        }));
+      },
+
+      updateBranchFloors: (branchId: string, floors: { floorId: string; name: string }[]) => {
+        set((state) => ({
+          branches: state.branches.map(b => b.id === branchId ? { ...b, floors } : b)
         }));
       },
 

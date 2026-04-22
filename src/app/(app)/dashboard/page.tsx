@@ -363,7 +363,7 @@ export default function Dashboard() {
           <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[14px] font-black text-slate-900 tracking-tighter uppercase">Active Orders</h3>
-              <Link href="/order-history" className="text-[10px] font-bold text-[#2563EB] uppercase tracking-widest hover:opacity-80 transition-opacity">View All</Link>
+              <Link href="/order-history" className="text-[10px] font-bold text-[#1E90FF] uppercase tracking-widest hover:opacity-80 transition-opacity">View All</Link>
             </div>
 
             <div className="flex p-1 bg-[#F3F4F6] rounded-full mb-8">
@@ -373,7 +373,7 @@ export default function Dashboard() {
                   onClick={() => setActiveOrderTab(tab)}
                   className={`flex-1 py-3 rounded-full text-[13px] font-bold transition-all duration-300 ${
                     activeOrderTab === tab 
-                    ? 'bg-white text-[#2563EB] shadow-sm scale-[1.02]' 
+                    ? 'bg-white text-[#1E90FF] shadow-sm scale-[1.02]' 
                     : 'text-[#6B7280] hover:text-slate-900'
                   }`}
                  >
@@ -408,7 +408,7 @@ export default function Dashboard() {
               <CardHeader className="p-4 space-y-0 flex flex-row items-center justify-between">
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Status</p>
-                  <p className={cn("text-xs font-bold", isRestaurantOnline ? "text-[#2563EB]" : "text-slate-500")}>
+                  <p className={cn("text-xs font-bold", isRestaurantOnline ? "text-[#1E90FF]" : "text-slate-500")}>
                     {isRestaurantOnline ? "Online" : "Offline"}
                   </p>
                 </div>
@@ -440,7 +440,7 @@ export default function Dashboard() {
           <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-6">
                <h3 className="text-[14px] font-black text-slate-900 tracking-tighter uppercase">Table Status</h3>
-               <Link href="/bookings" className="text-[10px] font-bold text-[#2563EB] uppercase tracking-widest">Manage</Link>
+               <Link href="/bookings" className="text-[10px] font-bold text-[#1E90FF] uppercase tracking-widest">Manage</Link>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
@@ -504,7 +504,7 @@ export default function Dashboard() {
         </button>
         <button 
           onClick={() => router.push("/takeaway")}
-          className="h-14 bg-[#2563EB] text-white rounded-2xl px-6 flex items-center justify-center gap-3 shadow-2xl shadow-blue-600/40 active:scale-95 transition-all"
+          className="h-14 bg-[#1E90FF] text-white rounded-2xl px-6 flex items-center justify-center gap-3 shadow-2xl shadow-blue-600/40 active:scale-95 transition-all"
         >
           <Plus size={24} />
           <span className="text-[14px] font-black uppercase tracking-widest">Create Order</span>

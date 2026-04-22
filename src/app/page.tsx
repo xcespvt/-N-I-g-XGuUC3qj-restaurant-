@@ -65,14 +65,14 @@ const WelcomeScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-[1000] bg-[#2563EB] flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${
+      className={`fixed inset-0 z-[1000] bg-[#1E90FF] flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${
         isFadingOut
           ? "opacity-0 scale-105 blur-sm"
           : "opacity-100 animate-in fade-in duration-700"
       }`}
     >
       <div className="flex flex-col items-center gap-6 animate-in zoom-in-95 duration-1000">
-        <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center text-[#2563EB] shadow-2xl shadow-blue-900/30">
+        <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center text-[#1E90FF] shadow-2xl shadow-blue-900/30">
           <Flame size={48} fill="currentColor" />
         </div>
         <div className="text-center space-y-2">
@@ -228,10 +228,10 @@ function LoginContent() {
       <div className="fixed inset-0 z-[500] bg-white/40 lg:bg-slate-50/40 backdrop-blur-[2px] flex flex-col lg:flex-row font-sans overflow-hidden lg:items-center lg:justify-center">
       {/* Desktop Left Side - Brand & Features */}
       
-      <div className="hidden lg:flex lg:flex-1 lg:h-full lg:bg-[#2563EB] lg:relative lg:flex-col lg:p-16 lg:justify-center lg:overflow-hidden">
+      <div className="hidden lg:flex lg:flex-1 lg:h-full lg:bg-[#1E90FF] lg:relative lg:flex-col lg:p-16 lg:justify-center lg:overflow-hidden">
         <div className="relative z-10 space-y-12 max-w-xl">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#2563EB] shadow-lg">
+            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#1E90FF] shadow-lg">
               <Flame size={24} fill="currentColor" />
             </div>
             <span className="text-2xl font-black text-white tracking-tight">
@@ -299,12 +299,12 @@ function LoginContent() {
       {/* Main Login Container */}
       <div className="flex-1 flex flex-col bg-white/90 lg:max-w-[500px] lg:h-full lg:shadow-2xl lg:relative lg:z-20 backdrop-blur-sm shadow-xl border-l border-slate-200/50">
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center animate-in fade-in duration-700 lg:px-12">
-          <div className="w-16 h-16 bg-[#2563EB] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-600/20 mb-6 lg:mb-8">
+          <div className="w-16 h-16 bg-[#1E90FF] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-600/20 mb-6 lg:mb-8">
             <Flame size={32} fill="currentColor" />
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-[1.1] mb-4 lg:text-5xl lg:mb-6">
             The operating system for your{" "}
-            <span className="text-[#2563EB]">Restaurant</span>
+            <span className="text-[#1E90FF]">Restaurant</span>
           </h1>
           <p className="text-[16px] text-slate-500 font-medium lg:text-lg lg:leading-relaxed">
             Manage orders, track growth, and scale your business from one
@@ -318,7 +318,7 @@ function LoginContent() {
             <div className="space-y-4 animate-in fade-in duration-300">
               <button
                 onClick={() => setView("input")}
-                className="w-full h-14 bg-[#2563EB] text-white rounded-xl font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all shadow-sm hover:brightness-110"
+                className="w-full h-14 bg-[#1E90FF] text-white rounded-xl font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all shadow-sm hover:brightness-110"
               >
                 Login
               </button>
@@ -346,7 +346,7 @@ function LoginContent() {
                 </h3>
               </div>
 
-              <div className="flex items-center h-14 border border-slate-200 rounded-xl overflow-hidden focus-within:border-[#2563EB] focus-within:ring-1 focus-within:ring-[#2563EB] bg-slate-50 focus-within:bg-white transition-all">
+              <div className="flex items-center h-14 border border-slate-200 rounded-xl overflow-hidden focus-within:border-[#1E90FF] focus-within:ring-1 focus-within:ring-[#1E90FF] bg-slate-50 focus-within:bg-white transition-all">
                 <div className="flex items-center gap-2 px-4 border-r border-slate-200 bg-slate-50 h-full">
                   <img
                     src="https://flagcdn.com/w20/in.png"
@@ -379,7 +379,7 @@ function LoginContent() {
                 <button
                   onClick={() => phoneNumber.length === 10 && setView("otp")}
                   disabled={phoneNumber.length < 10}
-                  className={`flex-1 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all ${phoneNumber.length === 10 ? "bg-[#2563EB] text-white active:scale-[0.98] hover:brightness-110" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
+                  className={`flex-1 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all ${phoneNumber.length === 10 ? "bg-[#1E90FF] text-white active:scale-[0.98] hover:brightness-110" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
                 >
                   Continue
                 </button>
@@ -429,8 +429,8 @@ function LoginContent() {
                         otpError
                         ? "border-rose-300 bg-rose-50 text-rose-600"
                         : digit
-                          ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
-                          : "border-slate-200 bg-slate-50 focus:border-[#2563EB] focus:bg-white"
+                          ? "border-[#1E90FF] bg-blue-50 text-[#1E90FF]"
+                          : "border-slate-200 bg-slate-50 focus:border-[#1E90FF] focus:bg-white"
                     }`}
                   />
                 ))}
@@ -454,7 +454,7 @@ function LoginContent() {
                   disabled={otp.join("").length < 6 || isVerifying}
                   className={`flex-1 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all ${
                     otp.join("").length === 6 && !isVerifying
-                      ? "bg-[#2563EB] text-white active:scale-[0.98] hover:brightness-110"
+                      ? "bg-[#1E90FF] text-white active:scale-[0.98] hover:brightness-110"
                       : "bg-slate-200 text-slate-400 cursor-not-allowed"
                   }`}
                 >
@@ -494,9 +494,9 @@ function LoginContent() {
               <div className="space-y-3">
                 <button
                   onClick={() => setView("email-otp-input")}
-                  className="w-full p-4 border border-slate-200 rounded-xl flex items-center gap-4 hover:border-[#2563EB] hover:bg-blue-50/50 transition-all active:scale-[0.98] text-left lg:p-6"
+                  className="w-full p-4 border border-slate-200 rounded-xl flex items-center gap-4 hover:border-[#1E90FF] hover:bg-blue-50/50 transition-all active:scale-[0.98] text-left lg:p-6"
                 >
-                  <div className="w-12 h-12 rounded-full bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0 lg:w-14 lg:h-14">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 text-[#1E90FF] flex items-center justify-center shrink-0 lg:w-14 lg:h-14">
                     <ShieldCheck size={24} />
                   </div>
                   <div>
@@ -511,7 +511,7 @@ function LoginContent() {
 
                 <button
                   onClick={() => setView("email-password-step1")}
-                  className="w-full p-4 border border-slate-200 rounded-xl flex items-center gap-4 hover:border-[#2563EB] hover:bg-blue-50/50 transition-all active:scale-[0.98] text-left lg:p-6"
+                  className="w-full p-4 border border-slate-200 rounded-xl flex items-center gap-4 hover:border-[#1E90FF] hover:bg-blue-50/50 transition-all active:scale-[0.98] text-left lg:p-6"
                 >
                   <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 lg:w-14 lg:h-14">
                     <KeyRound size={24} />
@@ -543,7 +543,7 @@ function LoginContent() {
                 </h3>
               </div>
 
-              <div className="flex items-center h-14 border border-slate-200 rounded-xl px-4 focus-within:border-[#2563EB] focus-within:ring-1 focus-within:ring-[#2563EB] bg-slate-50 focus-within:bg-white transition-all">
+              <div className="flex items-center h-14 border border-slate-200 rounded-xl px-4 focus-within:border-[#1E90FF] focus-within:ring-1 focus-within:ring-[#1E90FF] bg-slate-50 focus-within:bg-white transition-all">
                 <Mail size={20} className="text-slate-400 mr-3" />
                 <input
                   type="email"
@@ -566,7 +566,7 @@ function LoginContent() {
                   disabled={!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || isVerifying}
                   className={`flex-1 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all ${
                     email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !isVerifying
-                      ? "bg-[#2563EB] text-white active:scale-[0.98] hover:brightness-110"
+                      ? "bg-[#1E90FF] text-white active:scale-[0.98] hover:brightness-110"
                       : "bg-slate-200 text-slate-400 cursor-not-allowed"
                   }`}
                 >
@@ -613,8 +613,8 @@ function LoginContent() {
                         otpError
                         ? "border-rose-300 bg-rose-50 text-rose-600"
                         : digit
-                          ? "border-[#2563EB] bg-blue-50 text-[#2563EB]"
-                          : "border-slate-200 bg-slate-50 focus:border-[#2563EB] focus:bg-white"
+                          ? "border-[#1E90FF] bg-blue-50 text-[#1E90FF]"
+                          : "border-slate-200 bg-slate-50 focus:border-[#1E90FF] focus:bg-white"
                     }`}
                   />
                 ))}
@@ -638,7 +638,7 @@ function LoginContent() {
                   disabled={otp.join("").length < 6 || isVerifying}
                   className={`flex-1 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all ${
                     otp.join("").length === 6 && !isVerifying
-                      ? "bg-[#2563EB] text-white active:scale-[0.98] hover:brightness-110"
+                      ? "bg-[#1E90FF] text-white active:scale-[0.98] hover:brightness-110"
                       : "bg-slate-200 text-slate-400 cursor-not-allowed"
                   }`}
                 >
@@ -670,7 +670,7 @@ function LoginContent() {
                 </h3>
               </div>
 
-              <div className="flex items-center h-14 border border-slate-200 rounded-xl px-4 focus-within:border-[#2563EB] focus-within:ring-1 focus-within:ring-[#2563EB] bg-slate-50 focus-within:bg-white transition-all">
+              <div className="flex items-center h-14 border border-slate-200 rounded-xl px-4 focus-within:border-[#1E90FF] focus-within:ring-1 focus-within:ring-[#1E90FF] bg-slate-50 focus-within:bg-white transition-all">
                 <Mail size={20} className="text-slate-400 mr-3" />
                 <input
                   type="email"
@@ -693,7 +693,7 @@ function LoginContent() {
                   disabled={!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
                   className={`flex-1 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all ${
                     email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-                      ? "bg-[#2563EB] text-white active:scale-[0.98] hover:brightness-110"
+                      ? "bg-[#1E90FF] text-white active:scale-[0.98] hover:brightness-110"
                       : "bg-slate-200 text-slate-400 cursor-not-allowed"
                   }`}
                 >
@@ -722,7 +722,7 @@ function LoginContent() {
                 <span className="font-bold text-slate-900">{email}</span>
               </p>
 
-              <div className="flex items-center h-14 border border-slate-200 rounded-xl px-4 focus-within:border-[#2563EB] focus-within:ring-1 focus-within:ring-[#2563EB] bg-slate-50 focus-within:bg-white transition-all">
+              <div className="flex items-center h-14 border border-slate-200 rounded-xl px-4 focus-within:border-[#1E90FF] focus-within:ring-1 focus-within:ring-[#1E90FF] bg-slate-50 focus-within:bg-white transition-all">
                 <Lock size={20} className="text-slate-400 mr-3" />
                 <input
                   type={showPassword ? "text" : "password"}
@@ -733,7 +733,7 @@ function LoginContent() {
                 />
                 <button
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-[13px] font-semibold text-[#2563EB] ml-3"
+                  className="text-[13px] font-semibold text-[#1E90FF] ml-3"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
@@ -759,7 +759,7 @@ function LoginContent() {
                     password.length >= 6 &&
                     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
                     !isVerifying
-                      ? "bg-[#2563EB] text-white active:scale-[0.98] hover:brightness-110"
+                      ? "bg-[#1E90FF] text-white active:scale-[0.98] hover:brightness-110"
                       : "bg-slate-200 text-slate-400 cursor-not-allowed"
                   }`}
                 >
@@ -779,14 +779,14 @@ function LoginContent() {
               <br />
               <Link
                 href="#"
-                className="text-[#2563EB] hover:underline font-medium"
+                className="text-[#1E90FF] hover:underline font-medium"
               >
                 Terms of Service
               </Link>{" "}
               and{" "}
               <Link
                 href="#"
-                className="text-[#2563EB] hover:underline font-medium"
+                className="text-[#1E90FF] hover:underline font-medium"
               >
                 Privacy Policy
               </Link>

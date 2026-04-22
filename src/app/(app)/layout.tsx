@@ -60,10 +60,11 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BranchSwitcher } from "@/components/branch-switcher";
 import { useAppStore } from "@/context/useAppStore";
 import { NotificationBell } from "@/components/notification-bell";
 import { BottomNav } from "@/components/bottom-nav";
+import { Header } from "@/components/Header";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import dynamic from 'next/dynamic';
 import { useGet } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
@@ -113,7 +114,9 @@ function AppLayoutClient({
   const pathname = usePathname();
   const { toast } = useToast();
   const router = useRouter();
-  const { subscriptionPlan, orders, setBranches } = useAppStore();
+  const { subscriptionPlan, orders, setBranches, activeBranch, branches } = useAppStore();
+  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+  const [isOnline, setIsOnline] = React.useState(true);
 
   type ApiBranch = {
     _id: string;
@@ -166,6 +169,7 @@ function AppLayoutClient({
         isOnline: b.isOnline ?? !!b.isActive,
         isRushHour: b.isRushHour ?? false,
         restaurantId: b.branchId || b._id,
+        floors: (b as any).floors ?? [],
       }));
       setBranches(mapped);
     }
@@ -300,24 +304,32 @@ function AppLayoutClient({
       </Sidebar>
       <SidebarInset>
         {/* 3. FIXED: The Main Header fix from the previous step */}
-        <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
-          <div className="flex h-16 items-center gap-2 px-4 sm:px-6">
+        <Header 
+          title={
+            navSections.flatMap(s => s.items).concat(bottomNav).find(item => pathname.startsWith(item.href))?.label || 'Dashboard'
+          }
+          isOnline={isOnline}
+          onToggleOnline={() => setIsOnline(!isOnline)}
+          onProfileClick={() => setIsProfileModalOpen(true)}
+          onNotificationClick={() => {}}
+        >
+          <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden" />
-            <div className="hidden md:block">
-              <BranchSwitcher />
-            </div>
-            <div className="flex-1" />
-            <div className="flex items-center gap-1 sm:gap-2">
-              <ThemeToggle />
-              <NotificationBell />
-            </div>
           </div>
-        </header>
+        </Header>
+
+        <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
+          <DialogContent className="max-w-4xl h-[85vh] p-0 overflow-hidden rounded-2xl">
+            <DialogHeader className="p-4 border-b shrink-0 bg-white shadow-sm z-10 hidden">
+              <DialogTitle>Restaurant Profile</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 w-full h-full relative">
+              <iframe src="/profile" className="w-full h-full border-0 absolute inset-0" />
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <main className="flex-1 p-4 sm:px-6 pb-20 md:pb-6">
-          <div className="md:hidden mb-4">
-            <BranchSwitcher />
-          </div>
           {children}
         </main>
       </SidebarInset>

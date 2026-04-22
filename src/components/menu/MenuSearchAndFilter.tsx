@@ -81,7 +81,7 @@ export function MenuSearchAndFilter({
             onClick={onToggleListening}
             className={cn(
               "absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-all",
-              isListening ? "text-red-500 animate-pulse bg-red-50" : "text-[#2563EB] hover:bg-blue-50"
+              isListening ? "text-red-500 animate-pulse bg-red-50" : "text-[#1E90FF] hover:bg-blue-50"
             )}
           >
             <Mic size={20} />
@@ -92,7 +92,7 @@ export function MenuSearchAndFilter({
         <div className="flex gap-2 shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-[#2563EB] text-white px-6 h-[52px] rounded-[14px] active:scale-[0.98] transition-all font-semibold shadow-lg shadow-blue-100">
+              <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-[#1E90FF] text-white px-6 h-[52px] rounded-[14px] active:scale-[0.98] transition-all font-semibold shadow-lg shadow-blue-100">
                 <Plus size={20} /> <span>Add New</span>
               </button>
             </DropdownMenuTrigger>
@@ -110,7 +110,7 @@ export function MenuSearchAndFilter({
       <div className="flex gap-[10px] overflow-x-auto no-scrollbar pb-2 -mx-6 px-6 lg:mx-0 lg:px-0 lg:flex-wrap">
         <button 
           onClick={onOpenCategoryDialog}
-          className="h-[38px] px-4 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 bg-[#EFF6FF] text-[#2563EB] flex items-center gap-1.5 hover:bg-blue-100 border border-transparent shadow-sm"
+          className="h-[38px] px-4 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 bg-[#E6F4FF] text-[#1E90FF] flex items-center gap-1.5 hover:bg-blue-100 border border-transparent shadow-sm"
         >
           <Plus size={18} />
           <span>Add Category</span>
@@ -122,7 +122,7 @@ export function MenuSearchAndFilter({
           className={cn(
             "h-[38px] px-5 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 border shadow-sm",
             activeCategory === "All" 
-              ? "bg-[#EFF6FF] text-[#2563EB] border-blue-200" 
+              ? "bg-[#E6F4FF] text-[#1E90FF] border-blue-200" 
               : "bg-white border-[#E5E7EB] text-[#374151] hover:border-slate-300"
           )}
         >
@@ -139,7 +139,7 @@ export function MenuSearchAndFilter({
               className={cn(
                 "h-[38px] px-5 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 border shadow-sm",
                 activeCategory === cat 
-                  ? "bg-[#EFF6FF] text-[#2563EB] border-blue-200" 
+                  ? "bg-[#E6F4FF] text-[#1E90FF] border-blue-200" 
                   : "bg-white border-[#E5E7EB] text-[#374151] hover:border-slate-300"
               )}
             >
@@ -151,4 +151,4 @@ export function MenuSearchAndFilter({
       </div>
     </div>
   );
-}
+}

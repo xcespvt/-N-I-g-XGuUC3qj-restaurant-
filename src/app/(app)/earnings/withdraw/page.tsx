@@ -84,7 +84,7 @@ export default function WithdrawPage() {
             <button 
               onClick={() => setWithdrawStep('confirm')}
               disabled={!withdrawAmount || Number(withdrawAmount) <= 0 || Number(withdrawAmount) > walletBalance}
-              className="w-full h-[52px] bg-[#2563EB] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-[52px] bg-[#1E90FF] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next Step
             </button>
@@ -111,7 +111,7 @@ export default function WithdrawPage() {
               </button>
               <button 
                 onClick={handleWithdraw}
-                className="h-[52px] bg-[#2563EB] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
+                className="h-[52px] bg-[#1E90FF] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
               >
                 Confirm
               </button>

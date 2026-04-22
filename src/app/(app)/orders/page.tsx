@@ -49,10 +49,10 @@ export default function OrdersPage() {
           placeholder="Search Order ID or Customer..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full h-[52px] bg-white border border-[#E5E7EB] text-[#111827] py-4 pl-12 pr-12 rounded-[16px] focus:outline-none focus:border-[#2563EB] text-[15px] font-medium transition-all shadow-sm"
+          className="w-full h-[52px] bg-white border border-[#E5E7EB] text-[#111827] py-4 pl-12 pr-12 rounded-[16px] focus:outline-none focus:border-[#1E90FF] text-[15px] font-medium transition-all shadow-sm"
         />
         <Mic 
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#2563EB] cursor-pointer" 
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#1E90FF] cursor-pointer" 
           size={20} 
           onClick={() => setShowVoiceSearch(true)}
         />
@@ -72,7 +72,7 @@ export default function OrdersPage() {
             onClick={() => setActiveOrderTab(tab)}
             className={`h-[36px] px-[14px] rounded-[18px] text-[14px] font-medium whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 ${
               activeOrderTab === tab 
-                ? 'bg-[#EFF6FF] text-[#2563EB] border-[#EFF6FF]' 
+                ? 'bg-[#E6F4FF] text-[#1E90FF] border-[#E6F4FF]' 
                 : 'bg-white border border-[#E5E7EB] text-[#374151]'
             }`}
           >

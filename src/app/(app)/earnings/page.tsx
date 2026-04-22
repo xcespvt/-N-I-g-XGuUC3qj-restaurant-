@@ -166,7 +166,7 @@ export default function EarningsPage() {
 
         <Link href="/earnings/withdraw" className="block">
           <button 
-            className="w-full h-[52px] bg-[#2563EB] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
+            className="w-full h-[52px] bg-[#1E90FF] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
           >
             Withdraw Funds
           </button>
@@ -255,7 +255,7 @@ export default function EarningsPage() {
               onClick={() => setSelectedFilter(filter)}
               className={`h-[36px] px-[14px] rounded-[18px] text-[14px] font-medium whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 font-sans ${
                 selectedFilter === filter
-                  ? 'bg-[#EFF6FF] text-[#2563EB]' 
+                  ? 'bg-[#E6F4FF] text-[#1E90FF]' 
                   : 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#374151]'
               }`}
             >
@@ -423,7 +423,7 @@ export default function EarningsPage() {
                   setIsAutoWithdrawalEnabled(pendingAutoWithdrawState);
                   setShowAutoWithdrawConfirm(false);
                 }}
-                className="flex-1 h-[52px] bg-[#2563EB] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
+                className="flex-1 h-[52px] bg-[#1E90FF] text-[#FFFFFF] rounded-[16px] font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all"
               >
                 Confirm
               </button>
