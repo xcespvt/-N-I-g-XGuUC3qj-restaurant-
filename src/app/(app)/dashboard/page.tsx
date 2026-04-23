@@ -4,6 +4,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   IndianRupee,
   ShoppingBag,
@@ -29,6 +30,7 @@ import {
   ArrowRight,
   Plus,
   BellRing,
+  CheckCircle2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -345,16 +347,7 @@ export default function Dashboard() {
   return (
     <div className="pb-44 space-y-10 animate-in fade-in duration-700 bg-white md:bg-transparent lg:pb-10">
       
-      {/* Restaurant Info Card (Mobile) */}
-      <div className="h-[80px] rounded-[18px] p-[16px] bg-[#FFFFFF] border border-[#E5E7EB] flex items-center gap-4 shadow-sm md:hidden">
-        <div className="w-[48px] h-[48px] rounded-[12px] bg-[#F3F4F6] flex items-center justify-center shrink-0">
-          <Store size={24} className="text-slate-600" />
-        </div>
-        <div className="flex flex-col justify-center">
-          <h2 className="text-[17px] font-bold text-slate-900 leading-tight">{currentBranch?.name || "Crevings"}</h2>
-          <p className="text-[13px] text-[#6B7280] leading-tight mt-0.5">{currentBranch?.address || "HSR Layout"}</p>
-        </div>
-      </div>
+
 
       <div className="flex flex-col-reverse lg:grid lg:grid-cols-12 lg:gap-8 lg:space-y-0 gap-10">
         <div className="lg:col-span-8 space-y-10">
@@ -527,6 +520,8 @@ export default function Dashboard() {
           onConfirm={handleConfirmPrepTime}
         />
       )}
+
+
     </div>
   );
 }

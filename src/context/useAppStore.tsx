@@ -45,7 +45,6 @@ export interface OrderItem {
 export type OrderStatus = "Incoming" | "New" | "Preparing" | "Cooking" | "Ready" | "Delivered" | "Cancelled" | "Rejected";
 
 export interface Order {
-  [x: string]: number;
   id: string;
   customer: string;
   time: string;
