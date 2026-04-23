@@ -64,7 +64,7 @@ import { useAppStore } from "@/context/useAppStore";
 import { NotificationBell } from "@/components/notification-bell";
 import { BottomNav } from "@/components/bottom-nav";
 import { Header } from "@/components/Header";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ProfileView } from "@/components/ProfileView";
 import dynamic from 'next/dynamic';
 import { useGet } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
@@ -318,16 +318,7 @@ function AppLayoutClient({
           </div>
         </Header>
 
-        <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
-          <DialogContent className="max-w-4xl h-[85vh] p-0 overflow-hidden rounded-2xl">
-            <DialogHeader className="p-4 border-b shrink-0 bg-white shadow-sm z-10 hidden">
-              <DialogTitle>Restaurant Profile</DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 w-full h-full relative">
-              <iframe src="/profile" className="w-full h-full border-0 absolute inset-0" />
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ProfileView isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
 
         <main className="flex-1 p-4 sm:px-6 pb-20 md:pb-6">
           {children}
