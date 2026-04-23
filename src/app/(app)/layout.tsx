@@ -302,8 +302,7 @@ function AppLayoutClient({
           </button>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        {/* 3. FIXED: The Main Header fix from the previous step */}
+      <SidebarInset className="h-screen flex flex-col overflow-hidden w-full">
         <Header 
           title={
             navSections.flatMap(s => s.items).concat(bottomNav).find(item => pathname.startsWith(item.href))?.label || 'Dashboard'
@@ -320,7 +319,7 @@ function AppLayoutClient({
 
         <ProfileView isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
 
-        <main className="flex-1 p-4 sm:px-6 pb-20 md:pb-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 no-scrollbar">
           {children}
         </main>
       </SidebarInset>
