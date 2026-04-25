@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 interface ProfileViewProps {
   isOpen: boolean;
   onClose: () => void;
+  onLogout?: () => void;
   restaurantName?: string;
   restaurantSlug?: string;
 }
@@ -28,6 +29,7 @@ interface ProfileViewProps {
 export const ProfileView: React.FC<ProfileViewProps> = ({
   isOpen,
   onClose,
+  onLogout,
   restaurantName = "Gourmet Kitchen",
   restaurantSlug = "gourmet-kitchen",
 }) => {
@@ -205,13 +207,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   icon: MenuSquare,
                   title: "Digital Menu",
                   desc: "Upload Menu Images & PDFs",
-                  path: '/menu',
+                  path: '/profile/digital-menu',
                 },
                 {
                   icon: Upload,
                   title: "Upload Banners",
                   desc: "Manage restaurant banners",
-                  path: '/profile/documents',
+                  path: '/profile/banners',
                 },
                 {
                   icon: Landmark,
@@ -235,7 +237,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   icon: Receipt,
                   title: "Custom Charges",
                   desc: "Packaging, taxes, service charge",
-                  path: '/settings',
+                  path: '/profile/custom-charges',
                 },
               ].map((item, i, arr) => (
                 <button
@@ -275,6 +277,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <button
               onClick={() => {
                 onClose();
+                onLogout?.();
               }}
               className="w-full h-[52px] bg-rose-50 text-rose-500 rounded-[16px] border border-rose-100 font-semibold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
             >

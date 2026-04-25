@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { Bell, User, Power, Plus, X } from 'lucide-react';
+import { useSidebar } from '@/components/ui/sidebar';
+import { useState } from 'react';
 
 interface HeaderProps {
   title?: string;
@@ -8,18 +9,20 @@ interface HeaderProps {
   isOnline: boolean;
   onToggleOnline: () => void;
   onCreateOrder?: () => void;
+  hideProfileAndNotificationOnMobile?: boolean;
 }
 
-export const Header: React.FC<HeaderProps & { children?: React.ReactNode }> = ({ 
+export const Header: React.FC<HeaderProps> = ({ 
   title = 'Dashboard',
   onProfileClick,
   onNotificationClick,
   isOnline, 
   onToggleOnline,
   onCreateOrder,
-  children
+  hideProfileAndNotificationOnMobile = false,
 }) => {
   const [showConfirm, setShowConfirm] = useState(false);
+  const { toggleSidebar, isMobile } = useSidebar();
 
   const handleToggleClick = () => {
     setShowConfirm(true);
@@ -32,15 +35,17 @@ export const Header: React.FC<HeaderProps & { children?: React.ReactNode }> = ({
 
   return (
     <>
-    <div className="p-2 lg:p-4 pb-0">
-      <header className="sticky top-2 lg:top-4 z-[60] bg-white flex items-center justify-between h-[72px] px-[12px] w-full max-w-md mx-auto lg:max-w-none lg:px-6 rounded-2xl border border-slate-200 shadow-sm lg:h-[80px]">
+    <div className={`${hideProfileAndNotificationOnMobile ? 'hidden lg:block' : 'block'} px-2 lg:px-6 lg:pt-4`}>
+      <header className="sticky top-0 z-[60] flex items-center justify-between h-[72px] w-full max-w-md mx-auto lg:max-w-none lg:h-[80px] lg:bg-white lg:border lg:border-slate-200 lg:shadow-sm lg:rounded-2xl lg:px-6 transition-all duration-300">
       
-      {/* Mobile Sidebar Trigger & Desktop Profile Icon */}
+      {/* Profile Icon triggers Sidebar */}
       <div className="flex items-center gap-3">
-        {children}
         <button 
-          onClick={onProfileClick}
-          className="w-[40px] h-[40px] rounded-full bg-[#F3F4F6] flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+          onClick={() => {
+            if (isMobile) toggleSidebar();
+            onProfileClick?.();
+          }}
+          className={`${hideProfileAndNotificationOnMobile ? 'hidden lg:flex' : 'flex'} w-[40px] h-[40px] rounded-full bg-[#F3F4F6] items-center justify-center shrink-0 active:scale-95 transition-transform`}
         >
           <User size={20} className="text-slate-600" />
         </button>
@@ -63,7 +68,7 @@ export const Header: React.FC<HeaderProps & { children?: React.ReactNode }> = ({
 
         <button
           onClick={handleToggleClick}
-          className={`w-[160px] lg:w-[200px] h-[48px] rounded-[24px] flex flex-col items-center justify-center active:scale-95 transition-all lg:static absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0 ${
+          className={`${hideProfileAndNotificationOnMobile ? 'hidden lg:flex' : 'flex'} w-[160px] lg:w-[200px] h-[48px] rounded-[24px] flex-col items-center justify-center active:scale-95 transition-all lg:static absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:translate-x-0 lg:translate-y-0 ${
             isOnline ? 'bg-[#DBEAFE]' : 'bg-[#F3F4F6]'
           }`}
         >
@@ -85,7 +90,7 @@ export const Header: React.FC<HeaderProps & { children?: React.ReactNode }> = ({
         {/* Notification Icon */}
         <button 
           onClick={onNotificationClick}
-          className="relative w-[40px] h-[40px] flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+          className={`${hideProfileAndNotificationOnMobile ? 'hidden lg:flex' : 'flex'} relative w-[40px] h-[40px] items-center justify-center shrink-0 active:scale-95 transition-transform`}
         >
           <Bell size={22} className="text-slate-700" />
           <span className="absolute top-[8px] right-[10px] w-2 h-2 bg-red-500 rounded-full border border-white"></span>

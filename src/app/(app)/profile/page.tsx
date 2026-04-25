@@ -420,15 +420,7 @@ export default function ProfilePage() {
                 iconBgColor="bg-green-50 dark:bg-green-900/20"
                 iconTextColor="text-green-600 dark:text-green-400"
               />
-              <SettingsCard
-                icon={Sparkles}
-                label="Facilities"
-                subLabel="AMENITIES & INFRASTRUCTURE"
-                href="/profile/facilities"
-                className="col-span-1 md:col-span-2"
-                iconBgColor="bg-blue-50 dark:bg-blue-900/20"
-                iconTextColor="text-blue-600 dark:text-blue-400"
-              />
+         
               <SettingsCard
                 icon={Wrench}
                 label="Services"

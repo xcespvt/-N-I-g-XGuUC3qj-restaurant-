@@ -31,6 +31,7 @@ import {
   Plus,
   BellRing,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -318,7 +319,7 @@ export default function Dashboard() {
     const offline = orders.filter(o => o.source === 'Offline').length;
     return [
       { label: 'REVENUE', val: `₹${revenue.toLocaleString()}`, color: 'text-blue-500', bg: 'bg-rose-50', icon: Wallet },
-      { label: 'REFUNDS', val: `₹${refunds.reduce((acc, r) => acc + r.amount, 0)}`, color: 'text-red-500', bg: 'bg-red-50', icon: RefreshCw },
+      { label: 'REFUND', val: `₹${refunds.reduce((acc, r) => acc + r.amount, 0)}`, color: 'text-red-500', bg: 'bg-red-50', icon: AlertCircle },
       { label: 'TOTAL ORDERS', val: orders.length.toString(), color: 'text-indigo-500', bg: 'bg-emerald-50', icon: ShoppingBag },
       { label: 'ONLINE ORDERS', val: online.toString(), color: 'text-blue-500', bg: 'bg-blue-50', icon: Globe },
       { label: 'OFFLINE ORDERS', val: offline.toString(), color: 'text-amber-500', bg: 'bg-amber-50', icon: Store }
@@ -327,7 +328,8 @@ export default function Dashboard() {
 
   const tableStats = useMemo(() => {
     const occupied = tables.filter(t => t.status === 'Occupied').length;
-    return { occupied, available: tables.length - occupied };
+    const booked = tables.filter(t => t.status === 'Booked').length;
+    return { occupied, booked, available: tables.length - occupied - booked };
   }, [tables]);
 
   const handleConfirmPrepTime = (time: string) => {
@@ -345,7 +347,21 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="pb-44 space-y-10 animate-in fade-in duration-700 bg-white md:bg-transparent lg:pb-10">
+    <div className="pb-44 px-6 pt-6 space-y-10 animate-in fade-in duration-700 bg-white relative lg:bg-transparent lg:p-0 lg:pb-10">
+      
+      {/* Restaurant Info Card */}
+      <div className="h-[80px] rounded-[18px] p-[16px] bg-[#FFFFFF] border border-[#E5E7EB] flex items-center gap-4 shadow-sm lg:hidden">
+        {/* Left: Icon Container */}
+        <div className="w-[48px] h-[48px] rounded-[12px] bg-[#F3F4F6] flex items-center justify-center shrink-0">
+          <Store size={24} className="text-slate-600" />
+        </div>
+        
+        {/* Center: Content */}
+        <div className="flex flex-col justify-center">
+          <h2 className="text-[16px] font-bold text-slate-900 leading-tight">{currentBranch?.name || "Domino's"}</h2>
+          <p className="text-[13px] text-[#6B7280] leading-tight mt-0.5">{currentBranch?.address || "HSR Layout"}</p>
+        </div>
+      </div>
       
 
 
@@ -353,20 +369,20 @@ export default function Dashboard() {
         <div className="lg:col-span-8 space-y-10">
           
           {/* Active Orders Section */}
-          <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-[14px] font-black text-slate-900 tracking-tighter uppercase">Active Orders</h3>
-              <Link href="/order-history" className="text-[10px] font-bold text-[#1E90FF] uppercase tracking-widest hover:opacity-80 transition-opacity">View All</Link>
+          <section className="bg-white lg:p-6 lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm">
+            <div className="flex items-center justify-between mb-5 px-1 lg:px-0">
+               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight leading-none uppercase">Active Orders</h3>
+               <Link href="/order-history" className="text-[10px] font-semibold text-[#007FFF] uppercase tracking-[0.1em] transition-colors hover:opacity-80">View All</Link>
             </div>
 
-            <div className="flex p-1 bg-[#F3F4F6] rounded-full mb-8">
+            <div className="flex p-1 bg-[#F3F4F6] rounded-full mb-6">
                {(['Delivery', 'Dine-in', 'Takeaway'] as const).map(tab => (
                  <button 
                   key={tab}
                   onClick={() => setActiveOrderTab(tab)}
-                  className={`flex-1 py-3 rounded-full text-[13px] font-bold transition-all duration-300 ${
+                  className={`flex-1 py-2.5 rounded-full text-[13px] font-semibold transition-all duration-300 ${
                     activeOrderTab === tab 
-                    ? 'bg-white text-[#1E90FF] shadow-sm scale-[1.02]' 
+                    ? 'bg-white text-[#2563EB] shadow-sm' 
                     : 'text-[#6B7280] hover:text-slate-900'
                   }`}
                  >
@@ -376,18 +392,18 @@ export default function Dashboard() {
             </div>
 
             {activeOrders.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
                 {activeOrders.map((order) => (
                   <OrderCard key={order.id} order={order} />
                 ))}
               </div>
             ) : (
-              <div className="py-24 text-center bg-slate-50/50 rounded-[32px] border border-slate-200 border-dashed">
-                 <div className="w-14 h-14 bg-white border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
-                    <ShoppingBag size={24} />
+              <div className="py-20 text-center bg-white rounded-[32px] border border-slate-200 border-dashed">
+                 <div className="w-12 h-12 bg-white border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-200">
+                    <ShoppingBag size={20} />
                  </div>
-                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">No Active {activeOrderTab} Orders</p>
-                 <p className="text-[10px] font-bold text-slate-300 mt-2 tracking-wide">New incoming orders will appear here automatically</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Active Orders</p>
+                 <p className="text-[9px] font-bold text-slate-300 mt-1">New orders will appear here</p>
               </div>
             )}
           </section>
@@ -395,78 +411,46 @@ export default function Dashboard() {
 
         <div className="lg:col-span-4 space-y-8">
           
-          {/* Operational Controls (Added to Dashboard for easy access) */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card className={cn("border-none shadow-sm", isRestaurantOnline ? "bg-blue-50/50" : "bg-slate-50")}>
-              <CardHeader className="p-4 space-y-0 flex flex-row items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Status</p>
-                  <p className={cn("text-xs font-bold", isRestaurantOnline ? "text-[#1E90FF]" : "text-slate-500")}>
-                    {isRestaurantOnline ? "Online" : "Offline"}
-                  </p>
-                </div>
-                <Switch 
-                  checked={isRestaurantOnline} 
-                  onCheckedChange={(val) => toggleOnlineMutation.mutate({ isOnline: val })}
-                  disabled={toggleOnlineMutation.isPending}
-                />
-              </CardHeader>
-            </Card>
-            <Card className={cn("border-none shadow-sm", isBusy ? "bg-rose-50/50" : "bg-slate-50")}>
-              <CardHeader className="p-4 space-y-0 flex flex-row items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Rush Hour</p>
-                  <p className={cn("text-xs font-bold", isBusy ? "text-rose-600" : "text-slate-500")}>
-                    {isBusy ? "Active" : "Normal"}
-                  </p>
-                </div>
-                <Switch 
-                  checked={isBusy} 
-                  onCheckedChange={(val) => toggleRushHourMutation.mutate({ isRushHour: val })}
-                  disabled={toggleRushHourMutation.isPending}
-                />
-              </CardHeader>
-            </Card>
-          </div>
 
-          {/* Table Management Section */}
-          <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-               <h3 className="text-[14px] font-black text-slate-900 tracking-tighter uppercase">Table Status</h3>
-               <Link href="/bookings" className="text-[10px] font-bold text-[#1E90FF] uppercase tracking-widest">Manage</Link>
+
+          {/* Tables Section */}
+          <section className="space-y-4 bg-white lg:p-6 lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm">
+            <div className="flex items-center justify-between px-1 lg:px-0">
+               <h3 className="text-[14px] font-bold text-slate-900 tracking-tight leading-none uppercase">Tables</h3>
+               <Link href="/bookings" className="text-[10px] font-semibold text-[#007FFF] uppercase tracking-[0.1em] transition-colors hover:opacity-80">View All</Link>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
-               <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
-                  <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest mb-1">Available</p>
-                  <p className="text-3xl font-black text-emerald-600">{tableStats.available}</p>
+            <div className="flex gap-3 px-1 lg:px-0 lg:flex-col">
+               <div className="flex-1 bg-emerald-50 border border-emerald-100 rounded-2xl p-3 flex flex-col items-center justify-center lg:flex-row lg:justify-between lg:px-5">
+                  <p className="text-[10px] font-semibold text-emerald-600/80 uppercase tracking-wider">Available</p>
+                  <p className="text-2xl font-bold text-emerald-600">{tableStats.available}</p>
                </div>
-               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
-                  <p className="text-[10px] font-black text-blue-600/60 uppercase tracking-widest mb-1">Occupied</p>
-                  <p className="text-3xl font-black text-blue-600">{tableStats.occupied}</p>
+               <div className="flex-1 bg-blue-50 border border-blue-100 rounded-2xl p-3 flex flex-col items-center justify-center lg:flex-row lg:justify-between lg:px-5">
+                  <p className="text-[10px] font-semibold text-blue-600/80 uppercase tracking-wider">Occupied</p>
+                  <p className="text-2xl font-bold text-blue-600">{tableStats.occupied}</p>
+               </div>
+               <div className="flex-1 bg-amber-50 border border-amber-100 rounded-2xl p-3 flex flex-col items-center justify-center lg:flex-row lg:justify-between lg:px-5">
+                  <p className="text-[10px] font-semibold text-amber-600/80 uppercase tracking-wider">Booked</p>
+                  <p className="text-2xl font-bold text-amber-600">{tableStats.booked}</p>
                </div>
             </div>
           </section>
 
-          {/* Quick Stats (Desktop) */}
-          <section className="hidden lg:block bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-             <h3 className="text-[14px] font-black text-slate-900 tracking-tighter uppercase">Market Overview</h3>
-             <div className="space-y-4">
-               {stats.map((stat, idx) => {
-                 const Icon = stat.icon;
-                 return (
-                  <div key={idx} className="flex items-center gap-4 p-3.5 rounded-2xl border border-slate-50 bg-slate-50/30 transition-all hover:bg-slate-50">
-                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm", stat.bg)}>
-                      <Icon size={20} className={stat.color} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{stat.label}</p>
-                      <p className="text-[20px] font-black text-slate-900 leading-none">{stat.val}</p>
-                    </div>
-                    <ArrowRight size={16} className="text-slate-300" />
-                  </div>
-                 );
-               })}
+          {/* Quick Stats for Desktop */}
+          <section className="hidden lg:block bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+             <h3 className="text-[14px] font-bold text-slate-900 tracking-tight leading-none uppercase mb-4">Quick Stats</h3>
+             <div className="space-y-3">
+               {stats.slice(0, 3).map((stat, idx) => (
+                 <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100">
+                   <div className={`w-10 h-10 rounded-lg ${stat.bg} flex items-center justify-center shrink-0`}>
+                     <stat.icon size={18} className={stat.color} />
+                   </div>
+                   <div>
+                     <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                     <p className="text-[16px] font-bold text-slate-900">{stat.val}</p>
+                   </div>
+                 </div>
+               ))}
              </div>
           </section>
         </div>

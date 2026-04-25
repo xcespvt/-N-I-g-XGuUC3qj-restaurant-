@@ -90,9 +90,9 @@ const OrderHistoryPage = dynamic(() => import('./order-history/page'));
 const OrdersPage = dynamic(() => import('./orders/page'));
 const ProfilePage = dynamic(() => import('./profile/page'));
 const BankAccountPage = dynamic(() => import('./profile/bank-account/page'));
-const DocumentsPage = dynamic(() => import('./profile/documents/page'));
+const DocumentsPage = dynamic(() => import('./profile/banners/page'));
 const RestaurantInformationPage = dynamic(() => import('./profile/restaurant-information/page'));
-const FacilitiesPage = dynamic(() => import('./profile/facilities/page'));
+
 const PromotionsPage = dynamic(() => import('./promotions/page'));
 const RefundsPage = dynamic(() => import('./refunds/page'));
 const SettingsPage = dynamic(() => import('./settings/page'));
@@ -114,7 +114,7 @@ function AppLayoutClient({
   const pathname = usePathname();
   const { toast } = useToast();
   const router = useRouter();
-  const { subscriptionPlan, orders, setBranches, activeBranch, branches } = useAppStore();
+  const { subscriptionPlan, orders, setBranches, branches } = useAppStore();
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [isOnline, setIsOnline] = React.useState(true);
 
@@ -201,11 +201,11 @@ function AppLayoutClient({
       title: "",
       items: [
         { href: "/dashboard", label: "Home", icon: Home },
-        { 
-          href: "/orders", 
-          label: "Orders", 
-          icon: ShoppingBag, 
-          badge: newOrdersCount > 0 ? newOrdersCount.toString() : undefined 
+        {
+          href: "/orders",
+          label: "Orders",
+          icon: ShoppingBag,
+          badge: newOrdersCount > 0 ? newOrdersCount.toString() : undefined
         },
         { href: "/refunds", label: "Refunds", icon: RotateCcw },
         { href: "/bookings", label: "Tables", icon: LayoutGrid },
@@ -251,7 +251,7 @@ function AppLayoutClient({
 
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <Sidebar>
         <SidebarHeader className="pt-[env(safe-area-inset-top)] bg-sidebar border-b border-sidebar-border/50">
           <div className="flex items-center gap-3 px-4 py-6">
@@ -287,8 +287,8 @@ function AppLayoutClient({
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-          
-          <button 
+
+          <button
             onClick={() => router.push("/profile")}
             className="w-full flex items-center gap-3 px-3 py-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all active:scale-[0.98] group mt-2"
           >
@@ -303,21 +303,22 @@ function AppLayoutClient({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="h-screen flex flex-col overflow-hidden w-full">
-        <Header 
+        <Header
           title={
             navSections.flatMap(s => s.items).concat(bottomNav).find(item => pathname.startsWith(item.href))?.label || 'Dashboard'
           }
           isOnline={isOnline}
           onToggleOnline={() => setIsOnline(!isOnline)}
           onProfileClick={() => setIsProfileModalOpen(true)}
-          onNotificationClick={() => {}}
-        >
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="md:hidden" />
-          </div>
-        </Header>
+          onNotificationClick={() => { }}
+          hideProfileAndNotificationOnMobile={pathname.startsWith('/profile/') && pathname !== '/profile'}
+        />
 
-        <ProfileView isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+        <ProfileView
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          onLogout={handleLogout}
+        />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 no-scrollbar">
           {children}
