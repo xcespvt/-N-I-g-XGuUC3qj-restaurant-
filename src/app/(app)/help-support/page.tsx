@@ -52,11 +52,6 @@ const faqItems = [
     keywords: "customer, complaint, feedback, review, bad, issue",
   },
   {
-    question: "How do I manage staff access and permissions?",
-    answer: "The 'Staff' page allows you to add team members and assign roles. Each role has specific permissions, which you can customize to control access to different sections of the partner hub.",
-    keywords: "staff, user, access, permission, role, team",
-  },
-  {
     question: "Can I see how well my promotions are performing?",
     answer: "Yes, the 'Promotions' page (a Pro feature) includes an 'Analytics' tab where you can track views, clicks, conversions, and revenue generated from your promotional campaigns.",
     keywords: "promotion, analytics, performance, ads, offers, track",

@@ -4,14 +4,30 @@
 import { useState, useMemo } from "react";
 import { Search, Mic, ShoppingBag, UtensilsCrossed, Calendar } from "lucide-react";
 import { useAppStore } from "@/context/useAppStore";
+import { useGet } from "@/hooks/useApi";
 import { OrderCard } from "@/components/order-card";
 import { VoiceSearchModal } from "@/components/voice-search-modal";
 
 export default function OrdersPage() {
-  const { orders } = useAppStore();
+  const { selectedBranch } = useAppStore();
   const [activeOrderTab, setActiveOrderTab] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showVoiceSearch, setShowVoiceSearch] = useState(false);
+
+  const { data: apiOrdersData, isLoading } = useGet<any>(
+    ['orders', selectedBranch],
+    `/api/orders/${selectedBranch}`,
+    undefined,
+    { enabled: !!selectedBranch }
+  );
+
+  const orders = useMemo(() => {
+    if (!apiOrdersData?.data) return [];
+    return apiOrdersData.data.map((order: any) => ({
+      ...order,
+      id: order.orderId // Map backend orderId to frontend id
+    }));
+  }, [apiOrdersData]);
 
   const orderTypes = ['All', 'Delivery', 'Offline Orders', 'Dine-in', 'Bookings', 'Preparing', 'Ready to hand over'];
 
@@ -82,7 +98,12 @@ export default function OrdersPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-        {filteredOrders.length > 0 ? (
+        {isLoading ? (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E90FF]"></div>
+            <p className="mt-4 text-slate-500 font-medium">Loading orders...</p>
+          </div>
+        ) : filteredOrders.length > 0 ? (
           filteredOrders.map((order) => (
             <OrderCard 
               key={order.id}

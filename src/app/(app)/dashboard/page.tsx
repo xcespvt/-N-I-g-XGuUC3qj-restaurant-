@@ -60,7 +60,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { PrepTimeDialog } from "@/components/prep-time-dialog";
-import { useMutationRequestDynamic } from "@/hooks/useApi";
+import { useMutationRequestDynamic, useGet } from "@/hooks/useApi";
 // Use API-served audio to avoid bundler asset import issues
 
 const NewIncomingOrderCard = ({
@@ -74,130 +74,29 @@ const NewIncomingOrderCard = ({
 }) => {
   if (!order) return null;
 
-  const isBooking = order.items.some((i) => i.category === "Booking");
-  const subtotal = order.items.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
-  const discount = order.discount || 0; 
-  const gst = (subtotal - discount) * 0.05; // 5% GST
-  const grandTotal = subtotal - discount + gst;
-
   return (
-    <Card className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800/50 shadow-lg">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg text-primary">
-            {isBooking ? "New Booking!" : "New Incoming Order!"}
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 -mt-2 -mr-2"
-            onClick={() => onDecline(order.id)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        <CardDescription className="flex flex-col items-start gap-2 pt-2">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span>{order.customer}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span>{order.customerDetails.address}</span>
-          </div>
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <h4 className="font-semibold text-sm mb-2 flex items-center justify-between">
-            <span>ORDER DETAILS</span>
-            <Badge
-              variant="outline"
-              className="capitalize flex items-center gap-1.5"
-            >
-              <Truck className="h-3 w-3" /> {order.type}
-            </Badge>
-          </h4>
-          <div className="space-y-1 text-sm">
-            {order.items.map((item) => (
-              <div key={item.id} className="flex justify-between">
-                <p>
-                  {item.quantity} x {item.name}
-                </p>
-                <p className="flex items-center">
-                  <IndianRupee className="h-3.5 w-3.5" />
-                  {item.price.toFixed(2)}
-                </p>
-              </div>
-            ))}
+    <div className="fixed bottom-[110px] left-4 right-4 z-50 max-w-md mx-auto lg:bottom-10 lg:left-auto lg:right-10 lg:w-[350px]">
+      <div className="h-[72px] rounded-[20px] bg-gradient-to-r from-[#1E90FF] to-[#1D4ED8] p-[16px] shadow-2xl flex items-center justify-between border border-white/10">
+        {/* Left side: dot */}
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[#FFFFFF] animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+          
+          {/* Center: Text content */}
+          <div className="flex flex-col">
+            <span className="text-[16px] font-bold text-white leading-tight">Incoming Order</span>
+            <span className="text-[13px] text-white/80 font-medium leading-tight mt-0.5">1 waiting to confirm</span>
           </div>
         </div>
-        <div>
-          <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <FileText className="h-4 w-4" /> Special Note
-          </h4>
-          <p className="text-sm text-muted-foreground">
-            {order.note || "No special instructions."}
-          </p>
-        </div>
-        <div className="space-y-2 pt-2 border-t text-sm">
-          <div className="flex justify-between">
-            <p className="text-muted-foreground">Subtotal</p>
-            <p className="font-medium flex items-center">
-              <IndianRupee className="h-3.5 w-3.5" />
-              {subtotal.toFixed(2)}
-            </p>
-          </div>
-          {discount > 0 && (
-            <div className="flex justify-between">
-                <p className="text-muted-foreground">Discount</p>
-                <p className="font-medium text-green-600 flex items-center">
-                -<IndianRupee className="h-3.5 w-3.5" />
-                {discount.toFixed(2)}
-                </p>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <p className="text-muted-foreground">GST (5%)</p>
-            <p className="font-medium flex items-center">
-              <IndianRupee className="h-3.5 w-3.5" />
-              {gst.toFixed(2)}
-            </p>
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between font-bold text-lg">
-            <div className="flex items-center gap-2">
-              <p>Grand Total</p>
-              <Badge
-                variant="secondary"
-                className="bg-green-100 text-green-700 text-xs"
-              >
-                {order.payment?.status || "Paid"}
-              </Badge>
-            </div>
-            <p className="flex items-center">
-              <IndianRupee className="h-5 w-5" />
-              {grandTotal.toFixed(2)}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-      <CardHeader className="flex flex-row gap-4 pt-2">
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => onDecline(order.id)}
+
+        {/* Right side: Action button */}
+        <button 
+          onClick={() => onAccept(order)}
+          className="h-[36px] px-[16px] rounded-full bg-[#FFFFFF] text-[#1E90FF] text-[14px] font-bold active:scale-95 transition-transform shadow-md hover:bg-slate-50"
         >
-          Decline
-        </Button>
-        <Button className="w-full" onClick={() => onAccept(order)}>
-          Accept
-        </Button>
-      </CardHeader>
-    </Card>
+          Review
+        </button>
+      </div>
+    </div>
   );
 };
 
@@ -235,7 +134,6 @@ export default function Dashboard() {
     setRestaurantOnline,
     isBusy,
     setBusy,
-    orders,
     tables,
     updateOrderStatus,
     acceptNewOrder,
@@ -245,11 +143,24 @@ export default function Dashboard() {
     refunds,
   } = useAppStore();
 
+  const { data: apiOrdersData, isLoading: isLoadingOrders } = useGet<any>(
+    ['orders', selectedBranch],
+    `/api/orders/${selectedBranch}`,
+    undefined,
+    { enabled: !!selectedBranch }
+  );
+
+  const orders = useMemo(() => {
+    if (!apiOrdersData?.data) return [];
+    return apiOrdersData.data.map((order: any) => ({
+      ...order,
+      id: order.orderId
+    }));
+  }, [apiOrdersData]);
+
   const [newOrder, setNewOrder] = useState<Order | null>(null);
   const [orderToAccept, setOrderToAccept] = useState<Order | null>(null);
-  const [isAlertPlaying, setIsAlertPlaying] = useState<boolean>(false);
   const { toast } = useToast();
-  const [alertAudio, setAlertAudio] = useState<HTMLAudioElement | null>(null);
   const [activeOrderTab, setActiveOrderTab] = useState<'Delivery' | 'Dine-in' | 'Takeaway'>('Delivery');
   const router = useRouter();
 
@@ -288,23 +199,7 @@ export default function Dashboard() {
     }
   );
 
-  useEffect(() => {
-    const sound = new Audio("/audio/NEW_ORDER_ALERT_SOUND.mp3");
-    sound.loop = true;
-    sound.volume = 1.0;
-    setAlertAudio(sound);
-  }, []);
 
-  useEffect(() => {
-    if (!alertAudio) return;
-    if (newOrder) {
-      alertAudio.play().then(() => setIsAlertPlaying(true)).catch(() => setIsAlertPlaying(false));
-    } else {
-      alertAudio.pause();
-      alertAudio.currentTime = 0;
-      setIsAlertPlaying(false);
-    }
-  }, [newOrder, alertAudio]);
 
   const activeOrders = useMemo(() => {
     return orders.filter(o => 
@@ -336,6 +231,7 @@ export default function Dashboard() {
     if (!orderToAccept) return;
 
     acceptNewOrder(orderToAccept, time);
+    // playOrderConfirmation() removed
 
     setNewOrder(null);
     setOrderToAccept(null);

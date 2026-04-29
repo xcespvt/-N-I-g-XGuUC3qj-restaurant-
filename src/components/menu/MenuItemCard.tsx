@@ -75,7 +75,6 @@ export function MenuItemCard({
           </DropdownMenu>
         </div>
 
-        <p className="text-[12px] text-[#6B7280] line-clamp-1 mb-2 font-medium">{item.description}</p>
         
         <div className="flex items-center justify-between mt-auto">
           <span className="text-[16px] font-extrabold text-[#111827]">₹{item.price}</span>

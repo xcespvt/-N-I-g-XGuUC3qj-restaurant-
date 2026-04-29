@@ -5,6 +5,8 @@ import {
   useMutation,
   UseMutationOptions,
   useQueryClient,
+  useInfiniteQuery,
+  UseInfiniteQueryOptions,
 } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { buildUrl } from "@/lib/utils";
@@ -25,6 +27,31 @@ export function useGet<T>(
   return useQuery<T>({
     queryKey: params ? [...key, params] : key,
     queryFn: () => apiClient<T>(finalUrl),
+    ...options,
+  });
+}
+
+// ✅ Generic Infinite GET with cursor pagination
+export function useInfiniteGet<T>(
+  key: string[],
+  url: string,
+  params?: Record<string, unknown>,
+  options?: Omit<UseInfiniteQueryOptions<T, Error, any, T, any, string>, "queryKey" | "queryFn" | "initialPageParam" | "getNextPageParam">
+) {
+  return useInfiniteQuery({
+    queryKey: params ? [...key, params] : key,
+    queryFn: ({ pageParam }) => {
+      const p = { ...(params || {}) };
+      if (pageParam) {
+        p.cursor = pageParam;
+      }
+      const baseUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+      const finalUrl = buildUrl(baseUrl, p);
+      return apiClient<T>(finalUrl);
+    },
+    initialPageParam: '',
+    getNextPageParam: (lastPage: any) => 
+      lastPage?.pagination?.hasNextPage ? lastPage.pagination.nextCursor : undefined,
     ...options,
   });
 }

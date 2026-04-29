@@ -32,10 +32,6 @@ const growthPerks = [
     { category: "Multi-Branch Advantage", features: [
         "Multi-Branch System - Includes 3 free branch add-ons (₹99 per extra branch thereafter)",
     ]},
-    { category: "Team & Workflow Tools", features: [
-        "Work Assignment (coming soon) - Assign and track staff tasks",
-        "Staff Management (coming soon) - Manage shifts, salaries and performance",
-    ]},
     { category: "Advanced Finance Reporting", features: [
         "Advanced Accounting Dashboard - GST-ready reports, expense tracking",
     ]},

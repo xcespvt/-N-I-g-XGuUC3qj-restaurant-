@@ -2,19 +2,17 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAdd, useGet, usePut, useQueryHelpers } from "@/hooks/useApi";
+import { useAdd, useGet, useMutationRequestDynamic, usePut, useQueryHelpers } from "@/hooks/useApi";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-// import { Switch } from "@/components/ui/switch"; // unused here
+
 import { useAppStore } from "@/context/useAppStore";
-import { cn } from "@/lib/utils";
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // unused
-// import { Textarea } from "@/components/ui/textarea"; // unused
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,9 +24,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { MenuItem } from "@/context/useAppStore";
-// import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // unused
-// import { Separator } from "@/components/ui/separator"; // unused
-// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // unused
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { MenuItemForm } from "@/components/menu/MenuItemForm";
 import { MenuSearchAndFilter } from "@/components/menu/MenuSearchAndFilter";
@@ -49,6 +44,9 @@ export default function MenuPage() {
     isRestaurantOnline,
     addMenuItem,
     categories,
+    setCategories,
+    subCategories,
+    setSubCategories,
     addCategory,
     updateMenuItem,
     deleteMenuItem,
@@ -56,8 +54,10 @@ export default function MenuPage() {
     selectedBranch,
   } = useAppStore();
   const [activeCategory, setActiveCategory] = useState("All");
+  const [activeSubCategory, setActiveSubCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const { toast } = useToast();
   const [pendingNewItem, setPendingNewItem] = useState<any | null>(null);
   const { invalidate, set } = useQueryHelpers();
@@ -66,7 +66,6 @@ export default function MenuPage() {
   const currentBranch = branches.find(branch => branch.id === selectedBranch);
   const restaurantId = (currentBranch as any)?.restaurantId;
 
-  // API call to fetch menu items from database
   const { data: apiMenuData, error: apiError, isLoading } = useGet<{
     success: boolean;
     message: string;
@@ -95,18 +94,52 @@ export default function MenuPage() {
       itemsPerPage: number;
       totalItems: number;
       totalPages: number;
+      nextCursor: string | null;
       hasNextPage: boolean;
-      hasPreviousPage: boolean;
     };
   }>(
-    ['menu-items', restaurantId || '', currentPage],
+    ['menu-items', restaurantId || '', currentPage, activeCategory, activeSubCategory],
     `/api/menu/getitems/${restaurantId}`,
-      // `https://backend.crevings.com/api/menu/getitems/${restaurantId}`,
-    { page: currentPage, limit: 10 },
+    { 
+      cursor: cursorHistory[currentPage - 1] || undefined, 
+      limit: 10,
+      category: activeCategory,
+      subCategory: activeSubCategory
+    },
     {
       enabled: !!restaurantId,
     }
   );
+
+  // Fetch categories and sub-categories
+  const { data: categoryData } = useGet<{
+    success: boolean;
+    data: {
+      categories: any[];
+      subCategories: any[];
+    }
+  }>(
+    ['categories-and-sub', selectedBranch || ''],
+    `/api/categories/${selectedBranch}/all`,
+    {},
+    { enabled: !!selectedBranch }
+  );
+
+
+  useEffect(() => {
+    if (categoryData?.success) {
+      // Ensure we only store objects with a 'name' property to avoid corruption
+      const cats = Array.isArray(categoryData.data.categories) 
+        ? categoryData.data.categories.map((c: any) => typeof c === 'string' ? { name: c } : c)
+        : [];
+      const subCats = Array.isArray(categoryData.data.subCategories) 
+        ? categoryData.data.subCategories.map((s: any) => typeof s === 'string' ? { name: s } : s)
+        : [];
+      
+      setCategories([{ name: "All" }, ...cats]);
+      setSubCategories([{ name: "All" }, ...subCats]);
+    }
+  }, [categoryData, setCategories, setSubCategories]);
 
   // Debounced search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -128,11 +161,15 @@ export default function MenuPage() {
       images: string[];
     }>;
   }>(
-    ['menu-search', restaurantId || '', debouncedSearchTerm, activeCategory !== 'All' ? activeCategory : ''],
+    ['menu-search', restaurantId || '', debouncedSearchTerm, activeCategory !== 'All' ? activeCategory : '', activeSubCategory !== 'All' ? activeSubCategory : ''],
     `/api/menu/${restaurantId}/search`,
-    { query: debouncedSearchTerm, category: activeCategory !== 'All' ? activeCategory : '' },
+    { 
+      query: debouncedSearchTerm, 
+      category: activeCategory !== 'All' ? activeCategory : '',
+      subCategory: activeSubCategory !== 'All' ? activeSubCategory : ''
+    },
     {
-      enabled: !!restaurantId && (debouncedSearchTerm.length > 0 || (!!activeCategory && activeCategory !== 'All')),
+      enabled: !!restaurantId && debouncedSearchTerm.length > 0,
     }
   );
 
@@ -161,19 +198,31 @@ export default function MenuPage() {
   const transformedMenuItems = useMemo(() => {
     if (!apiMenuData?.data) return menuItems;
     
-    return apiMenuData.data.map((item, index) => ({
+    return apiMenuData.data.map((item: any, index: number) => ({
       id: Date.now() + index, // Generate unique ID
       itemId: item.itemId ?? item._id,
       name: item.name,
       description: item.description,
-      price: item.pricing_options[0]?.price || 0,
+      price: item.pricing_options?.[0]?.price || 0,
       category: item.category,
-      image: item.images[0] || "https://placehold.co/300x200.png",
+      subCategory: item.subCategory,
+      image: item.images?.[0] || "https://placehold.co/300x200.png",
+      images: item.images,
       aiHint: item.name.toLowerCase(),
       available: item.available,
-      dietaryType: 'Veg' as const, // Default to Veg, could be enhanced based on API data
-      portionOptions: item.pricing_options.length > 1 
-        ? item.pricing_options.map(option => ({
+      dietaryType: item.dietaryType || 'Veg',
+      badges: item.badges || [],
+      allowedAddons: item.allowedAddons || [],
+      allowedToppings: item.allowedToppings || [],
+      servingSize: item.servingSize,
+      piecesInfo: item.piecesInfo || [],
+      availableFor: item.availableFor || ["Delivery", "Takeaway", "Dine-In"],
+      gstCategory: item.gstCategory || "Freshly Prepared Item",
+      gstIncluded: item.gstIncluded ?? true,
+      pricing_options: item.pricing_options || [],
+      pricing_unit: item.pricing_unit || 'quantity',
+      portionOptions: item.pricing_unit === 'size'
+        ? item.pricing_options?.map((option: any) => ({
             name: option.label,
             price: option.price
           }))
@@ -184,18 +233,34 @@ export default function MenuPage() {
   // Transform Search API data to MenuItem format
   const transformedSearchItems = useMemo(() => {
     const src = apiSearchData?.data ?? [];
-    return src.map((item, index) => ({
+    return src.map((item: any, index: number) => ({
       id: Date.now() + index,
-      itemId: undefined,
+      itemId: item.itemId ?? item._id,
       name: item.name,
       description: item.description,
       price: 0,
       category: item.category,
+      subCategory: item.subCategory,
       image: item.images?.[0] || 'https://placehold.co/300x200.png',
+      images: item.images,
       aiHint: item.name.toLowerCase(),
-      available: true,
-      dietaryType: 'Veg' as const,
-      portionOptions: undefined,
+      available: item.available ?? true,
+      dietaryType: item.dietaryType || 'Veg',
+      badges: item.badges || [],
+      allowedAddons: item.allowedAddons || [],
+      allowedToppings: item.allowedToppings || [],
+      servingSize: item.servingSize,
+      piecesInfo: item.piecesInfo || [],
+      availableFor: item.availableFor || ["Delivery", "Takeaway", "Dine-In"],
+      gstCategory: item.gstCategory || "Freshly Prepared Item",
+      gstIncluded: item.gstIncluded ?? true,
+      pricing_unit: item.pricing_unit || 'quantity',
+      portionOptions: item.pricing_unit === 'size'
+        ? item.pricing_options?.map((option: any) => ({
+            name: option.label,
+            price: option.price
+          }))
+        : undefined,
     }));
   }, [apiSearchData]);
 
@@ -214,15 +279,23 @@ export default function MenuPage() {
         restaurantId,
         name: pendingNewItem.name,
         description: pendingNewItem.description,
-        type: 'item',
+        type: pendingNewItem.type || 'item',
         category: pendingNewItem.category,
-        images: [pendingNewItem.image || 'https://placehold.co/300x200.png'],
+        subCategory: pendingNewItem.subCategory,
+        dietaryType: pendingNewItem.dietaryType,
+        badges: pendingNewItem.badges || [],
+        allowedAddons: pendingNewItem.allowedAddons || [],
+        allowedToppings: pendingNewItem.allowedToppings || [],
+        servingSize: pendingNewItem.servingSize,
+        piecesInfo: pendingNewItem.piecesInfo || [],
+        availableFor: pendingNewItem.availableFor || [],
+        gstCategory: pendingNewItem.gstCategory || "Freshly Prepared Item",
+        gstIncluded: pendingNewItem.gstIncluded ?? true,
+        images: pendingNewItem.images && pendingNewItem.images.length > 0 ? pendingNewItem.images : ['https://placehold.co/300x200.png'],
         available: !!pendingNewItem.available,
-        pricing_unit: 'quantity',
-        pricing_options: (pendingNewItem.portionOptions && pendingNewItem.portionOptions.length > 0)
-          ? pendingNewItem.portionOptions.map((p: any) => ({ label: p.name, price: p.price }))
-          : [{ label: 'Regular', price: pendingNewItem.price, default: true }],
-        portions: [],
+        pricing_unit: pendingNewItem.pricing_unit || 'quantity',
+        pricing_options: pendingNewItem.pricing_options || [],
+        portions: pendingNewItem.portions || [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -259,6 +332,48 @@ export default function MenuPage() {
       }
     },
   });
+
+  // Mutation for adding categories
+  const addCategoryMutation = useMutationRequestDynamic<any, { url: string; data: any }>(
+  "POST",
+  (vars) => vars.url,
+  (vars) => vars.data,
+  {
+    onSuccess: () => {
+      toast({
+        title: "Category Added",
+        description: "New category has been added successfully.",
+      });
+      // ✅ FIX: Match the fetch key exactly
+      invalidate(['categories-and-sub', selectedBranch || '']); 
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to add category.",
+      });
+    },
+  }
+);
+
+  // Mutation for adding sub-categories
+const addSubCategoryMutation = useMutationRequestDynamic<any, { url: string; data: any }>(
+  "POST",
+  (vars) => vars.url,
+  (vars) => vars.data,
+  {
+    onSuccess: () => {
+      toast({
+        title: "Sub-Category Added",
+        description: "New sub-category has been added successfully.",
+      });
+      // ✅ FIX: Match the fetch key exactly
+      invalidate(['categories-and-sub', selectedBranch || '']); 
+    },
+    // ...
+  }
+);
 
   const [activeSheet, setActiveSheet] = useState<AddSheetType>(null);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -310,7 +425,9 @@ export default function MenuPage() {
   }, [restaurantId, editTarget?.itemId, pendingUpdatePayload]);
 
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isSubCategoryDialogOpen, setIsSubCategoryDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newSubCategoryName, setNewSubCategoryName] = useState("");
 
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
@@ -439,7 +556,7 @@ export default function MenuPage() {
 
   // Pagination and category helpers
   const itemsPerPage = apiMenuData?.pagination?.itemsPerPage ?? 10;
-  const isFiltering = debouncedSearchTerm.length > 0 || (!!activeCategory && activeCategory !== 'All');
+  const isFiltering = debouncedSearchTerm.length > 0;
 
   let pageItems: MenuItem[] = [];
   let computedTotalItems = 0;
@@ -466,18 +583,46 @@ export default function MenuPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm, activeCategory]);
+    setCursorHistory([]);
+  }, [debouncedSearchTerm, activeCategory, activeSubCategory]);
+
+  useEffect(() => {
+    if (apiMenuData?.pagination?.nextCursor && !cursorHistory[currentPage]) {
+      const newHistory = [...cursorHistory];
+      newHistory[currentPage] = apiMenuData.pagination.nextCursor;
+      setCursorHistory(newHistory);
+    }
+  }, [apiMenuData, currentPage, cursorHistory]);
 
   const availableCategories = useMemo(
-    () => categories.filter((c) => c !== "All"),
+    () => categories.filter((c) => {
+      const name = typeof c === 'string' ? c : c.name;
+      return name !== "All";
+    }),
     [categories]
   );
 
   const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
-      addCategory(newCategoryName.trim());
+    if (newCategoryName.trim() && restaurantId) {
+      addCategoryMutation.mutate({
+        url: `/api/categories/${restaurantId}/category`,
+        data: { name: newCategoryName.trim() }
+      });
       setNewCategoryName("");
       setIsCategoryDialogOpen(false);
+    }
+  };
+
+  const handleAddSubCategory = () => {
+    if (newSubCategoryName.trim() && restaurantId) {
+      addSubCategoryMutation.mutate({
+        url: `/api/categories/${restaurantId}/subcategory`,
+        data: { 
+          name: newSubCategoryName.trim()
+        }
+      });
+      setNewSubCategoryName("");
+      setIsSubCategoryDialogOpen(false);
     }
   };
 
@@ -491,10 +636,14 @@ export default function MenuPage() {
         activeCategory={activeCategory}
         onCategoryChange={setActiveCategory}
         categories={categories}
+        activeSubCategory={activeSubCategory}
+        onSubCategoryChange={setActiveSubCategory}
+        subCategories={subCategories}
         isListening={isListening}
         onToggleListening={toggleListening}
         onOpenAdd={handleOpenAdd}
         onOpenCategoryDialog={() => setIsCategoryDialogOpen(true)}
+        onOpenSubCategoryDialog={() => setIsSubCategoryDialogOpen(true)}
       />
 
       {/* Removed results badge to keep pagination UI simple */}
@@ -561,12 +710,17 @@ export default function MenuPage() {
       >
         <SheetContent
           side="bottom"
-          className="sm:max-w-3xl mx-auto p-0 flex flex-col h-full max-h-[90vh]"
+          className="sm:max-w-4xl mx-auto p-0 flex flex-col h-full max-h-[92vh] rounded-t-[32px] overflow-hidden border-none shadow-2xl"
         >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Menu Item Form</SheetTitle>
+            <SheetDescription>Fill in the details for the menu item.</SheetDescription>
+          </SheetHeader>
           <MenuItemForm
             editingItem={editingItem}
             addSheetType={activeSheet}
             categories={availableCategories}
+            subCategories={subCategories}
             onSubmit={(itemData) => {
               // If editing, update local store with full MenuItem object
               if (editingItem) {
@@ -596,22 +750,14 @@ export default function MenuPage() {
                       try { return new URL(url).hostname.endsWith("imagedelivery.net"); } catch { return url.includes("imagedelivery.net"); }
                     };
 
-                    // Remove imagedelivery.net entries (likely deleted) and put the new one first
                     const retained = existingImages.filter(url => !isImageDelivery(url));
-                    const primary = itemData.image || "https://placehold.co/300x200.png";
-                    const nextImages = [primary, ...retained];
+                    const nextImages = itemData.images && itemData.images.length > 0 
+                      ? itemData.images 
+                      : retained.length > 0 ? retained : ["https://placehold.co/300x200.png"];
 
                     const payload = {
-                      name: itemData.name,
-                      description: itemData.description,
-                      available: itemData.available,
-                      type: "item",
-                      category: itemData.category,
-                      images: nextImages,
-                      pricing_unit: "quantity",
-                      pricing_options: [
-                        { label: "Regular", price: itemData.price, default: true }
-                      ],
+                      ...itemData,
+                      images: nextImages
                     };
                     setPendingUpdatePayload(payload);
                     setEditTarget({ itemId: targetId });
@@ -632,11 +778,10 @@ export default function MenuPage() {
                 return;
               }
 
-              const apiPayload = buildMenuItemApiPayload(
+              const apiPayload = {
                 restaurantId,
-                itemData,
-                activeSheet
-              );
+                ...itemData
+              };
 
               setPendingNewItem(itemData);
               addMenuItemMutation.mutate(apiPayload);
@@ -649,7 +794,7 @@ export default function MenuPage() {
       </Sheet>
 
       <Sheet open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <SheetContent side="bottom" className="sm:max-w-md mx-auto p-0 flex flex-col h-full max-h-[70vh]">
+        <SheetContent side="bottom" className="sm:max-w-md mx-auto p-0 flex flex-col h-full max-h-[70vh] rounded-t-[32px] overflow-hidden border-none shadow-2xl">
           <SheetHeader className="p-6 pb-4 border-b">
             <SheetTitle>Create New Category</SheetTitle>
             <SheetDescription>Enter a name for your new food category.</SheetDescription>
@@ -672,7 +817,43 @@ export default function MenuPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation Dialog */}
+      <Sheet open={isSubCategoryDialogOpen} onOpenChange={setIsSubCategoryDialogOpen}>
+        <SheetContent side="bottom" className="sm:max-w-md mx-auto p-0 flex flex-col h-full max-h-[70vh] rounded-t-[32px] overflow-hidden border-none shadow-2xl">
+          <SheetHeader className="p-6 pb-4 border-b">
+            <SheetTitle>Create New Sub Category</SheetTitle>
+            <SheetDescription>Enter a name for your new sub category.</SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="grid gap-2">
+              <Label htmlFor="subcategory-name">Sub Category Name</Label>
+              <Input
+                id="subcategory-name"
+                value={newSubCategoryName}
+                onChange={(e) => setNewSubCategoryName(e.target.value)}
+                placeholder="e.g. Cold Coffee"
+              />
+            </div>
+          </div>
+          <SheetFooter className="p-6 border-t flex justify-center gap-2">
+            <Button variant="outline" onClick={() => setIsSubCategoryDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddSubCategory}>Add Sub Category</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Floating Add Button */}
+      <div className="fixed bottom-32 lg:bottom-10 right-6 lg:right-10 z-50">
+        <Button 
+          onClick={() => {
+            setEditingItem(null);
+            setActiveSheet("Item");
+          }}
+          className="h-14 bg-[#2563EB] text-white rounded-2xl px-8 flex items-center justify-center gap-3 shadow-2xl shadow-blue-500/40 active:scale-95 transition-all"
+        >
+          <span className="text-[16px] font-black uppercase tracking-widest">Add</span>
+        </Button>
+      </div>
+
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

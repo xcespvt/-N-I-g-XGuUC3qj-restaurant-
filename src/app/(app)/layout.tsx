@@ -74,7 +74,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 const AnalyticsPage = dynamic(() => import('./analytics/page'));
 const BookingsPage = dynamic(() => import('./bookings/page'));
-const BranchesPage = dynamic(() => import('./branches/page'));
+
 const DashboardPage = dynamic(() => import('./dashboard/page'));
 const DineInTakeawayPage = dynamic(() => import('./dine-in-takeaway/page'));
 const EarningsPage = dynamic(() => import('./earnings/page'));
@@ -85,7 +85,7 @@ const CommunityForumPage = dynamic(() => import('./help-support/community-forum/
 const KnowledgeBasePage = dynamic(() => import('./help-support/knowledge-base/page'));
 const ChatPage = dynamic(() => import('./help-support/chat/page'));
 const MenuPage = dynamic(() => import('./menu/page'));
-const OffersPage = dynamic(() => import('./offers/page'));
+
 const OrderHistoryPage = dynamic(() => import('./order-history/page'));
 const OrdersPage = dynamic(() => import('./orders/page'));
 const ProfilePage = dynamic(() => import('./profile/page'));
@@ -93,12 +93,10 @@ const BankAccountPage = dynamic(() => import('./profile/bank-account/page'));
 const DocumentsPage = dynamic(() => import('./profile/banners/page'));
 const RestaurantInformationPage = dynamic(() => import('./profile/restaurant-information/page'));
 
-const PromotionsPage = dynamic(() => import('./promotions/page'));
+
 const RefundsPage = dynamic(() => import('./refunds/page'));
 const SettingsPage = dynamic(() => import('./settings/page'));
-const StaffPage = dynamic(() => import('./staff/page'));
-const SubscriptionPage = dynamic(() => import('./subscription/page'));
-const CheckoutPage = dynamic(() => import('./subscription/checkout/page'));
+
 const TakeawayPage = dynamic(() => import('./takeaway/page'));
 const StorePage = dynamic(() => import('./store/page'));
 const OrderTrackingPage = dynamic(() => import('./order-tracking/page'));
@@ -114,7 +112,7 @@ function AppLayoutClient({
   const pathname = usePathname();
   const { toast } = useToast();
   const router = useRouter();
-  const { subscriptionPlan, orders, setBranches, branches } = useAppStore();
+  const { orders, setBranches, branches } = useAppStore();
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [isOnline, setIsOnline] = React.useState(true);
 
@@ -216,15 +214,11 @@ function AppLayoutClient({
       title: "Business & Growth",
       items: [
         { href: "/earnings", label: "Payout", icon: Wallet },
-        // { href: "/offers", label: "Create Offer", icon: Tag },
-        // { href: "/subscription", label: "Subscription", icon: CreditCard },
-        // { href: "/promotions", label: "Ads", icon: Megaphone },
       ]
     },
     {
       title: "Management",
       items: [
-        { href: "/staff", label: "Staff Management", icon: Users },
         { href: "/profile", label: "Customer Info", icon: UserCircle },
         { href: "/analytics", label: "Analytics", icon: PieChart },
       ]
@@ -242,7 +236,7 @@ function AppLayoutClient({
         <Link href={item.href}>
           <item.icon className={pathname.startsWith(item.href) ? "text-primary" : "text-muted-foreground"} />
           <span className={pathname.startsWith(item.href) ? "font-semibold text-primary" : ""}>{item.label}</span>
-          {subscriptionPlan === 'Free' && (item as any).pro && <Lock className="ml-auto h-3.5 w-3.5 text-muted-foreground" />}
+
           {(item as any).badge && <span className="ml-auto bg-primary text-white text-xs font-semibold rounded-full px-2 py-0.5">{(item as any).badge}</span>}
         </Link>
       </SidebarMenuButton>

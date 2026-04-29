@@ -58,10 +58,6 @@ export default function PrivacyPolicyPage() {
                     </li>
                     <li className="flex items-start">
                       <span className="text-primary mr-2">•</span>
-                      <span><strong>Food Partner Staff (Accessory Data Principals):</strong> Employees and agents whose login credentials and role-based access permissions are furnished to the Company by the Food Partner for secure use of Partner-facing interfaces.</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-primary mr-2">•</span>
                       <span><strong>Food Partner Entity (Juridical Data Principal):</strong> The commercial entity (e.g., restaurant, cloud kitchen, café, franchise) whose non-personal corporate and operational data is collected and archived.</span>
                     </li>
                     <li className="flex items-start">
@@ -91,10 +87,7 @@ export default function PrivacyPolicyPage() {
                       <span className="text-primary mr-2">•</span>
                       <span><strong>Financial & Transactional Data:</strong> Order-level transaction records, revenue metrics, payout banking details, payout disbursement histories, and ancillary financial data maintained for payment execution, accounting, taxation, and statutory reporting.</span>
                     </li>
-                    <li className="flex items-start">
-                      <span className="text-primary mr-2">•</span>
-                      <span><strong>Food Partner Staff Data:</strong> Employee identifiers, role/titles, business contact information, securely hashed authentication credentials, and assigned application access permissions.</span>
-                    </li>
+
                     <li className="flex items-start">
                       <span className="text-primary mr-2">•</span>
                       <span><strong>Inventory & Menu Data:</strong> Comprehensive menu enumerations, stock and inventory levels, consumption and ordering histories, item categorization, and transactional behavior contributing to predictive analytics and inventory forecasting.</span>
@@ -126,10 +119,7 @@ export default function PrivacyPolicyPage() {
                       <span className="text-primary mr-2">•</span>
                       <span><strong>Business Analysis, Advisory & Optimization:</strong> Combine inventory/menu, transactional, and offline performance data to diagnose operational deficiencies, recommend menu engineering, pricing strategies, inventory procurement improvements, and other prescriptive enhancements to augment Partner competitiveness.</span>
                     </li>
-                    <li className="flex items-start">
-                      <span className="text-primary mr-2">•</span>
-                      <span><strong>Staff Management & Security:</strong> Administer role-based access controls and secure authentication for Partner staff, as authorized by the Food Partner.</span>
-                    </li>
+
                     <li className="flex items-start">
                       <span className="text-primary mr-2">•</span>
                       <span><strong>Marketing Campaigns (Processor Role):</strong> Where the Company processes Partner-supplied customer data to execute marketing campaigns, the Company acts as Data Processor and processes such data strictly per Partner instructions and contractual Data Processing Agreements.</span>

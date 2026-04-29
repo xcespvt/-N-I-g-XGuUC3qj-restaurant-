@@ -27,7 +27,8 @@ import Link from 'next/link';
 import { useAppStore } from '@/context/useAppStore';
 
 export default function EarningsPage() {
-  const { orders, walletBalance } = useAppStore();
+  const { orders } = useAppStore();
+  const walletBalance = 0; // Default to 0 since walletBalance state was removed
   const [selectedFilter, setSelectedFilter] = useState('Last month');
   const [currentMonthDate, setCurrentMonthDate] = useState(new Date(2026, 1, 1)); 
   const [isAutoWithdrawalEnabled, setIsAutoWithdrawalEnabled] = useState(true);
@@ -67,7 +68,7 @@ export default function EarningsPage() {
     const deductions = [
       { label: 'Offline Cash', icon: Banknote, sub: 'Collected at counter', amount: `- ₹ ${walkIn.toLocaleString('en-IN')}` },
       { label: 'GST (Delivery)', icon: Receipt, sub: '5% on delivery orders', amount: `- ₹ ${gst.toLocaleString('en-IN')}` },
-      { label: 'Ads Spend', icon: Megaphone, sub: 'In-app promotions', amount: '- ₹ 500' },
+
       { label: 'Refunds', icon: RotateCcw, sub: `${orders.filter(o => o.status === 'Cancelled').length} Order(s)`, amount: `- ₹ ${refunds.toLocaleString('en-IN')}` },
     ];
 
@@ -78,7 +79,7 @@ export default function EarningsPage() {
         breakdown,
         deductions,
         totalRevenue: delivery + onlineTakeaway + dineIn + bookings,
-        totalDeductions: gst + 500 + refunds + walkIn
+        totalDeductions: gst + refunds + walkIn
     };
   }, [orders]);
 

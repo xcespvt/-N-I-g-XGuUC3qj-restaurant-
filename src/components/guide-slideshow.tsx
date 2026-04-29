@@ -21,7 +21,7 @@ const guideSteps = [
     image: "https://placehold.co/550x310.png",
     aiHint: "dashboard analytics",
     title: "Welcome to Your Dashboard",
-    description: "This is your central hub. Get a quick overview of your key metrics like total orders, revenue, and active promotions at a glance.",
+    description: "This is your central hub. Get a quick overview of your key metrics like total orders and revenue at a glance.",
   },
   {
     image: "https://placehold.co/550x310.png",
@@ -35,12 +35,7 @@ const guideSteps = [
     title: "Build Your Menu",
     description: "Easily add, edit, and categorize your dishes in the 'Menu' section. Toggle item availability and set prices for both online and offline sales.",
   },
-  {
-    image: "https://placehold.co/550x310.png",
-    aiHint: "restaurant promotion",
-    title: "Create Promotions",
-    description: "Attract more customers by creating special offers and discounts. Our Pro plan gives you advanced tools to track performance and target specific audiences.",
-  },
+
   {
     image: "https://placehold.co/550x310.png",
     aiHint: "customer feedback",

@@ -19,12 +19,6 @@ const initialNotifications = [
     description: "Tomatoes are running low",
     time: "5 min ago",
   },
-  {
-    id: 3,
-    title: "Staff Update",
-    description: "John marked as present",
-    time: "10 min ago",
-  },
 ];
 
 

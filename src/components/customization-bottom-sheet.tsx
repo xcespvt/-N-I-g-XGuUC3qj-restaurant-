@@ -35,6 +35,10 @@ interface CustomizationBottomSheetProps {
     image: string;
     isVeg: boolean;
     bestseller?: boolean;
+    pricing_options?: Array<{ label: string, price: number, default?: boolean }>;
+    allowedAddons?: string[];
+    allowedToppings?: string[];
+    portionOptions?: Array<{ name: string, price: number }>;
   };
   onClose: () => void;
   onAddToCart: (cartItem: any) => void;
@@ -42,127 +46,64 @@ interface CustomizationBottomSheetProps {
 
 // Helper to generate dynamic variants based on item name
 const getVariantsForItem = (item: any): ItemVariant[] => {
-  const name = item.name.toLowerCase();
-  const basePrice = item.price;
-  
-  if (name.includes('pizza')) {
-    return [
-      { id: 'v1', name: 'Small', price: basePrice },
-      { id: 'v2', name: 'Medium', price: basePrice + 150 },
-      { id: 'v3', name: 'Large', price: basePrice + 300 },
-    ];
+  if (item.pricing_options && item.pricing_options.length > 0) {
+    return item.pricing_options.map((opt: any, index: number) => ({
+      id: `v${index + 1}`,
+      name: opt.label,
+      price: opt.price,
+    }));
   }
-  if (name.includes('chicken') && name.includes('biryani')) {
-    return [
-      { id: 'v1', name: 'Quarter', price: basePrice },
-      { id: 'v2', name: 'Half', price: basePrice + 120 },
-      { id: 'v3', name: 'Full', price: basePrice + 250 },
-    ];
-  }
-  if (name.includes('biryani')) {
-    return [
-      { id: 'v1', name: '250g', price: basePrice },
-      { id: 'v2', name: '500g', price: basePrice + 100 },
-      { id: 'v3', name: '1kg', price: basePrice + 250 },
-    ];
-  }
-  if (name.includes('masala') || name.includes('curry') || name.includes('paneer')) {
-    return [
-      { id: 'v1', name: 'Half', price: basePrice },
-      { id: 'v2', name: 'Full', price: basePrice + 150 },
-    ];
+  if (item.portionOptions && item.portionOptions.length > 0) {
+    return item.portionOptions.map((opt: any, index: number) => ({
+      id: `v${index + 1}`,
+      name: opt.name,
+      price: opt.price,
+    }));
   }
   
-  // Default variant if no specific match
+  // Default variant if no pricing options provided
   return [
-    { id: 'v1', name: 'Regular', price: basePrice }
+    { id: 'v1', name: 'Regular', price: item.price }
   ];
 };
 
 // Helper to generate dynamic addons based on item name
 const getAddonsForItem = (item: any): CustomizationSection[] => {
-  const name = item.name.toLowerCase();
-  
-  const beverages: CustomizationSection = {
-    id: 's-bev',
-    title: 'Beverages',
-    subtitle: 'Select up to 7 • Optional',
-    type: 'beverage',
-    selectionLimit: 7,
-    items: [
-      { id: 'b1', name: 'Coca Cola Can', price: 38, isVeg: true, inStock: true },
-      { id: 'b2', name: 'Sprite Can', price: 38, isVeg: true, inStock: true }
-    ]
-  };
+  const sections: CustomizationSection[] = [];
 
-  if (name.includes('pizza')) {
-    return [
-      {
-        id: 's1',
-        title: 'Extra Toppings',
-        subtitle: 'Add multiple • Optional',
-        type: 'addon',
-        items: [
-          { id: 'a1', name: 'Extra Cheese', price: 50, isVeg: true, inStock: true, image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc0?w=200&h=200&fit=crop' },
-          { id: 'a2', name: 'Jalapenos', price: 30, isVeg: true, inStock: true },
-          { id: 'a3', name: 'Black Olives', price: 40, isVeg: true, inStock: true },
-          { id: 'a4', name: 'Paneer Chunks', price: 60, isVeg: true, inStock: true }
-        ]
-      },
-      beverages
-    ];
-  }
-  
-  if (name.includes('biryani')) {
-    return [
-      {
-        id: 's1',
-        title: 'Perfect Pairings',
-        subtitle: 'Add multiple • Optional',
-        type: 'addon',
-        items: [
-          { id: 'a1', name: 'Extra Raita', price: 30, isVeg: true, inStock: true },
-          { id: 'a2', name: 'Mirchi Ka Salan', price: 40, isVeg: true, inStock: true },
-          { id: 'a3', name: 'Boiled Egg', price: 20, isVeg: false, inStock: true },
-          { id: 'a4', name: 'Chicken Kabab (2 pcs)', price: 120, isVeg: false, inStock: true, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&h=200&fit=crop' }
-        ]
-      },
-      beverages
-    ];
-  }
-
-  if (name.includes('masala') || name.includes('curry') || name.includes('paneer')) {
-    return [
-      {
-        id: 's1',
-        title: 'Breads & Rice',
-        subtitle: 'Add multiple • Optional',
-        type: 'addon',
-        items: [
-          { id: 'a1', name: 'Butter Naan', price: 45, isVeg: true, inStock: true, image: 'https://images.unsplash.com/photo-1604152135912-04a022e23696?w=200&h=200&fit=crop' },
-          { id: 'a2', name: 'Tandoori Roti', price: 25, isVeg: true, inStock: true },
-          { id: 'a3', name: 'Jeera Rice', price: 120, isVeg: true, inStock: true },
-          { id: 'a4', name: 'Garlic Naan', price: 55, isVeg: true, inStock: true }
-        ]
-      },
-      beverages
-    ];
-  }
-
-  // Default addons
-  return [
-    {
-      id: 's1',
-      title: 'Popular Pairings',
+  if (item.allowedToppings && item.allowedToppings.length > 0) {
+    sections.push({
+      id: 's-toppings',
+      title: 'Extra Toppings',
       subtitle: 'Add multiple • Optional',
       type: 'addon',
-      items: [
-        { id: 'a1', name: 'French Fries', price: 99, isVeg: true, inStock: true, image: 'https://images.unsplash.com/photo-1589301760014-d929f39ce9b1?w=200&h=200&fit=crop' },
-        { id: 'a2', name: 'Extra Dip', price: 25, isVeg: true, inStock: true }
-      ]
-    },
-    beverages
-  ];
+      items: item.allowedToppings.map((topping: string, index: number) => ({
+        id: `t${index}`,
+        name: topping,
+        price: 0, // Backend array contains strings only, no price info attached
+        isVeg: item.isVeg !== undefined ? item.isVeg : true,
+        inStock: true
+      }))
+    });
+  }
+
+  if (item.allowedAddons && item.allowedAddons.length > 0) {
+    sections.push({
+      id: 's-addons',
+      title: 'Addons',
+      subtitle: 'Add multiple • Optional',
+      type: 'addon',
+      items: item.allowedAddons.map((addon: string, index: number) => ({
+        id: `a${index}`,
+        name: addon,
+        price: 0, // Default to 0 as strings don't have price
+        isVeg: item.isVeg !== undefined ? item.isVeg : true,
+        inStock: true
+      }))
+    });
+  }
+
+  return sections;
 };
 
 export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> = ({ item, onClose, onAddToCart }) => {
@@ -286,7 +227,7 @@ export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> =
                 {item.bestseller && (
                   <>
                     <span>•</span>
-                    <span className="text-[#00bd6f] font-bold">Bestseller</span>
+                    <span className="text-[#1E90FF] font-bold">Bestseller</span>
                   </>
                 )}
               </div>
@@ -309,11 +250,11 @@ export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> =
                     onClick={() => setSelectedVariant(variant)}
                     className={`flex flex-col items-center justify-center p-3 rounded-2xl border cursor-pointer transition-all ${
                       selectedVariant.id === variant.id 
-                        ? 'border-[#00bd6f] bg-[#f4fdf8] shadow-[0_2px_10px_rgba(0,189,111,0.1)]' 
+                        ? 'border-[#1E90FF] bg-[#eff6ff] shadow-[0_2px_10px_rgba(30,144,255,0.1)]' 
                         : 'border-gray-200 bg-white shadow-sm hover:border-gray-300'
                     }`}
                   >
-                    <span className={`text-[14px] font-bold mb-1 ${selectedVariant.id === variant.id ? 'text-[#00bd6f]' : 'text-gray-700'}`}>
+                    <span className={`text-[14px] font-bold mb-1 ${selectedVariant.id === variant.id ? 'text-[#1E90FF]' : 'text-gray-700'}`}>
                       {variant.name}
                     </span>
                     <span className="text-[13px] font-black text-gray-900">₹{variant.price}</span>
@@ -350,7 +291,7 @@ export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> =
                       }}
                       className={`relative flex flex-col p-3 rounded-2xl border transition-all cursor-pointer ${
                         isSelected 
-                          ? 'border-[#00bd6f] bg-[#f4fdf8] shadow-[0_2px_10px_rgba(0,189,111,0.1)]' 
+                          ? 'border-[#1E90FF] bg-[#eff6ff] shadow-[0_2px_10px_rgba(30,144,255,0.1)]' 
                           : 'border-gray-200 bg-white shadow-sm'
                       } ${!addon.inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
@@ -383,7 +324,7 @@ export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> =
                         {section.type === 'beverage' ? (
                           addon.inStock ? (
                             addonQuantities[addon.id] ? (
-                              <div className="flex items-center justify-between bg-[#00bd6f] rounded-lg h-7 px-1 min-w-[64px] shadow-sm">
+                              <div className="flex items-center justify-between bg-[#1E90FF] rounded-lg h-7 px-1 min-w-[64px] shadow-sm">
                                 <button onClick={(e) => { e.stopPropagation(); handleAddonDecrement(addon.id); }} className="w-6 h-full flex items-center justify-center text-white active:scale-95">
                                   <Minus className="w-3.5 h-3.5 stroke-[3]" />
                                 </button>
@@ -395,7 +336,7 @@ export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> =
                             ) : (
                               <button 
                                 onClick={(e) => { e.stopPropagation(); handleAddonIncrement(addon.id); }}
-                                className="bg-white text-[#00bd6f] border border-[#00bd6f]/30 px-3 py-1 rounded-lg font-bold text-[12px] flex items-center gap-1 active:scale-95 transition-transform shadow-sm hover:bg-[#f4fdf8]"
+                                className="bg-white text-[#1E90FF] border border-[#1E90FF]/30 px-3 py-1 rounded-lg font-bold text-[12px] flex items-center gap-1 active:scale-95 transition-transform shadow-sm hover:bg-[#eff6ff]"
                               >
                                 ADD
                               </button>
@@ -411,7 +352,7 @@ export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> =
                             disabled={!addon.inStock}
                             onClick={(e) => { e.stopPropagation(); toggleBeverage(addon.id, section.selectionLimit); }}
                             className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                              isSelected ? 'border-[#00bd6f] bg-[#00bd6f]' : 'border-gray-300 bg-white'
+                              isSelected ? 'border-[#1E90FF] bg-[#1E90FF]' : 'border-gray-300 bg-white'
                             }`}
                           >
                             {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
@@ -440,7 +381,7 @@ export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> =
               <span className="text-[16px] font-bold text-gray-900">{mainQuantity}</span>
               <button 
                 onClick={() => setMainQuantity(mainQuantity + 1)}
-                className="w-8 h-full flex items-center justify-center text-[#00bd6f]"
+                className="w-8 h-full flex items-center justify-center text-[#1E90FF]"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
               </button>
@@ -449,7 +390,7 @@ export const CustomizationBottomSheet: React.FC<CustomizationBottomSheetProps> =
             {/* Add to Cart Button */}
             <button 
               onClick={handleAddToCart}
-              className="flex-1 bg-[#00bd6f] text-white h-14 rounded-xl font-bold text-[16px] flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-sm"
+              className="flex-1 bg-[#1E90FF] text-white h-14 rounded-xl font-bold text-[16px] flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-sm"
             >
               Add to Cart • ₹{calculateTotalPrice()}
             </button>

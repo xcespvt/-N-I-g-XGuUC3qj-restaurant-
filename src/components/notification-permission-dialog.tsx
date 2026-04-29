@@ -49,7 +49,7 @@ export function NotificationPermissionDialog({ open, onOpenChange }: Notificatio
             </div>
           <h2 className="text-xl font-bold">Enable Notifications</h2>
           <p className="mt-2 text-gray-400">
-            Get updates on your order status, new offers, and more.
+            Get updates on your order status and other important information.
           </p>
           <div className="mt-6 w-full space-y-3">
              <Button 

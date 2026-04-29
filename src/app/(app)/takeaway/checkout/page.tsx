@@ -17,32 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 
-const initialOffersData = [
-    {
-        id: "offer-1",
-        title: "Summer Special",
-        description: "Get 20% off on all pizza orders above ₹500",
-        couponCode: "SUMMER20",
-    },
-    {
-        id: "offer-2",
-        title: "Flat ₹50 OFF",
-        description: "Flat ₹50 discount on orders above ₹300",
-        couponCode: "FLAT50",
-    },
-    {
-        id: "offer-3",
-        title: "BOGO Burgers",
-        description: "Buy any burger and get another burger absolutely free",
-        couponCode: "BOGOSTAR",
-    },
-    {
-        id: "offer-5",
-        title: "First Order Special",
-        description: "New customers get 30% off on their first order",
-        couponCode: "NEW30",
-    },
-];
+const initialOffersData: any[] = [];
 
 
 function TakeawayCheckoutContent() {
@@ -68,18 +43,7 @@ function TakeawayCheckoutContent() {
         return takeawayCart.reduce((total, item) => total + item.price * item.quantity, 0)
     }, [takeawayCart]);
 
-    const discount = useMemo(() => {
-        if (couponCode === "FLAT50" && cartSubtotal >= 300) {
-            return 50;
-        }
-        if (couponCode === "SUMMER20" && cartSubtotal >= 500) {
-            return cartSubtotal * 0.20;
-        }
-         if (couponCode === "NEW30" && cartSubtotal >= 200) {
-            return cartSubtotal * 0.30;
-        }
-        return 0;
-    }, [cartSubtotal, couponCode]);
+    const discount = 0;
 
 
     const taxes = useMemo(() => (cartSubtotal - discount) * 0.18, [cartSubtotal, discount]);
@@ -201,36 +165,7 @@ function TakeawayCheckoutContent() {
                             <CardDescription>All transactions are secure and encrypted.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                             <div className="flex items-center gap-2">
-                                <Input 
-                                    placeholder="Enter coupon code" 
-                                    value={couponCode}
-                                    onChange={(e) => setCouponCode(e.target.value)}
-                                />
-                                <Dialog open={isCouponsDialogOpen} onOpenChange={setIsCouponsDialogOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button variant="outline">View</Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>Available Coupons</DialogTitle>
-                                            <DialogDescription>Select a coupon to apply to this order.</DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-3 py-4 max-h-[60vh] overflow-y-auto">
-                                            {initialOffersData.map(offer => (
-                                                <div key={offer.id} className="p-3 border rounded-lg flex items-center justify-between gap-2">
-                                                    <div>
-                                                        <p className="font-semibold text-primary">{offer.couponCode}</p>
-                                                        <p className="text-sm text-muted-foreground">{offer.title}</p>
-                                                        <p className="text-xs">{offer.description}</p>
-                                                    </div>
-                                                    <Button size="sm" onClick={() => applyCoupon(offer.couponCode)}>Apply</Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
+
                             <Separator/>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">

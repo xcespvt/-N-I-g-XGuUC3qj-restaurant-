@@ -421,28 +421,28 @@ export default function TableManagementPage() {
       {/* 1. Header & Quick Actions */}
       <div className="px-4 sm:px-6 pt-6 sm:pt-10 pb-6 sm:pb-8 bg-white border-b border-slate-100 sticky top-0 z-40">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <h1 className="text-[18px] sm:text-[20px] font-bold text-[#111827]">Tables</h1>
+          <h1 className="text-[20px] font-semibold text-[#111827]">Tables</h1>
         </div>
 
         {/* Action HUD Buttons */}
         <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-6">
-          <button onClick={() => { setEditingTable(null); setFormData({ ...initialFormState, floor: activeFloor }); setIsFormOpen(true); }} className="flex items-center justify-center gap-2 bg-[#1E90FF] text-white h-[48px] sm:h-[56px] rounded-[12px] sm:rounded-[14px] active:scale-[0.98] transition-all">
-            <PlusCircle size={18} className="sm:w-5 sm:h-5" /> <span className="text-[13px] sm:text-[14px] font-medium">Add Table</span>
+          <button onClick={() => { setEditingTable(null); setFormData({ ...initialFormState, floor: activeFloor }); setIsFormOpen(true); }} className="flex items-center justify-center gap-2 bg-[#1E90FF] text-white h-[56px] rounded-[14px] active:scale-[0.98] transition-all">
+            <PlusCircle size={20} /> <span className="text-[14px] font-medium">Add Table</span>
           </button>
-          <button onClick={() => { setSeriesFormData({ ...initialSeriesFormState, floor: activeFloor }); setIsSeriesFormOpen(true); }} className="flex items-center justify-center gap-2 bg-[#1E90FF] text-white h-[48px] sm:h-[56px] rounded-[12px] sm:rounded-[14px] active:scale-[0.98] transition-all">
-            <Layers size={18} className="sm:w-5 sm:h-5" /> <span className="text-[13px] sm:text-[14px] font-medium">Add Series</span>
+          <button onClick={() => { setSeriesFormData({ ...initialSeriesFormState, floor: activeFloor }); setIsSeriesFormOpen(true); }} className="flex items-center justify-center gap-2 bg-[#1E90FF] text-white h-[56px] rounded-[14px] active:scale-[0.98] transition-all">
+            <Layers size={20} /> <span className="text-[14px] font-medium">Add Series</span>
           </button>
-          <button onClick={() => setIsTableTypeDialogOpen(true)} className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#1E90FF] h-[48px] sm:h-[56px] rounded-[12px] sm:rounded-[14px] active:scale-[0.98] transition-all">
-            <Tag size={18} className="sm:w-5 sm:h-5" /> <span className="text-[13px] sm:text-[14px] font-medium">Types</span>
+          <button onClick={() => setIsTableTypeDialogOpen(true)} className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#1E90FF] h-[56px] rounded-[14px] active:scale-[0.98] transition-all">
+            <Tag size={20} /> <span className="text-[14px] font-medium">Types</span>
           </button>
-          <button onClick={() => setIsBookingSettingsOpen(true)} className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#1E90FF] h-[48px] sm:h-[56px] rounded-[12px] sm:rounded-[14px] active:scale-[0.98] transition-all">
-            <Settings size={18} className="sm:w-5 sm:h-5" /> <span className="text-[13px] sm:text-[14px] font-medium">Booking Settings</span>
+          <button onClick={() => setIsBookingSettingsOpen(true)} className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#1E90FF] h-[56px] rounded-[14px] active:scale-[0.98] transition-all">
+            <Settings size={20} /> <span className="text-[14px] font-medium">Booking Settings</span>
           </button>
-          <button onClick={() => setIsCreatePackageOpen(true)} className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#1E90FF] h-[48px] sm:h-[56px] rounded-[12px] sm:rounded-[14px] active:scale-[0.98] transition-all">
-            <Gift size={18} className="sm:w-5 sm:h-5" /> <span className="text-[13px] sm:text-[14px] font-medium">Packages</span>
+          <button onClick={() => setIsCreatePackageOpen(true)} className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#1E90FF] h-[56px] rounded-[14px] active:scale-[0.98] transition-all">
+            <Gift size={20} /> <span className="text-[14px] font-medium">Packages</span>
           </button>
-          <button onClick={() => setIsManagePackagesOpen(true)} className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#1E90FF] h-[48px] sm:h-[56px] rounded-[12px] sm:rounded-[14px] active:scale-[0.98] transition-all">
-            <Boxes size={18} className="sm:w-5 sm:h-5" /> <span className="text-[13px] sm:text-[14px] font-medium">Manage Packages</span>
+          <button onClick={() => setIsManagePackagesOpen(true)} className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#1E90FF] h-[56px] rounded-[14px] active:scale-[0.98] transition-all">
+            <Boxes size={20} /> <span className="text-[14px] font-medium">Manage Packages</span>
           </button>
         </div>
 
@@ -525,7 +525,7 @@ export default function TableManagementPage() {
             {Object.entries(groupedTables).map(([group, tablesInGroup]) => (
               <div key={group} className="mb-8 sm:mb-10">
                 <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                  <h3 className="text-[14px] sm:text-[16px] font-bold text-[#111827] capitalize">{group}</h3>
+                  <h3 className="text-[16px] font-semibold text-[#111827] capitalize">{group}</h3>
                   <div className="flex-1 h-[1px] bg-slate-100"></div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
@@ -538,8 +538,8 @@ export default function TableManagementPage() {
                       <div key={table.id} className="bg-white rounded-[16px] p-3 sm:p-4 border border-[#E5E7EB] shadow-sm flex flex-col justify-between h-[135px] sm:h-[155px] relative transition-all active:scale-[0.98] group hover:border-[#1E90FF]/40 hover:shadow-md">
                         <div className="flex justify-between items-start">
                           <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                            <h4 className="text-[16px] sm:text-[20px] font-bold text-[#111827] leading-tight">{table.name}</h4>
-                            <div className={cn("inline-block px-[6px] py-[1px] sm:px-[8px] sm:py-[2px] rounded-[4px] sm:rounded-[6px] text-[8px] sm:text-[10px] font-bold uppercase w-fit", isAvailable ? "bg-[#DCFCE7] text-[#15803D]" : info.type === 'Booking' ? "bg-[#FEF3C7] text-[#B45309]" : "bg-[#FEE2E2] text-[#B91C1C]")}>
+                            <h4 className="text-[18px] font-semibold text-[#111827] leading-tight">{table.name}</h4>
+                            <div className={cn("inline-block px-[8px] py-[2px] rounded-[12px] text-[12px] font-medium w-fit", isAvailable ? "bg-[#DCFCE7] text-[#15803D]" : info.type === 'Booking' ? "bg-[#FEF3C7] text-[#B45309]" : "bg-[#FEE2E2] text-[#B91C1C]")}>
                               {isAvailable ? "Available" : info.type === 'Booking' ? 'Booked' : 'Occupied'}
                             </div>
                           </div>
@@ -557,18 +557,18 @@ export default function TableManagementPage() {
                         </div>
 
                         <div className="mt-1">
-                          <p className="text-[11px] sm:text-[13px] text-slate-500 font-medium line-clamp-1">Cap: {table.capacity} • {table.type}</p>
+                          <p className="text-[14px] text-slate-500 line-clamp-1">Cap: {table.capacity} • {table.type}</p>
                         </div>
-
+ 
                         <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-slate-50">
                           <div className="flex items-center gap-1.5">
                             <Users size={14} className="text-slate-400 sm:w-[15px]" />
-                            <span className="text-[12px] sm:text-[14px] font-bold text-slate-800 tracking-tight">{info.guests || 0}/{table.capacity}</span>
+                            <span className="text-[14px] font-medium text-slate-800 tracking-tight">{info.guests || 0}/{table.capacity}</span>
                           </div>
                           {!isAvailable && (info.booking?.time || (info.order as any)?.time) && (
                             <div className="flex items-center gap-1">
                               <Clock size={14} className="text-slate-400 sm:w-[15px]" />
-                              <span className="text-[11px] sm:text-[13px] font-bold text-slate-800">{info.booking?.time || (info.order as any)?.time}</span>
+                              <span className="text-[14px] font-medium text-slate-800">{info.booking?.time || (info.order as any)?.time}</span>
                             </div>
                           )}
                         </div>

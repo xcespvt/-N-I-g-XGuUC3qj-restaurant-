@@ -31,25 +31,16 @@ interface MenuSearchAndFilterProps {
   onSearchChange: (value: string) => void;
   activeCategory: string;
   onCategoryChange: (value: string) => void;
-  categories: string[];
+  categories: any[];
+  activeSubCategory: string;
+  onSubCategoryChange: (value: string) => void;
+  subCategories: any[];
   isListening: boolean;
   onToggleListening: () => void;
   onOpenAdd: (type: AddSheetType) => void;
   onOpenCategoryDialog: () => void;
+  onOpenSubCategoryDialog: () => void;
 }
-
-const getCategoryIcon = (category: string) => {
-  switch (category.toLowerCase()) {
-    case 'pizza': return '🍕';
-    case 'sides': return '🍟';
-    case 'beverages': case 'drinks': return '🥤';
-    case 'combos': return '🍱';
-    case 'desserts': return '🍰';
-    case 'lunch': return '🍛';
-    case 'dinner': return '🍽️';
-    default: return null;
-  }
-};
 
 export function MenuSearchAndFilter({
   searchTerm,
@@ -57,10 +48,14 @@ export function MenuSearchAndFilter({
   activeCategory,
   onCategoryChange,
   categories,
+  activeSubCategory,
+  onSubCategoryChange,
+  subCategories,
   isListening,
   onToggleListening,
   onOpenAdd,
   onOpenCategoryDialog,
+  onOpenSubCategoryDialog,
 }: MenuSearchAndFilterProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -88,66 +83,68 @@ export function MenuSearchAndFilter({
           </button>
         </div>
 
-        {/* Add Actions */}
-        <div className="flex gap-2 shrink-0">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-[#1E90FF] text-white px-6 h-[52px] rounded-[14px] active:scale-[0.98] transition-all font-semibold shadow-lg shadow-blue-100">
-                <Plus size={20} /> <span>Add New</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl shadow-xl border-slate-100">
-              <DropdownMenuItem onClick={() => onOpenAdd("Item")} className="rounded-lg p-2.5 font-medium cursor-pointer"><Plus className="mr-2 h-4 w-4 text-blue-500" /> Add Item</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenAdd("Beverage")} className="rounded-lg p-2.5 font-medium cursor-pointer"><Plus className="mr-2 h-4 w-4 text-purple-500" /> Add Beverage</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenAdd("Combo")} className="rounded-lg p-2.5 font-medium cursor-pointer"><Plus className="mr-2 h-4 w-4 text-orange-500" /> Add Combo</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenAdd("Sauce")} className="rounded-lg p-2.5 font-medium cursor-pointer"><Plus className="mr-2 h-4 w-4 text-rose-500" /> Add Sauce</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
-      {/* 2. Category Filter Chips */}
-      <div className="flex gap-[10px] overflow-x-auto no-scrollbar pb-2 -mx-6 px-6 lg:mx-0 lg:px-0 lg:flex-wrap">
-        <button 
-          onClick={onOpenCategoryDialog}
-          className="h-[38px] px-4 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 bg-[#E6F4FF] text-[#1E90FF] flex items-center gap-1.5 hover:bg-blue-100 border border-transparent shadow-sm"
-        >
-          <Plus size={18} />
-          <span>Add Category</span>
-        </button>
+      <div className="space-y-4">
+        {/* 2. Category Filter Chips */}
+        <div className="flex gap-[10px] overflow-x-auto no-scrollbar pb-1 -mx-6 px-6 lg:mx-0 lg:px-0 lg:flex-wrap">
+          <button 
+            onClick={onOpenCategoryDialog}
+            className="h-[38px] px-4 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 bg-[#E6F4FF] text-[#1E90FF] flex items-center gap-1.5 hover:bg-blue-100 border border-transparent shadow-sm"
+          >
+            <Plus size={18} />
+            <span>Add Category</span>
+          </button>
+          
+          {categories.map(catObj => {
+            const cat = catObj.name;
+            return (
+              <button 
+                key={cat}
+                onClick={() => onCategoryChange(cat)}
+                className={cn(
+                  "h-[38px] px-5 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 border shadow-sm",
+                  activeCategory === cat 
+                    ? "bg-[#E6F4FF] text-[#1E90FF] border-blue-200" 
+                    : "bg-white border-[#E5E7EB] text-[#374151] hover:border-slate-300"
+                )}
+              >
+                {cat === 'All' && <LayoutGrid size={16} />}
+                <span>{cat === 'All' ? 'All Items' : cat}</span>
+              </button>
+            );
+          })}
+        </div>
 
-        {/* 'All' Chip */}
-        <button 
-          onClick={() => onCategoryChange("All")}
-          className={cn(
-            "h-[38px] px-5 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 border shadow-sm",
-            activeCategory === "All" 
-              ? "bg-[#E6F4FF] text-[#1E90FF] border-blue-200" 
-              : "bg-white border-[#E5E7EB] text-[#374151] hover:border-slate-300"
-          )}
-        >
-          <LayoutGrid size={16} />
-          <span>All Items</span>
-        </button>
+        {/* 3. Sub Category Filter Chips */}
+        <div className="flex gap-[10px] overflow-x-auto no-scrollbar pb-1 -mx-6 px-6 lg:mx-0 lg:px-0 lg:flex-wrap">
+          <button 
+            onClick={onOpenSubCategoryDialog}
+            className="h-[38px] px-4 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 bg-[#F0FDF4] text-[#16A34A] flex items-center gap-1.5 hover:bg-green-100 border border-transparent shadow-sm"
+          >
+            <Plus size={18} />
+            <span>Add Sub Category</span>
+          </button>
 
-        {categories.filter(c => c !== 'All').map(cat => {
-          const icon = getCategoryIcon(cat);
-          return (
-            <button 
-              key={cat}
-              onClick={() => onCategoryChange(cat)}
-              className={cn(
-                "h-[38px] px-5 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 border shadow-sm",
-                activeCategory === cat 
-                  ? "bg-[#E6F4FF] text-[#1E90FF] border-blue-200" 
-                  : "bg-white border-[#E5E7EB] text-[#374151] hover:border-slate-300"
-              )}
-            >
-              {icon && <span className="text-[16px] leading-none">{icon}</span>}
-              <span>{cat}</span>
-            </button>
-          );
-        })}
+          {subCategories.map(subObj => {
+            const sub = subObj.name;
+            return (
+              <button 
+                key={sub}
+                onClick={() => onSubCategoryChange(sub)}
+                className={cn(
+                  "h-[38px] px-5 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 border shadow-sm",
+                  activeSubCategory === sub 
+                    ? "bg-[#F0FDF4] text-[#16A34A] border-green-200" 
+                    : "bg-white border-[#E5E7EB] text-[#374151] hover:border-slate-300"
+                )}
+              >
+                {sub === 'All' && <LayoutGrid size={16} />}
+                <span>{sub === 'All' ? 'All' : sub}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

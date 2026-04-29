@@ -325,15 +325,15 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-3 gap-4 w-full">
             <div>
-              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.orders || "0")}</p>
+              <div className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.orders || "0")}</div>
               <p className="text-xs text-muted-foreground">Orders</p>
             </div>
             <div>
-              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.acceptance || "0%")}</p>
+              <div className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.acceptance || "0%")}</div>
               <p className="text-xs text-muted-foreground">Acceptance</p>
             </div>
             <div>
-              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.tenure || "0")}</p>
+              <div className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-12 mx-auto" /> : (profile?.stats?.tenure || "0")}</div>
               <p className="text-xs text-muted-foreground">Months</p>
             </div>
           </div>
@@ -355,17 +355,17 @@ export default function ProfilePage() {
           <div className="grid grid-cols-3 gap-4 text-center">
             <Card className="p-3 bg-muted/50">
               <Star className="h-6 w-6 text-yellow-400 fill-yellow-400 mx-auto mb-1" />
-              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.rating || "0.0")}</p>
+              <div className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.rating || "0.0")}</div>
               <p className="text-xs text-muted-foreground">Rating</p>
             </Card>
             <Card className="p-3 bg-muted/50">
               <Clock className="h-6 w-6 text-blue-500 mx-auto mb-1" />
-              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.accuracy || "0%")}</p>
+              <div className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.accuracy || "0%")}</div>
               <p className="text-xs text-muted-foreground">Order Accuracy</p>
             </Card>
             <Card className="p-3 bg-muted/50">
               <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
-              <p className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.acceptanceRate || "0%")}</p>
+              <div className="font-bold text-lg">{isLoading ? <Skeleton className="h-6 w-10 mx-auto" /> : (profile?.performance?.acceptanceRate || "0%")}</div>
               <p className="text-xs text-muted-foreground">Acceptance</p>
             </Card>
           </div>

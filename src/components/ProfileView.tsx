@@ -228,12 +228,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   path: '/refunds',
                 },
                 {
-                  icon: Users,
-                  title: "Staff Management",
-                  desc: "Manage staff and roles",
-                  path: '/staff',
-                },
-                {
                   icon: Receipt,
                   title: "Custom Charges",
                   desc: "Packaging, taxes, service charge",

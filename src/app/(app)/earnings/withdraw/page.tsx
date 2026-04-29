@@ -13,7 +13,8 @@ import { useAppStore } from '@/context/useAppStore';
 import { useRouter } from 'next/navigation';
 
 export default function WithdrawPage() {
-  const { walletBalance, setWalletBalance } = useAppStore();
+  const { } = useAppStore();
+  const walletBalance = 0; // Default to 0 as wallet state was removed
   const router = useRouter();
   const [withdrawStep, setWithdrawStep] = useState<'input' | 'confirm' | 'loading' | 'success'>('input');
   const [withdrawAmount, setWithdrawAmount] = useState('');
