@@ -110,7 +110,7 @@ export function MenuSearchAndFilter({
                 )}
               >
                 {cat === 'All' && <LayoutGrid size={16} />}
-                <span>{cat === 'All' ? 'All Items' : cat}</span>
+                <span>{cat === 'All' ? 'All Categories' : cat}</span>
               </button>
             );
           })}
@@ -120,7 +120,7 @@ export function MenuSearchAndFilter({
         <div className="flex gap-[10px] overflow-x-auto no-scrollbar pb-1 -mx-6 px-6 lg:mx-0 lg:px-0 lg:flex-wrap">
           <button 
             onClick={onOpenSubCategoryDialog}
-            className="h-[38px] px-4 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 bg-[#F0FDF4] text-[#16A34A] flex items-center gap-1.5 hover:bg-green-100 border border-transparent shadow-sm"
+            className="h-[38px] px-4 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 bg-[#E6F4FF] text-[#1E90FF] flex items-center gap-1.5 hover:bg-blue-100 border border-transparent shadow-sm"
           >
             <Plus size={18} />
             <span>Add Sub Category</span>
@@ -135,12 +135,12 @@ export function MenuSearchAndFilter({
                 className={cn(
                   "h-[38px] px-5 rounded-[19px] text-[14px] font-bold whitespace-nowrap transition-all duration-300 flex-shrink-0 flex items-center gap-1.5 border shadow-sm",
                   activeSubCategory === sub 
-                    ? "bg-[#F0FDF4] text-[#16A34A] border-green-200" 
+                    ? "bg-[#E6F4FF] text-[#1E90FF] border-blue-200" 
                     : "bg-white border-[#E5E7EB] text-[#374151] hover:border-slate-300"
                 )}
               >
                 {sub === 'All' && <LayoutGrid size={16} />}
-                <span>{sub === 'All' ? 'All' : sub}</span>
+                <span>{sub === 'All' ? 'All Sub Categories' : sub}</span>
               </button>
             );
           })}

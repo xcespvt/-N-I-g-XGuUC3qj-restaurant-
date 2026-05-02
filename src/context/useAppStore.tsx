@@ -123,6 +123,7 @@ export interface MenuItem {
   available: boolean;
   dietaryType: 'Veg' | 'Non-Veg';
   portionOptions?: { name: string; price: number }[];
+  gstIncluded: boolean;
   // Optional server identifier for API operations
   itemId?: string;
 }
@@ -455,7 +456,7 @@ export const useAppStore = create<AppStore>()(
             id: `ORD-${(get().orders.length + 1).toString().padStart(3, '0')}`,
             customer: customerName || 'Walk-in Customer',
             time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-            date: new Date().toISOString().split('T')[0],
+            date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD in local time
             status: 'Preparing',
             type: orderType === 'takeaway' ? 'Takeaway' : 'Dine-in',
             source: 'Offline',

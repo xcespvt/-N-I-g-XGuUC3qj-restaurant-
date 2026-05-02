@@ -28,30 +28,26 @@ export function MenuItemCard({
   return (
     <div className={cn(
         "rounded-[16px] p-2 border border-[#E5E7EB] flex flex-col gap-2 transition-all duration-300 shadow-sm hover:shadow-md hover:border-blue-100",
-        item.available ? "bg-white" : "bg-slate-50 opacity-80 grayscale-[0.2]"
+        item.available ? "bg-white" : "bg-white opacity-80 grayscale-[0.2]"
     )}>
       {/* Image Section */}
-      <div className="relative w-full h-[120px] rounded-[12px] overflow-hidden bg-slate-100 shrink-0">
-        <img 
-            src={item.image} 
-            alt={item.name} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-        />
-        
-        {/* Veg/Non-Veg Icon */}
-        <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm">
-          <div className={cn("w-3 h-3 rounded-sm border flex items-center justify-center", isVeg ? "border-green-500" : "border-red-500")}>
-            <div className={cn("w-1.5 h-1.5 rounded-full", isVeg ? "bg-green-500" : "bg-red-500")} />
-          </div>
-        </div>
-
-        {/* Status Badge */}
-        {!item.available && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <span className="text-white text-[11px] font-bold uppercase tracking-wider bg-black/60 px-2 py-1 rounded-md">Unavailable</span>
+      {item.category !== "Toppings" && item.category !== "Beverage" && item.category !== "Beverages" && (
+        <div className="relative w-full h-[120px] rounded-[12px] overflow-hidden bg-white shrink-0">
+          <img 
+              src={item.image} 
+              alt={item.name} 
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+          />
+          
+          {/* Veg/Non-Veg Icon */}
+          <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm">
+            <div className={cn("w-3 h-3 rounded-sm border flex items-center justify-center", isVeg ? "border-green-500" : "border-red-500")}>
+              <div className={cn("w-1.5 h-1.5 rounded-full", isVeg ? "bg-green-500" : "bg-red-500")} />
             </div>
-        )}
-      </div>
+          </div>
+
+        </div>
+      )}
 
       {/* Content Section */}
       <div className="flex flex-col flex-1 px-1 py-1">
@@ -75,26 +71,37 @@ export function MenuItemCard({
           </DropdownMenu>
         </div>
 
+        {item.category !== "Toppings" && item.category !== "Beverage" && item.category !== "Beverages" && item.description && (
+          <p className="text-[12px] text-[#6B7280] line-clamp-2 leading-relaxed mb-2">
+            {item.description}
+          </p>
+        )}
         
-        <div className="flex items-center justify-between mt-auto">
-          <span className="text-[16px] font-extrabold text-[#111827]">₹{item.price}</span>
+        <div className="flex items-center justify-between mt-auto pt-2">
+          <div className="flex flex-col">
+            <span className="text-[16px] font-extrabold text-[#111827]">₹{item.price}</span>
+            {!item.available ? (
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Out of Stock</span>
+            ) : (
+              <span className="text-[10px] text-slate-500 font-medium">
+                {item.gstIncluded ? "GST Included" : "+ GST extra"}
+              </span>
+            )}
+          </div>
           
           <div className="flex items-center gap-2">
-            <span className={cn("text-[9px] font-bold uppercase tracking-wide", item.available ? "text-green-600" : "text-slate-400")}>
-                {item.available ? "Live" : "Off"}
-            </span>
             <button 
               onClick={() => isRestaurantOnline && onToggleAvailability(item, !item.available)}
               disabled={!isRestaurantOnline}
               className={cn(
-                "w-[34px] h-[18px] rounded-full p-[2px] transition-all duration-300 relative shrink-0",
-                item.available ? "bg-[#1E90FF]" : "bg-slate-300",
+                "w-[40px] h-[22px] rounded-full p-[2px] transition-all duration-300 relative shrink-0 border-2",
+                item.available ? "bg-[#1E90FF] border-[#1E90FF]" : "bg-white border-slate-300",
                 !isRestaurantOnline && "opacity-50 grayscale"
               )}
             >
               <div className={cn(
-                "w-[14px] h-[14px] bg-white rounded-full transition-all duration-300 shadow-sm",
-                item.available ? "translate-x-[16px]" : "translate-x-0"
+                "w-[14px] h-[14px] rounded-full transition-all duration-300 shadow-sm",
+                item.available ? "bg-white translate-x-[18px]" : "bg-slate-400 translate-x-0"
               )} />
             </button>
           </div>

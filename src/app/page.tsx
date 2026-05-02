@@ -225,7 +225,7 @@ function LoginContent() {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-white">
     
-      <div className="fixed inset-0 z-[500] bg-white/40 lg:bg-slate-50/40 backdrop-blur-[2px] flex flex-col lg:flex-row font-sans overflow-hidden lg:items-center lg:justify-center">
+      <div className="fixed inset-0 z-[500] bg-white/40 lg:bg-white/40 backdrop-blur-[2px] flex flex-col lg:flex-row font-sans overflow-hidden lg:items-center lg:justify-center">
       {/* Desktop Left Side - Brand & Features */}
       
       <div className="hidden lg:flex lg:flex-1 lg:h-full lg:bg-[#1E90FF] lg:relative lg:flex-col lg:p-16 lg:justify-center lg:overflow-hidden">
@@ -325,7 +325,7 @@ function LoginContent() {
 
               <button
                 onClick={onNavigateToOnboarding}
-                className="w-full h-14 bg-white text-slate-900 border-[1.5px] border-slate-900 rounded-xl font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all hover:bg-slate-50"
+                className="w-full h-14 bg-white text-slate-900 border-[1.5px] border-slate-900 rounded-xl font-semibold text-[16px] flex items-center justify-center active:scale-[0.98] transition-all hover:bg-white"
               >
                 Become a Partner
               </button>
@@ -346,8 +346,8 @@ function LoginContent() {
                 </h3>
               </div>
 
-              <div className="flex items-center h-14 border border-slate-200 rounded-xl overflow-hidden focus-within:border-[#1E90FF] focus-within:ring-1 focus-within:ring-[#1E90FF] bg-slate-50 focus-within:bg-white transition-all">
-                <div className="flex items-center gap-2 px-4 border-r border-slate-200 bg-slate-50 h-full">
+              <div className="flex items-center h-14 border border-slate-200 rounded-xl overflow-hidden focus-within:border-[#1E90FF] focus-within:ring-1 focus-within:ring-[#1E90FF] bg-white focus-within:bg-white transition-all">
+                <div className="flex items-center gap-2 px-4 border-r border-slate-200 bg-white h-full">
                   <img
                     src="https://flagcdn.com/w20/in.png"
                     alt="India"
@@ -372,7 +372,7 @@ function LoginContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setView("hero")}
-                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-[0.98]"
+                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-[0.98]"
                 >
                   Back
                 </button>
@@ -387,7 +387,7 @@ function LoginContent() {
 
               <button
                 onClick={() => setView("email-method")}
-                className="w-full h-14 bg-white text-slate-700 rounded-xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all border border-slate-200 hover:bg-slate-50"
+                className="w-full h-14 bg-white text-slate-700 rounded-xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all border border-slate-200 hover:bg-white"
               >
                 <Mail size={18} className="text-slate-500" /> Login with Email
               </button>
@@ -430,7 +430,7 @@ function LoginContent() {
                         ? "border-rose-300 bg-rose-50 text-rose-600"
                         : digit
                           ? "border-[#1E90FF] bg-blue-50 text-[#1E90FF]"
-                          : "border-slate-200 bg-slate-50 focus:border-[#1E90FF] focus:bg-white"
+                          : "border-slate-200 bg-white focus:border-[#1E90FF] focus:bg-white"
                     }`}
                   />
                 ))}
@@ -445,7 +445,7 @@ function LoginContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setView("input")}
-                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-[0.98]"
+                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-[0.98]"
                 >
                   Back
                 </button>
@@ -557,7 +557,7 @@ function LoginContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setView("email-method")}
-                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-[0.98]"
+                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-[0.98]"
                 >
                   Back
                 </button>
@@ -614,7 +614,7 @@ function LoginContent() {
                         ? "border-rose-300 bg-rose-50 text-rose-600"
                         : digit
                           ? "border-[#1E90FF] bg-blue-50 text-[#1E90FF]"
-                          : "border-slate-200 bg-slate-50 focus:border-[#1E90FF] focus:bg-white"
+                          : "border-slate-200 bg-white focus:border-[#1E90FF] focus:bg-white"
                     }`}
                   />
                 ))}
@@ -629,7 +629,7 @@ function LoginContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setView("email-otp-input")}
-                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-[0.98]"
+                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-[0.98]"
                 >
                   Back
                 </button>
@@ -684,7 +684,7 @@ function LoginContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setView("email-method")}
-                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-[0.98]"
+                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-[0.98]"
                 >
                   Back
                 </button>
@@ -742,7 +742,7 @@ function LoginContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setView("email-password-step1")}
-                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-[0.98]"
+                  className="w-1/3 h-14 rounded-xl font-semibold text-[16px] flex items-center justify-center transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-[0.98]"
                 >
                   Back
                 </button>

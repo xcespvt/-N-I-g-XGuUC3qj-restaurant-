@@ -284,7 +284,7 @@ function AppLayoutClient({
 
           <button
             onClick={() => router.push("/profile")}
-            className="w-full flex items-center gap-3 px-3 py-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all active:scale-[0.98] group mt-2"
+            className="w-full flex items-center gap-3 px-3 py-3 bg-white rounded-xl hover:bg-white border border-slate-100 transition-all active:scale-[0.98] group mt-2"
           >
             <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold group-hover:bg-primary/20 transition-colors text-sm">
               GK

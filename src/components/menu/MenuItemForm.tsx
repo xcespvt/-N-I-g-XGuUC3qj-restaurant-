@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { useToast } from "@/hooks/use-toast";
-import { usePostForm, useDeleteJson, useQueryHelpers } from "@/hooks/useApi";
+import { usePostForm, useDeleteJson, useQueryHelpers, useGet } from "@/hooks/useApi";
 import { useAppStore } from "@/context/useAppStore";
 
 type AddSheetType = "Item" | "Beverage" | "Combo" | "Sauce" | null;
@@ -191,6 +191,33 @@ export function MenuItemForm({
   const [selectedToppings, setSelectedToppings] = useState<string[]>(
     editingItem?.allowedToppings || []
   );
+  const [enableBeverages, setEnableBeverages] = useState(
+    editingItem?.allowedBeverages && editingItem.allowedBeverages.length > 0 ? true : false
+  );
+  const [selectedBeverages, setSelectedBeverages] = useState<string[]>(
+    editingItem?.allowedBeverages || []
+  );
+
+  const { data: toppingsData } = useGet<any>(
+    ["toppings", restaurantId || ""],
+    `/api/menu/toppings/${restaurantId}`,
+    {},
+    { enabled: !!restaurantId && enableToppings }
+  );
+
+  const { data: addonsData } = useGet<any>(
+    ["addons", restaurantId || ""],
+    `/api/menu/addons/${restaurantId}`,
+    {},
+    { enabled: !!restaurantId && enableAddons }
+  );
+
+  const { data: beveragesData } = useGet<any>(
+    ["beverages", restaurantId || ""],
+    `/api/menu/beverages/${restaurantId}`,
+    {},
+    { enabled: !!restaurantId && enableBeverages }
+  );
   const [enableServeInfo, setEnableServeInfo] = useState(
     editingItem?.piecesInfo && editingItem.piecesInfo.length > 0 ? true : false
   );
@@ -235,6 +262,8 @@ export function MenuItemForm({
       setSelectedAddons(editingItem.allowedAddons || []);
       setEnableToppings(editingItem.allowedToppings && editingItem.allowedToppings.length > 0 ? true : false);
       setSelectedToppings(editingItem.allowedToppings || []);
+      setEnableBeverages(editingItem.allowedBeverages && editingItem.allowedBeverages.length > 0 ? true : false);
+      setSelectedBeverages(editingItem.allowedBeverages || []);
       setEnableServeInfo(editingItem.piecesInfo && editingItem.piecesInfo.length > 0 ? true : false);
       setServingSize(editingItem.servingSize || "1-2");
       setPiecesInfo(editingItem.piecesInfo || []);
@@ -258,6 +287,8 @@ export function MenuItemForm({
       setSelectedAddons([]);
       setEnableToppings(false);
       setSelectedToppings([]);
+      setEnableBeverages(false);
+      setSelectedBeverages([]);
       setEnableServeInfo(false);
       setServingSize("1-2");
       setPiecesInfo([]);
@@ -269,9 +300,23 @@ export function MenuItemForm({
   }, [editingItem]);
   const [customTagInput, setCustomTagInput] = useState("");
 
-  const availableToppings = [
-    "Extra Cheese", "Jalapenos", "Black Olives", "Mushroom", "Onion", "Capsicum", "Paneer", "Pepperoni", "Chicken Tikka"
-  ];
+  const availableToppings = toppingsData?.success 
+    ? toppingsData.data
+        .filter((t: any) => t.name !== name)
+        .map((t: any) => t.name)
+    : [];
+
+  const availableAddons = addonsData?.success
+    ? addonsData.data
+        .filter((a: any) => a.name !== name)
+        .map((a: any) => a.name)
+    : [];
+
+  const availableBeverages = beveragesData?.success
+    ? beveragesData.data
+        .filter((b: any) => b.name !== name)
+        .map((b: any) => b.name)
+    : [];
   
   const servingSizeOptions = [
     "0-1",
@@ -351,6 +396,12 @@ export function MenuItemForm({
     );
   };
 
+  const toggleBeverage = (beverage: string) => {
+    setSelectedBeverages((prev) =>
+      prev.includes(beverage) ? prev.filter((b) => b !== beverage) : [...prev, beverage]
+    );
+  };
+
   const addPieceInfo = () => {
     setPiecesInfo([...piecesInfo, { name: "", count: "" }]);
   };
@@ -375,17 +426,20 @@ export function MenuItemForm({
       return;
     }
 
+    const isToppings = foodCategory === "Toppings";
+    const isBeverages = foodCategory === "Beverage" || foodCategory === "Beverages";
+
     const itemData = {
       name,
-      description,
+      description: (isToppings || isBeverages) ? "" : description,
       category: foodCategory,
-      subCategory: subCategory,
+      subCategory: (isToppings || isBeverages) ? "All" : subCategory,
       type: addSheetType?.toLowerCase() || "item",
       available: isAvailable,
-      images: uploadedImageUrl ? [uploadedImageUrl] : [],
-      pricing_unit: pricingType === "variety" ? "size" : "quantity",
+      images: (isToppings || isBeverages) ? [] : (uploadedImageUrl ? [uploadedImageUrl] : []),
+      pricing_unit: (isToppings || isBeverages) ? "quantity" : (pricingType === "variety" ? "size" : "quantity"),
       pricing_options:
-        pricingType === "simple"
+        isToppings || isBeverages || pricingType === "simple"
           ? [{ label: "Regular", price: parseFloat(price), default: true }]
           : variants.map((v, i) => ({
               label: v.name,
@@ -393,18 +447,19 @@ export function MenuItemForm({
               default: i === 0, // Make the first variant default
             })),
       portions:
-        pricingType === "simple"
+        isToppings || isBeverages || pricingType === "simple"
           ? ["Regular"]
           : variants.map((v) => v.name),
       // Optional fields if the backend supports them later
-      dietaryType,
-      badges: selectedTags,
-      allowedAddons: enableAddons ? selectedAddons : [],
-      allowedToppings: enableToppings ? selectedToppings : [],
-      servingSize: enableServeInfo ? servingSize : null,
-      piecesInfo: enableServeInfo ? piecesInfo : [],
-      availableFor,
-      gstCategory,
+      dietaryType: (isToppings || isBeverages) ? "Veg" : dietaryType,
+      badges: (isToppings || isBeverages) ? [] : selectedTags,
+      allowedAddons: !(isToppings || isBeverages) && enableAddons ? selectedAddons : [],
+      allowedToppings: !(isToppings || isBeverages) && enableToppings ? selectedToppings : [],
+      allowedBeverages: !(isToppings || isBeverages) && enableBeverages ? selectedBeverages : [],
+      servingSize: !(isToppings || isBeverages) && enableServeInfo ? servingSize : null,
+      piecesInfo: !(isToppings || isBeverages) && enableServeInfo ? piecesInfo : [],
+      availableFor: (isToppings || isBeverages) ? ["Delivery", "Takeaway", "Dine-In"] : availableFor,
+      gstCategory: (isToppings || isBeverages) ? "Freshly Prepared Item" : gstCategory,
       gstIncluded,
     };
 
@@ -435,38 +490,40 @@ export function MenuItemForm({
         )}
 
         {/* Image Upload Section */}
-        <div
-          onClick={handleImageUploadClick}
-          className="h-[180px] rounded-[16px] border border-dashed border-[#D1D5DB] bg-[#F9FAFB] flex flex-col items-center justify-center gap-3 relative overflow-hidden active:bg-slate-50 transition-colors cursor-pointer"
-        >
-          {uploadedImageUrl ? (
-            <img
-              src={uploadedImageUrl}
-              alt="Preview"
-              className="w-full h-full object-cover"
+        {foodCategory !== "Toppings" && (
+          <div
+            onClick={handleImageUploadClick}
+            className="h-[180px] rounded-[16px] border border-dashed border-[#D1D5DB] bg-white flex flex-col items-center justify-center gap-3 relative overflow-hidden active:bg-slate-50 transition-colors cursor-pointer"
+          >
+            {uploadedImageUrl ? (
+              <img
+                src={uploadedImageUrl}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-400">
+                  {isUploading ? (
+                    <Loader2 className="animate-spin" size={24} />
+                  ) : (
+                    <ImageIcon size={24} />
+                  )}
+                </div>
+                <span className="text-sm font-medium text-slate-600">
+                  {isUploading ? "Uploading..." : "Upload Food Image"}
+                </span>
+              </>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
             />
-          ) : (
-            <>
-              <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-400">
-                {isUploading ? (
-                  <Loader2 className="animate-spin" size={24} />
-                ) : (
-                  <ImageIcon size={24} />
-                )}
-              </div>
-              <span className="text-sm font-medium text-slate-600">
-                {isUploading ? "Uploading..." : "Upload Food Image"}
-              </span>
-            </>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
+          </div>
+        )}
 
         {/* Food Item Name */}
         <div className="space-y-2">
@@ -518,149 +575,159 @@ export function MenuItemForm({
         </div>
 
         {/* Sub Category */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Sub Category</label>
-          <Select value={subCategory} onValueChange={setSubCategory}>
-            <SelectTrigger className="w-full h-[44px] rounded-[10px] border-[#E5E7EB]">
-              <SelectValue placeholder="Select sub category" />
-            </SelectTrigger>
-            <SelectContent position="popper" className="z-[150] bg-white border border-slate-200 shadow-xl rounded-xl">
-              <SelectItem value="All" className="py-3 px-4 hover:bg-slate-50 cursor-pointer">All</SelectItem>
-              {storeSubCategories.map((sub) => {
-                const name = typeof sub === 'string' ? sub : sub.name;
-                if (name === 'All') return null;
-                return (
-                  <SelectItem key={name} value={name} className="py-3 px-4 hover:bg-slate-50 cursor-pointer">
-                    {name}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
+        {foodCategory !== "Toppings" && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Sub Category</label>
+            <Select value={subCategory} onValueChange={setSubCategory}>
+              <SelectTrigger className="w-full h-[44px] rounded-[10px] border-[#E5E7EB]">
+                <SelectValue placeholder="Select sub category" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="z-[150] bg-white border border-slate-200 shadow-xl rounded-xl">
+                <SelectItem value="All" className="py-3 px-4 hover:bg-slate-50 cursor-pointer">All</SelectItem>
+                {storeSubCategories.map((sub) => {
+                  const name = typeof sub === 'string' ? sub : sub.name;
+                  if (name === 'All') return null;
+                  return (
+                    <SelectItem key={name} value={name} className="py-3 px-4 hover:bg-slate-50 cursor-pointer">
+                      {name}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* GST Category */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">GST Category</label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
-              <input 
-                type="radio" 
-                checked={gstCategory === 'Freshly Prepared Item'} 
-                onChange={() => setGstCategory('Freshly Prepared Item')}
-                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              Freshly Prepared Item
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
-              <input 
-                type="radio" 
-                checked={gstCategory === 'MRP Based Item'} 
-                onChange={() => setGstCategory('MRP Based Item')}
-                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              MRP Based Item
-            </label>
+        {foodCategory !== "Toppings" && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">GST Category</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                <input 
+                  type="radio" 
+                  checked={gstCategory === 'Freshly Prepared Item'} 
+                  onChange={() => setGstCategory('Freshly Prepared Item')}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                Freshly Prepared Item
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                <input 
+                  type="radio" 
+                  checked={gstCategory === 'MRP Based Item'} 
+                  onChange={() => setGstCategory('MRP Based Item')}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                MRP Based Item
+              </label>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Food Type Selection */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Food Types</label>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setDietaryType("Veg")}
-              className={`flex-1 h-[44px] rounded-[10px] border flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
-                dietaryType === "Veg"
-                  ? "border-green-500 bg-green-50 text-green-700"
-                  : "border-[#E5E7EB] text-slate-600"
-              }`}
-            >
-              <div className="w-3 h-3 rounded-sm border border-green-600 flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-600" />
-              </div>
-              Veg
-            </button>
-            <button
-              onClick={() => setDietaryType("Non-Veg")}
-              className={`flex-1 h-[44px] rounded-[10px] border flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
-                dietaryType === "Non-Veg"
-                  ? "border-red-500 bg-red-50 text-red-700"
-                  : "border-[#E5E7EB] text-slate-600"
-              }`}
-            >
-              <div className="w-3 h-3 rounded-sm border border-red-600 flex items-center justify-center">
-                <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-b-[5px] border-l-transparent border-r-transparent border-b-red-600" />
-              </div>
-              Non-Veg
-            </button>
-            <button
-              onClick={() => setDietaryType("Egg")}
-              className={`flex-1 h-[44px] rounded-[10px] border flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
-                dietaryType === "Egg"
-                  ? "border-yellow-500 bg-yellow-50 text-yellow-700"
-                  : "border-[#E5E7EB] text-slate-600"
-              }`}
-            >
-              <div className="w-3 h-3 rounded-sm border border-yellow-500 flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-              </div>
-              Egg
-            </button>
-          </div>
-        </div>
-
-        {/* Food Tags */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Food Tags</label>
-          <Input
-            placeholder="Type a tag and press Enter"
-            value={customTagInput}
-            onChange={(e) => setCustomTagInput(e.target.value)}
-            onKeyDown={handleAddCustomTag}
-            className="h-[44px] rounded-[10px] border-[#E5E7EB] mb-2"
-          />
-          <div className="flex flex-wrap gap-2">
-            {[...new Set([...tagsList, ...selectedTags])].map((tag) => (
+        {foodCategory !== "Toppings" && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Food Types</label>
+            <div className="flex gap-3">
               <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`h-[32px] px-4 rounded-[16px] border text-sm transition-colors ${
-                  selectedTags.includes(tag)
-                    ? "bg-[#2563EB] border-[#2563EB] text-white"
-                    : "bg-white border-[#E5E7EB] text-slate-600"
+                onClick={() => setDietaryType("Veg")}
+                className={`flex-1 h-[44px] rounded-[10px] border flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+                  dietaryType === "Veg"
+                    ? "border-green-500 bg-green-50 text-green-700"
+                    : "border-[#E5E7EB] text-slate-600"
                 }`}
               >
-                {tag}
+                <div className="w-3 h-3 rounded-sm border border-green-600 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-600" />
+                </div>
+                Veg
               </button>
-            ))}
+              <button
+                onClick={() => setDietaryType("Non-Veg")}
+                className={`flex-1 h-[44px] rounded-[10px] border flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+                  dietaryType === "Non-Veg"
+                    ? "border-red-500 bg-red-50 text-red-700"
+                    : "border-[#E5E7EB] text-slate-600"
+                }`}
+              >
+                <div className="w-3 h-3 rounded-sm border border-red-600 flex items-center justify-center">
+                  <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-b-[5px] border-l-transparent border-r-transparent border-b-red-600" />
+                </div>
+                Non-Veg
+              </button>
+              <button
+                onClick={() => setDietaryType("Egg")}
+                className={`flex-1 h-[44px] rounded-[10px] border flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+                  dietaryType === "Egg"
+                    ? "border-yellow-500 bg-yellow-50 text-yellow-700"
+                    : "border-[#E5E7EB] text-slate-600"
+                }`}
+              >
+                <div className="w-3 h-3 rounded-sm border border-yellow-500 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                </div>
+                Egg
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Food Tags */}
+        {foodCategory !== "Toppings" && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Food Tags</label>
+            <Input
+              placeholder="Type a tag and press Enter"
+              value={customTagInput}
+              onChange={(e) => setCustomTagInput(e.target.value)}
+              onKeyDown={handleAddCustomTag}
+              className="h-[44px] rounded-[10px] border-[#E5E7EB] mb-2"
+            />
+            <div className="flex flex-wrap gap-2">
+              {[...new Set([...tagsList, ...selectedTags])].map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`h-[32px] px-4 rounded-[16px] border text-sm transition-colors ${
+                    selectedTags.includes(tag)
+                      ? "bg-[#2563EB] border-[#2563EB] text-white"
+                      : "bg-white border-[#E5E7EB] text-slate-600"
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Pricing Section */}
         <div className="space-y-4">
           <h3 className="text-base font-semibold text-slate-900">Pricing</h3>
 
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
-              <input
-                type="radio"
-                checked={pricingType === "simple"}
-                onChange={() => setPricingType("simple")}
-                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              Simple Price
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
-              <input
-                type="radio"
-                checked={pricingType === "variety"}
-                onChange={() => setPricingType("variety")}
-                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              Price by Variety
-            </label>
-          </div>
+          {foodCategory !== "Toppings" && (
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={pricingType === "simple"}
+                  onChange={() => setPricingType("simple")}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                Simple Price
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={pricingType === "variety"}
+                  onChange={() => setPricingType("variety")}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                Price by Variety
+              </label>
+            </div>
+          )}
 
           {pricingType === "simple" ? (
             <div className="space-y-2">
@@ -678,14 +745,16 @@ export function MenuItemForm({
                 />
               </div>
               <div className="flex items-center gap-2 mt-2">
-                <Switch
+                <input
+                  type="checkbox"
                   checked={gstIncluded}
-                  onCheckedChange={setGstIncluded}
-                  id="gst-included"
+                  onChange={(e) => setGstIncluded(e.target.checked)}
+                  id="gst-included-simple"
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 />
-                <Label htmlFor="gst-included" className="text-sm text-slate-600">
+                <label htmlFor="gst-included-simple" className="text-sm text-slate-600 cursor-pointer">
                   GST Included
-                </Label>
+                </label>
               </div>
               {price && (
                 <p className="text-sm text-slate-500 mt-1">
@@ -738,6 +807,19 @@ export function MenuItemForm({
                 </div>
               ))}
 
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  checked={gstIncluded}
+                  onChange={(e) => setGstIncluded(e.target.checked)}
+                  id="gst-included-variety"
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <label htmlFor="gst-included-variety" className="text-sm text-slate-600 cursor-pointer">
+                  GST Included for all variants
+                </label>
+              </div>
+
               <button
                 onClick={addVariant}
                 className="text-sm font-medium text-blue-600 flex items-center gap-1 py-2"
@@ -749,35 +831,39 @@ export function MenuItemForm({
         </div>
 
 {/* Add-ons Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-2 border-t border-slate-100">
-            <label className="text-sm font-medium text-slate-700">Enable Add-ons</label>
-            <Switch checked={enableAddons} onCheckedChange={setEnableAddons} />
-          </div>
-
-          {enableAddons && (
-            <div className="space-y-2 p-4 bg-slate-50 rounded-[12px] border border-slate-100">
-              <label className="text-sm font-medium text-slate-700">Select Add-ons</label>
-              <div className="flex flex-wrap gap-2">
-                {["Extra Cheese", "Cold Drink", "Brownie", "Dip"].map((addon) => (
-                  <button
-                    key={addon}
-                    onClick={() => toggleAddon(addon)}
-                    className={`h-[32px] px-4 rounded-[16px] border text-sm transition-colors ${
-                      selectedAddons.includes(addon)
-                        ? "bg-[#2563EB] border-[#2563EB] text-white"
-                        : "bg-white border-[#E5E7EB] text-slate-600"
-                    }`}
-                  >
-                    {addon}
-                  </button>
-                ))}
-              </div>
+        {foodCategory !== "Toppings" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-2 border-t border-slate-100">
+              <label className="text-sm font-medium text-slate-700">Enable Add-ons</label>
+              <Switch checked={enableAddons} onCheckedChange={setEnableAddons} />
             </div>
-          )}
-        </div>
+
+            {enableAddons && (
+              <div className="space-y-2 p-4 bg-white rounded-[12px] border border-slate-200">
+                <label className="text-sm font-medium text-slate-700">Select Add-ons</label>
+                <div className="flex flex-wrap gap-2">
+                  {availableAddons.length > 0 ? availableAddons.map((addon) => (
+                    <button
+                      key={addon}
+                      onClick={() => toggleAddon(addon)}
+                      className={`h-[32px] px-4 rounded-[16px] border text-sm transition-colors ${
+                        selectedAddons.includes(addon)
+                          ? "bg-[#2563EB] border-[#2563EB] text-white"
+                          : "bg-white border-[#E5E7EB] text-slate-600"
+                      }`}
+                    >
+                      {addon}
+                    </button>
+                  )) : (
+                    <p className="text-sm text-slate-500">No add-ons available in menu.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {/* Toppings Section */}
-        {foodCategory !== 'Toppings' && (
+        {foodCategory !== 'Toppings' && foodCategory !== 'Beverage' && foodCategory !== 'Beverages' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between py-2 border-t border-slate-100">
               <label className="text-sm font-medium text-slate-700">Enable Toppings</label>
@@ -790,7 +876,7 @@ export function MenuItemForm({
             </div>
 
             {enableToppings && (
-              <div className="space-y-2 p-4 bg-slate-50 rounded-[12px] border border-slate-100">
+              <div className="space-y-2 p-4 bg-white rounded-[12px] border border-slate-200">
                 <label className="text-sm font-medium text-slate-700">Select Toppings</label>
                 <div className="flex flex-wrap gap-2">
                   {availableToppings.length > 0 ? availableToppings.map(topping => (
@@ -814,6 +900,44 @@ export function MenuItemForm({
           </div>
         )}
 
+        {/* Beverages Section */}
+        {foodCategory !== 'Toppings' && foodCategory !== 'Beverage' && foodCategory !== 'Beverages' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-2 border-t border-slate-100">
+              <label className="text-sm font-medium text-slate-700">Enable Beverages</label>
+              <button 
+                onClick={() => setEnableBeverages(!enableBeverages)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enableBeverages ? 'bg-[#2563EB]' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enableBeverages ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            {enableBeverages && (
+              <div className="space-y-2 p-4 bg-white rounded-[12px] border border-slate-200">
+                <label className="text-sm font-medium text-slate-700">Select Beverages</label>
+                <div className="flex flex-wrap gap-2">
+                  {availableBeverages.length > 0 ? availableBeverages.map(beverage => (
+                    <button
+                      key={beverage}
+                      onClick={() => toggleBeverage(beverage)}
+                      className={`h-[32px] px-4 rounded-[16px] border text-sm transition-colors ${
+                        selectedBeverages.includes(beverage) 
+                          ? 'bg-[#2563EB] border-[#2563EB] text-white' 
+                          : 'bg-white border-[#E5E7EB] text-slate-600'
+                      }`}
+                    >
+                      {beverage}
+                    </button>
+                  )) : (
+                    <p className="text-sm text-slate-500">No beverages available in menu.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Serve Info Section */}
         {foodCategory !== 'Toppings' && (
           <div className="space-y-4">
@@ -828,7 +952,7 @@ export function MenuItemForm({
             </div>
 
             {enableServeInfo && (
-              <div className="space-y-4 p-4 bg-slate-50 rounded-[12px] border border-slate-100">
+              <div className="space-y-4 p-4 bg-white rounded-[12px] border border-slate-200">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Serving Size</label>
                   <select
@@ -907,6 +1031,94 @@ export function MenuItemForm({
           <label className="text-sm font-medium text-slate-700">Active Status</label>
           <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
         </div>
+
+        {/* Live Preview Card */}
+        {foodCategory !== "Toppings" && (
+          <div className="space-y-2 border-t border-slate-100 pt-4">
+            <label className="text-sm font-medium text-slate-700">Live Preview</label>
+            <div className={`rounded-[16px] p-[8px] border border-[#E5E7EB] flex flex-col gap-2 transition-colors duration-300 ${isAvailable ? 'bg-white' : 'bg-slate-100 opacity-75 grayscale-[0.5]'}`}>
+              {/* Image Section */}
+              <div className="relative w-full h-[120px] rounded-[10px] overflow-hidden bg-slate-50 shrink-0">
+                {uploadedImageUrl ? (
+                  <img src={uploadedImageUrl} alt={name || 'Preview'} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-300">
+                    <ImageIcon size={24} />
+                  </div>
+                )}
+                
+                {/* Veg/Non-Veg Icon */}
+                <div className="absolute top-1.5 left-1.5 bg-white p-1 rounded-md shadow-sm">
+                  {dietaryType === 'Veg' && (
+                    <div className="w-2.5 h-2.5 rounded-sm border border-green-500 flex items-center justify-center">
+                      <div className="w-1 h-1 rounded-full bg-green-500" />
+                    </div>
+                  )}
+                  {dietaryType === 'Non-Veg' && (
+                    <div className="w-2.5 h-2.5 rounded-sm border border-red-500 flex items-center justify-center">
+                      <div className="w-0 h-0 border-l-[2px] border-r-[2px] border-b-[4px] border-l-transparent border-r-transparent border-b-red-500" />
+                    </div>
+                  )}
+                  {dietaryType === 'Egg' && (
+                    <div className="w-2.5 h-2.5 rounded-sm border border-yellow-500 flex items-center justify-center">
+                      <div className="w-1 h-1 rounded-full bg-yellow-500" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Content Section */}
+              <div className="flex flex-col flex-1 px-1 pb-1">
+                <div className="flex items-start justify-between gap-1 mb-1.5">
+                  <h3 className="text-[15px] font-bold text-[#111827] leading-tight flex-1 line-clamp-2">
+                    {name || 'Food Item Name'}
+                  </h3>
+                </div>
+                
+                <p className="text-[12px] text-[#6B7280] line-clamp-2 mb-2 leading-relaxed">
+                  {description || 'Short description of the food item will appear here.'}
+                </p>
+                
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {selectedTags.slice(0, 2).map((tag, index) => (
+                      <span key={index} className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-medium border border-blue-100">
+                        {tag}
+                      </span>
+                    ))}
+                    {selectedTags.length > 2 && (
+                      <span className="px-1.5 py-0.5 bg-slate-50 text-slate-600 rounded text-[10px] font-medium border border-slate-200">
+                        +{selectedTags.length - 2}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex flex-col gap-1 mt-auto pt-2 border-t border-slate-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[16px] font-extrabold text-[#111827]">
+                        ₹{pricingType === 'simple' ? (calculateFinalPrice(price) || 0).toFixed(2) : (variants[0]?.price ? calculateFinalPrice(variants[0].price).toFixed(2) : '0.00')}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        {gstIncluded ? "GST Included" : "+ GST extra"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wide">
+                        {isAvailable ? 'IN STOCK' : 'OUT OF STOCK'}
+                      </span>
+                      <div className={`w-[40px] h-[22px] rounded-full p-[2px] transition-colors duration-300 relative shrink-0 ${isAvailable ? 'bg-[#2563EB]' : 'bg-[#D1D5DB]'}`}>
+                        <div className={`w-[14px] h-[14px] bg-white rounded-full transform transition-transform duration-300 shadow-sm ${isAvailable ? 'translate-x-[18px]' : 'translate-x-0'}`} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer */}

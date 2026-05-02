@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-    <div className={`${hideProfileAndNotificationOnMobile ? 'hidden lg:block' : 'block'} px-2 lg:px-6 lg:pt-4`}>
+    <div className={`${hideProfileAndNotificationOnMobile ? 'hidden lg:block' : 'block'} px-2 lg:px-6 lg:pt-4 border-b border-slate-100 lg:border-none`}>
       <header className="sticky top-0 z-[40] flex items-center justify-between h-[72px] w-full max-w-md mx-auto lg:max-w-none lg:h-[80px] lg:bg-white lg:border lg:border-slate-200 lg:shadow-sm lg:rounded-2xl lg:px-6 transition-all duration-300">
       
       {/* Profile Icon triggers Sidebar */}

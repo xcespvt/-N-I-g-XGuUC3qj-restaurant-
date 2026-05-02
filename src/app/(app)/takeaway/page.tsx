@@ -342,7 +342,7 @@ function TakeawayPageContent() {
     const orderPayload = {
       customer: customerName || "Walk-in",
       time: now.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
-      date: now.toISOString().split('T')[0],
+      date: now.toLocaleDateString('en-CA'), // Returns YYYY-MM-DD in local time
       status: 'New',
       type: 'Takeaway',
       items: takeawayCart.map(i => ({

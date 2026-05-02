@@ -29,7 +29,6 @@ import { MenuItemForm } from "@/components/menu/MenuItemForm";
 import { MenuSearchAndFilter } from "@/components/menu/MenuSearchAndFilter";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { PaginationControls } from "@/components/pagination/PaginationControls";
-import { buildMenuItemApiPayload } from "@/lib/menuUtils";
 
 // Removed legacy local form state; MenuItemForm manages its own form values
 
